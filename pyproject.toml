@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "mofmt"
+version = "0.1.0"
+description = "Modelica Code Formatter"
+authors = ["Eryk Mroczek <mroczek.eryk@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "mofmt"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+antlr4-python3-runtime = "4.12.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+pylint = "^2.16.2"
+black = "^23.1.0"
+flake8 = "^6.0.0"
+mypy = "^1.0.1"
+isort = "^5.12.0"
+autoflake = "^2.0.1"
+pydocstringformatter = "^0.7.3"
+
+[tool.poetry.scripts]
+mofmt = "mofmt.mofmt:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
