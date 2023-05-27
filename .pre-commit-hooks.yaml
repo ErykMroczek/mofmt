@@ -1,0 +1,6 @@
+- id: mofmt
+  name: mofmt
+  description: Make your Modelica code pretty
+  entry: mofmt
+  language: python
+  files: '.*\.mo'
