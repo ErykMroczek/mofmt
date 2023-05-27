@@ -1,0 +1,2 @@
+# mofmt
+Modelica code formatter
