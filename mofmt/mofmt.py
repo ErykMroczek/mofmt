@@ -10,14 +10,14 @@ class ParsingError(Exception):
     """Raised when parsing fails"""
 
     def __init__(self, f: Path) -> None:
-        self.message = f"cannot parse {f}. Probably it not a valid modelica file"
+        self.message = f"cannot parse {f}. Probably it is not a valid modelica file"
         super().__init__(self.message)
 
 
 def main():
     argv = sys.argv
     if len(argv) != 2:
-        raise SystemExit("mofmt takes one argument (file/directory path)")
+        raise SystemExit("mofmt takes only one argument (file/directory path)")
     p = Path(argv[1])
     if p.is_dir():
         modelica_files = get_files_from_dir(p)
