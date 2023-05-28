@@ -20,6 +20,7 @@ mypy = "^1.0.1"
 isort = "^5.12.0"
 autoflake = "^2.0.1"
 pydocstringformatter = "^0.7.3"
+pre-commit = "^3.3.2"
 
 [tool.poetry.scripts]
 mofmt = "mofmt.mofmt:main"
