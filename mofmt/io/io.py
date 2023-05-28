@@ -13,7 +13,7 @@ class NotModelicaFileError(Exception):
 
 def get_files_from_dir(directory: Path) -> list[Path]:
     """Return list of Modelica files inside directory"""
-    return list(directory.glob("*/*.mo"))
+    return list(directory.rglob("*.mo"))
 
 
 def read_file(path: Path) -> str:
