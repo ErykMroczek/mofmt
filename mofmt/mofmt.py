@@ -1,4 +1,6 @@
+import operator
 import sys
+from functools import reduce
 from pathlib import Path
 
 from mofmt.io import get_files_from_dir, read_file, write_file
@@ -19,19 +21,16 @@ def main():
     if len(argv) < 2:
         raise SystemExit("mofmt takes at least one argument (file/directory path)")
     paths = [Path(arg) for arg in argv[1:]]
-    for p in paths:
-        if p.is_dir():
-            modelica_files = get_files_from_dir(p)
-        else:
-            modelica_files = [p]
-        for file in modelica_files:
-            contents = read_file(file)
-            try:
-                parsed = parse_source(contents)
-            except Exception as e:
-                raise ParsingError(file) from e
-            fmt = pretty_print(parsed)
-            write_file(file, fmt)
+    modelica_files = [get_files_from_dir(p) if p.is_dir() else [p] for p in paths]
+    modelica_files = reduce(operator.concat, modelica_files)
+    for file in modelica_files:
+        contents = read_file(file)
+        try:
+            parsed = parse_source(contents)
+        except Exception as e:
+            raise ParsingError(file) from e
+        fmt = pretty_print(parsed)
+        write_file(file, fmt)
 
 
 if __name__ == "__main__":
