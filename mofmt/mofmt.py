@@ -1,4 +1,6 @@
+import operator
 import sys
+from functools import reduce
 from pathlib import Path
 
 from mofmt.io import get_files_from_dir, read_file, write_file
@@ -16,13 +18,11 @@ class ParsingError(Exception):
 
 def main():
     argv = sys.argv
-    if len(argv) != 2:
-        raise SystemExit("mofmt takes only one argument (file/directory path)")
-    p = Path(argv[1])
-    if p.is_dir():
-        modelica_files = get_files_from_dir(p)
-    else:
-        modelica_files = [p]
+    if len(argv) < 2:
+        raise SystemExit("mofmt takes at least one argument (file/directory path)")
+    paths = [Path(arg) for arg in argv[1:]]
+    modelica_files = [get_files_from_dir(p) if p.is_dir() else [p] for p in paths]
+    modelica_files = reduce(operator.concat, modelica_files)
     for file in modelica_files:
         contents = read_file(file)
         try:
