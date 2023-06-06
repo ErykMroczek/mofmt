@@ -24,11 +24,12 @@ so if you are using git, you can delegate running *mofmt* to
 
 ### Usage
 
-*mofmt* takes but one argument, which is path that points to Modelica
-source file or directory, that is supposed to contain such files.
+*mofmt* takes one kind of argument - path that points to Modelica source
+file or directory that is supposed to contain such files. *mofmt* can
+accept multiple such arguments.
 
 ```shell
-mofmt PATH
+mofmt PATH ...
 ```
 
 ## Features and limitations
