@@ -16,21 +16,22 @@ class ParsingError(Exception):
 
 def main():
     argv = sys.argv
-    if len(argv) != 2:
-        raise SystemExit("mofmt takes only one argument (file/directory path)")
-    p = Path(argv[1])
-    if p.is_dir():
-        modelica_files = get_files_from_dir(p)
-    else:
-        modelica_files = [p]
-    for file in modelica_files:
-        contents = read_file(file)
-        try:
-            parsed = parse_source(contents)
-        except Exception as e:
-            raise ParsingError(file) from e
-        fmt = pretty_print(parsed)
-        write_file(file, fmt)
+    if len(argv) < 2:
+        raise SystemExit("mofmt takes at least one argument (file/directory path)")
+    paths = [Path(arg) for arg in argv[1:]]
+    for p in paths:
+        if p.is_dir():
+            modelica_files = get_files_from_dir(p)
+        else:
+            modelica_files = [p]
+        for file in modelica_files:
+            contents = read_file(file)
+            try:
+                parsed = parse_source(contents)
+            except Exception as e:
+                raise ParsingError(file) from e
+            fmt = pretty_print(parsed)
+            write_file(file, fmt)
 
 
 if __name__ == "__main__":
