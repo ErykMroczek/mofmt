@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mofmt"
-version = "0.1.1"
+version = "0.1.2"
 description = "Modelica Code Formatter"
 authors = ["Eryk Mroczek <mroczek.eryk@gmail.com>"]
 license = "MIT"
