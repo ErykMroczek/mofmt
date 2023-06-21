@@ -61,7 +61,6 @@ annotations are good examples. Overall, indentation shall be increased at:
 
 * descriptions and annotations
 * constraining clauses
-* class sections (public, private, equation, algorithm etc.)
 * elements, equations and statement lists
 * enumeration items
 * inside loops and if blocks
@@ -79,15 +78,9 @@ replaceable package Medium = Modelica.Media.R134a.R134a_ph
   annotation(Dialog(tab = "General", group = "Medium"));
 ```
 
-### Class sections and element lists
+### Element, statement and equation lists
 
-Indentation shall be increased before the section keyword and then
-increased further inside section. In case of first public element list
-(without explicit keyword) indentation simply shall be increased twice.
-
-Indenting keywords is deliberate for it allows nice code wrapping in
-text editors.
-
+Indentation shall be increased before the list.
 
 #### Example
 
@@ -95,19 +88,19 @@ text editors.
 model BasicBoundary
   "Basic fluid boundary model"
 
-    import Modelica.Fluid.Types.PortFlowDirection;
-    import Modelica.Constants.inf;
+  import Modelica.Fluid.Types.PortFlowDirection;
+  import Modelica.Constants.inf;
 
-    // SNAP
+  // SNAP
 
-  protected
+protected
 
-    parameter PortFlowDirection flowDirection = PortFlowDirection.Bidirectional
-      "Allowed flow direction";
+  parameter PortFlowDirection flowDirection = PortFlowDirection.Bidirectional
+    "Allowed flow direction";
 
-  equation
+equation
 
-    // SNAP
+  // SNAP
 
 end BasicBoundary;
 ```
