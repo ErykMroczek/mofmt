@@ -191,6 +191,8 @@ class Listener(ModelicaListener):
         ):
             self.collector.add_space()
         self.collector.add_token(content)
+        if content == "annotation":
+            self.collector.add_space()
         self.prev_token_text = content
         self.prev_token_line = line
 
