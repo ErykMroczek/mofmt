@@ -2,13 +2,13 @@
 
   replaceable package Medium = Modelica.Media.Interfaces.PartialMedium
     "Medium model"
-    annotation(choicesAllMatching = true);
+    annotation (choicesAllMatching = true);
 
   parameter /* Unexpected comment! */ Integer n = 1
     "Discretization number"
-    annotation(tab = "General");
+    annotation (tab = "General");
   Modelica.Fluid.Interfaces.HeatPorts_a[n] heatPorts_a /* Where is b? */
-    annotation(
+    annotation (
       Placement(
         transformation(
           extent = {{-20, -10}, {20, 10}},
