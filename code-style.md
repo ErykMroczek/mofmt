@@ -155,48 +155,36 @@ Additionally, single blank shall be inserted before:
 ### Function calls, arrays, matrices, class modifications etc.
 
 Main rule here is: be consistent.
-To achieve this *mofmt* takes a following approach:
+The following approach shall be applied:
 
 1. If line is wrapped at any argument, then wrap at every argument.
 2. If line is wrapped inside nested construct, then wrap at every
    argument in every outer construct.
 
-Indenation is increased to help visually identify the scope.
+Indenation shall be increased accordingly to help visually identify the
+scope.
 
 #### Example
 
 ```Modelica
-// No wrap is fine!
+// No wrap is fine
 h = enthalpy_pT(p, T);
 
-// Outer array is wrapped, but inner ones are kept intact...
+// Outer array is wrapped, but inner ones are kept intact
 parameter Real A[2,3] = {
   {1.0, 2.0, 3.0},
   {5.0, 6.0, 7.0}};
 
-// In nested function call, if inner call is wrapped, outer call is
-// wrapped as well...
+// In nested function call, if inner call is wrapped, outer call shall be
+// wrapped as well
 cp_a = specificHeat_pT(
   p = p_a,
   T = temperature_ph(
     p = p_a,
     h = h_a));
 
-// But it is fine to wrap only outer call, keeping inner one intact!
+// But it is fine to wrap only outer call, keeping inner one intact
 cp_b = specificHeat_pT(
   p = p_b,
   T = temperature_ph(p = p_b, h = h_b));
-```
-
-#### Counterexample
-
-```Modelica
-// Ugly!
-h = enthalpy_pT(p,
-  T);
-
-// Even more ugly!
-cp_a = specificHeat_pT(p = p_a, T = temperature_ph(
-  p = p_a,
-  h = h_a));
 ```
