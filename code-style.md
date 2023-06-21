@@ -1,6 +1,6 @@
-# *mofmt* code style
+# Code style
 
-This document describes code style applied to Modelica files by *mofmt*.
+This document describes code style as applied by *mofmt*.
 
 ## Maximum line length
 
@@ -8,21 +8,109 @@ There is no line length limit. There are plenty of limits already.
 
 ## Indentation
 
-Indentation used by *mofmt* is 2 spaces per single level.
+Indentation is 2 spaces per single level.
 
 Modelica doesn't use indentation to define the scope, but it is
-nonetheless useful to use it to enhance readability. Descriptions and annotation are good examples. Overall, *mofmt* increases indentation at:
+nonetheless useful to use it to enhance readability. Descriptions and
+annotations are good examples. Overall, indentation shall be increased at:
 
-* descriptions
+* descriptions and annotations
 * constraining clauses
 * class sections (public, private, equation, algorithm etc.)
 * elements, equations and statement lists
-* enumerations
-* at line wraps
+* enumeration items
+* inside loops and if blocks
+
+### Descriptions, annotations and constraining clauses
+
+Indentation shall be increased only one time per element.
+
+#### Example
+
+```modelica
+replaceable package Medium = Modelica.Media.R134a.R134a_ph
+  constrainedby Modelica.Media.Interfaces.PartialMedium
+  "Fluid medium"
+  annotation(Dialog(tab = "General", group = "Medium"));
+```
+
+### Class sections and element lists
+
+Indentation shall be increased before the section keyword and then
+increased further inside section. In case of first public element list
+(without explicit keyword) indentation simply shall be increased twice.
+
+Indenting keywords is deliberate for it allows nice code wrapping in
+text editors.
+
+
+#### Example
+
+```modelica
+model BasicBoundary
+  "Basic fluid boundary model"
+
+    import Modelica.Fluid.Types.PortFlowDirection;
+    import Modelica.Constants.inf;
+
+    // SNAP
+
+  protected
+
+    parameter PortFlowDirection flowDirection = PortFlowDirection.Bidirectional
+      "Allowed flow direction";
+
+  equation
+
+    // SNAP
+
+end BasicBoundary;
+```
+
+### Enumeration items
+
+Indentation shall be increased inside `enumeration()` and at every
+description.
+
+#### Example
+
+```modelica
+type BoundaryType = enumeration(
+  Pressure
+    "Pressure boundary",
+  Flow
+    "Flow boundary")
+  "Enumeration of possible boundary types";
+```
+
+### Loops and if blocks
+
+Indentation shall be increased before statement/equation list inside
+loop or if-else branch block.
+
+#### Example
+
+```modelica
+if boundaryType == BoundaryType.Pressure then
+  medium.p = p_in;
+else
+  port.m_flow = -m_flow_in;
+end if;
+```
 
 ## Vertical spacing
 
-Maximum single blank line is allowed.
+Beside indented elements described in the previous section, a newline
+shall be inserted after every semicolon. It is allowable to insert a
+single blank line instead.
+
+Additionally, single blank shall be inserted before:
+
+* section keywords
+* element, equations and statement lists inside class sections
+* before the call to external function
+* before class annotation
+* before end clause signifying the class' scope
 
 ## Horizontal spacing
 
