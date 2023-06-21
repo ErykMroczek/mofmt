@@ -92,26 +92,6 @@ cp = specificHeat_pT(
     h = h));
 ```
 
-### Strings
-
-*Mofmt* disallows line wrapping inside strings. If it finds wrapped
-string:
-
-```modelica
-string = "Some long string that someone
-          wrapped, but shouldn't";
-```
-
-it converts it into two or more concatenated strings with `+` between
-them:
-
-```modelica
-string = "Some long string that someone"
-  + "wrapped, but shouldn't";
-```
-
-Explicit (escaped) newline chars are kept intact.
-
 ## Future plans
 
 * create dedicated file with description of style applied by *mofmt*
