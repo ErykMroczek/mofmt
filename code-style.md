@@ -6,6 +6,51 @@ This document describes code style as applied by *mofmt*.
 
 There is no line length limit. There are plenty of limits already.
 
+## Horizontal spacing
+
+Single space is allowed as a horizontal separator.
+
+### Binary operators
+
+All binary operator shall be surrounded with spaces.
+
+```modelica
+2 * (3 - 1.76)
+a <= b or x
+```
+
+### Unary operators
+
+Except for `not` operator unary operators shall not be separated from
+their operands.
+
+#### Example
+
+```modelica
+-4
+-(2 + 3)
+not isOff
+```
+
+### Assignments and equalities
+
+`:=` and `=` tokens shall be surrounded with spaces.
+
+```modelica
+Q_flow = alpha * A * delta_T;
+```
+
+### Array elements and function arguments
+
+Space shall be inserted after every comma.
+
+#### Example
+
+```modelica
+{1.0, 2.0, 3.0}
+enthalpy_pT(p, T)
+```
+
 ## Indentation
 
 Indentation is 2 spaces per single level.
@@ -111,8 +156,6 @@ Additionally, single blank shall be inserted before:
 * before the call to external function
 * before class annotation
 * before end clause signifying the class' scope
-
-## Horizontal spacing
 
 ## Line wrapping
 
