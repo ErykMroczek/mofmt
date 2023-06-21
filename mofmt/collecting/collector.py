@@ -55,21 +55,7 @@ class Collector:
 
     def add_token(self, val: str) -> None:
         """Add a token marker"""
-        if val[0] != '"':
-            self.add_marker(Marker(Marker.TOKEN, val, val))
-            return
-        # Token is a string
-        stripped = [line.strip() for line in val.split("\n")]
-        for i, line in enumerate(stripped):
-            # Append double quote to every substring except last one
-            if line != stripped[-1]:
-                line = line + '"'
-            if i > 0:
-                self.add_wrappoint()
-                self.add_marker(Marker(Marker.TOKEN, "+", "+"))
-                self.add_space()
-                line = '"' + line
-            self.add_marker(Marker(Marker.TOKEN, line, line))
+        self.add_marker(Marker(Marker.TOKEN, val, val))
         self.last = len(self.list) - 1
 
     def add_comment(self, val: str) -> None:
