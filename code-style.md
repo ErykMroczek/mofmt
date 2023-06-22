@@ -188,3 +188,17 @@ cp_b = specificHeat_pT(
   p = p_b,
   T = temperature_ph(p = p_b, h = h_b));
 ```
+
+### Compund expressions
+
+Expressions shall be wrapped at binary operators. Operator used as a
+wrapping point shall be moved to a new line. Indenation shall be
+increased only after first wrap.
+
+#### Example
+
+```Modelica
+Wb_flows[1] = vs[1] * crossAreas[1] * ((mediums[2].p - mediums[1].p) / 2
+  + flowModel.dps_fg[1] / 2 - system.g*dheights[1] * mediums[1].d)
+  * nParallel;
+```
