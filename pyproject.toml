@@ -3,9 +3,16 @@ name = "mofmt"
 version = "0.2.0"
 description = "Modelica Code Formatter"
 authors = ["Eryk Mroczek <mroczek.eryk@gmail.com>"]
+repository = "https://github.com/ErykMroczek/mofmt"
+homepage = "https://github.com/ErykMroczek/mofmt"
 license = "MIT"
 readme = "README.md"
 packages = [{include = "mofmt"}]
+keywords = ["Modelica", "automation", "formatter"]
+include = ["CHANGELOG.md"]
+
+[tool.poetry.urls]
+"changelog" = "https://github.com/ErykMroczek/mofmt/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
