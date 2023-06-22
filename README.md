@@ -8,6 +8,8 @@ This is initial version of this formatter. Although functionality is
 more or less finished, it is highly probable that it can exhibit buggy
 behavior. Better double-check changed files.
 
+Code style applied by the *mofmt* is described in `code-style.md`.
+
 ## Installation and usage
 
 ### Installation
@@ -94,7 +96,6 @@ cp = specificHeat_pT(
 
 ## Future plans
 
-* create dedicated file with description of style applied by *mofmt*
 * improve test coverage
 * improve parsing performance
 * (maybe) include HTML pretty-printer
