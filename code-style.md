@@ -1,6 +1,6 @@
 # Code style
 
-This document describes code style as applied by *mofmt*.
+This document describes a code style as applied by *mofmt*.
 
 ## Maximum line length
 
@@ -12,7 +12,7 @@ Single space is allowed as a horizontal separator.
 
 ### Binary operators
 
-All binary operator shall be surrounded with spaces.
+All binary operators shall be surrounded by spaces.
 
 ```modelica
 2 * (3 - 1.76)
@@ -21,8 +21,8 @@ a <= b or x
 
 ### Unary operators
 
-Except for `not` operator unary operators shall not be separated from
-their operands.
+Except for the `not` operator unary operators shall not be separated
+from their operands.
 
 #### Example
 
@@ -34,7 +34,7 @@ not isOff
 
 ### Assignments and equalities
 
-`:=` and `=` tokens shall be surrounded with spaces.
+`:=` and `=` tokens shall be surrounded by spaces.
 
 ```modelica
 Q_flow = alpha * A * delta_T;
@@ -142,11 +142,11 @@ Beside indented elements described in the previous section, a newline
 shall be inserted after every semicolon. It is allowable to insert a
 single blank line instead.
 
-Additionally, single blank shall be inserted before:
+Additionally, a single blank shall be inserted before:
 
 * section keywords
 * element, equations and statement lists inside class sections
-* before the call to external function
+* before the call to an external function
 * before class annotation
 * before end clause signifying the class' scope
 
@@ -154,14 +154,14 @@ Additionally, single blank shall be inserted before:
 
 ### Function calls, arrays, matrices, class modifications etc.
 
-Main rule here is: be consistent.
-The following approach shall be applied:
+The main rule here is: be consistent. The following approach shall be
+applied:
 
 1. If line is wrapped at any argument, then wrap at every argument.
-2. If line is wrapped inside nested construct, then wrap at every
+2. If line is wrapped inside a nested construct, then wrap at every
    argument in every outer construct.
 
-Indenation shall be increased accordingly to help visually identify the
+Indentation shall be increased accordingly to help visually identify the
 scope.
 
 #### Example
@@ -189,11 +189,11 @@ cp_b = specificHeat_pT(
   T = temperature_ph(p = p_b, h = h_b));
 ```
 
-### Compund expressions
+### Compound expressions
 
 Expressions shall be wrapped at binary operators. Operator used as a
-wrapping point shall be moved to a new line. Indenation shall be
-increased only after first wrap.
+wrapping point shall be moved to a new line. Indentation shall be
+increased only after the first wrap.
 
 #### Example
 
