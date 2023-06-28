@@ -94,9 +94,8 @@ cp = specificHeat_pT(
     h = h));
 ```
 
-## Future plans
+## TODO
 
-* improve test coverage
 * improve parsing performance
 * (maybe) include HTML pretty-printer
 
