@@ -25,9 +25,8 @@ class Marker:
     DEDENT = 4
     IGNORE = 5
     BLANK = 6
-    HARDBREAK = 7
-    SOFTBREAK = 8
-    WRAPPOINT = 9
+    LINEBREAK = 7
+    WRAPPOINT = 8
 
     def __init__(self, typ: int, val: str, rep: str) -> None:
         self.typ: int = typ
@@ -97,26 +96,17 @@ class Collector:
             self.list.pop()
         if self.wrapped:
             self.add_dedent()
-        self.wrapped = False
+            self.wrapped = False
         self.add_marker(Marker(Marker.BLANK, "\n\n", "BLANK"))
 
-    def add_softbreak(self) -> None:
-        """Add a soft break marker"""
+    def add_linebreak(self) -> None:
+        """Add a linebreak marker"""
         if self.list[-1].typ >= Marker.BLANK:
             return
         if self.wrapped:
             self.add_dedent()
             self.wrapped = False
-        self.add_marker(Marker(Marker.SOFTBREAK, "\n", "SBREAK"))
-
-    def add_hardbreak(self) -> None:
-        """Add a hard break marker"""
-        if self.list[-1].typ >= Marker.BLANK:
-            return
-        if self.wrapped:
-            self.add_dedent()
-        self.wrapped = False
-        self.add_marker(Marker(Marker.HARDBREAK, "\n", "HBREAK"))
+        self.add_marker(Marker(Marker.LINEBREAK, "\n", "LINEBREAK"))
 
     def add_wrappoint(self) -> None:
         """Add a soft break marker"""
