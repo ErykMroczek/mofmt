@@ -35,3 +35,9 @@ end if;
 for i in 1:n loop
   h[i] = cp[i] * T[i];
 end for;
+
+for i in 1:passes loop
+  for j in 1:n loop
+    connect(refrigerant.heatPort[i], wallWithConv.heatPorts_a_vap[i, k]);
+  end for;
+end for;

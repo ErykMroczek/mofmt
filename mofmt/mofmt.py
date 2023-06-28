@@ -17,10 +17,14 @@ class ParsingError(Exception):
 
 
 def main():
-    argv = sys.argv
-    if len(argv) < 2:
+    format_files(sys.argv)
+
+
+def format_files(args: list[str]) -> None:
+    """Format files specified in argument list"""
+    if len(args) < 2:
         raise SystemExit("mofmt takes at least one argument (file/directory path)")
-    paths = [Path(arg) for arg in argv[1:]]
+    paths = [Path(arg) for arg in args[1:]]
     modelica_files = [get_files_from_dir(p) if p.is_dir() else [p] for p in paths]
     modelica_files = reduce(operator.concat, modelica_files)
     for file in modelica_files:

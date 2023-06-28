@@ -152,18 +152,18 @@ class Listener(ModelicaListener):
             if line_diff == 0:
                 self.collector.add_space()
             else:
-                self.collector.add_hardbreak()
+                self.collector.add_linebreak()
             self.collector.add_comment(comment.text)
             line = comment.line
         if self.prev_token_line == 1:
-            self.collector.add_hardbreak()
+            self.collector.add_linebreak()
             return
         if len(tail) > 0:
             self.collector.append(tail)
             return
         line_diff = current_line - line
         if line_diff == 1:
-            self.collector.add_hardbreak()
+            self.collector.add_linebreak()
             return
         if line_diff > 1:
             self.collector.add_blank()
@@ -180,7 +180,7 @@ class Listener(ModelicaListener):
             token.tokenIndex, ModelicaLexer.COMMENTS
         )
         if self.prev_token_text == ";":
-            self.collector.add_hardbreak()
+            self.collector.add_linebreak()
             if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
                 self.collector.add_blank()
         if comments:
@@ -226,10 +226,10 @@ class Listener(ModelicaListener):
         if len(ctx.getText()) == 0:
             return
         if rule in HARD_BREAKS_AT:
-            self.collector.add_hardbreak()
+            self.collector.add_linebreak()
         if rule in SOFT_BREAKS_AT:
             if self.group_stack[-1]:
-                self.collector.add_softbreak()
+                self.collector.add_linebreak()
         if rule in BLANK_BEFORE:
             self.collector.add_blank()
         if rule in IGNORE_AT:

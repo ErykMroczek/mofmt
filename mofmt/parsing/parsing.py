@@ -30,5 +30,5 @@ def parse_source(source: str, entry_rule=Modelica.stored_definition) -> list[Mar
     walker = antlr.ParseTreeWalker()
     walker.walk(listener, entry_rule(parser))
     # Append empty line
-    listener.collector.add_hardbreak()
+    listener.collector.add_linebreak()
     return listener.collector.list
