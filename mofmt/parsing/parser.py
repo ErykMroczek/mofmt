@@ -119,7 +119,7 @@ NO_BREAK_BEFORE = (
 )
 
 
-class Listener(ModelicaListener):
+class Listener(ModelicaListener):  # type: ignore
     """Custom listener for parsing Modelica source"""
 
     def __init__(self, stream: antlr.CommonTokenStream) -> None:
@@ -168,7 +168,7 @@ class Listener(ModelicaListener):
         if line_diff > 1:
             self.collector.add_blank()
 
-    def visitTerminal(self, node: antlr.TerminalNode):
+    def visitTerminal(self, node: antlr.TerminalNode) -> None:
         """
         Generic method called by Antlr listener every time it finds
         terminal.
@@ -196,7 +196,7 @@ class Listener(ModelicaListener):
         self.prev_token_text = content
         self.prev_token_line = line
 
-    def enterEveryRule(self, ctx: antlr.ParserRuleContext):
+    def enterEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
         """
         Generic method called by Antlr listener every time it enters a
         grammar rule.
@@ -235,7 +235,7 @@ class Listener(ModelicaListener):
         if rule in IGNORE_AT:
             self.collector.add_ignore()
 
-    def exitEveryRule(self, ctx: antlr.ParserRuleContext):
+    def exitEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
         """
         Generic method called by Antlr listener every time it exits a
         grammar rule.
