@@ -49,3 +49,6 @@ follow_imports = "skip"
 [[tool.mypy.overrides]]
 module = "antlr4"
 ignore_missing_imports = true
+
+[tool.isort]
+profile = "black"
