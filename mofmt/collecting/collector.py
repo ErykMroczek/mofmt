@@ -28,10 +28,12 @@ class Marker:
     LINEBREAK = 7
     WRAPPOINT = 8
 
+    __slots__ = ("typ", "val", "rep")
+
     def __init__(self, typ: int, val: str, rep: str) -> None:
-        self.typ: int = typ
-        self.val: str = val
-        self.rep: str = rep
+        self.typ = typ
+        self.val = val
+        self.rep = rep
 
     def __repr__(self) -> str:
         return self.rep
@@ -43,32 +45,31 @@ class Marker:
 class Collector:
     """Represents collector that gathers formatting markers"""
 
+    __slots__ = ("markers", "wrapped")
+
     def __init__(self) -> None:
-        self.list: list[Marker] = []
-        self.wrapped = False
-        self.last = 0
+        self.markers: list[Marker] = []
+        self.wrapped: bool = False
 
     def add_marker(self, marker: Marker) -> None:
         """Add marker"""
-        self.list.append(marker)
+        self.markers.append(marker)
 
     def add_token(self, val: str) -> None:
         """Add a token marker"""
         self.add_marker(Marker(Marker.TOKEN, val, val))
-        self.last = len(self.list) - 1
 
     def add_comment(self, val: str) -> None:
         """Add a comment marker"""
         self.add_marker(Marker(Marker.COMMENT, val, val))
-        self.last = len(self.list) - 1
 
-    def cache_tail(self) -> list:
+    def cache_tail(self) -> list[Marker]:
         """Return last few markers that are not tokens or comments"""
         tail = []
-        while len(self.list) > 0:
-            if self.list[-1].typ <= Marker.COMMENT:
+        while len(self.markers) > 0:
+            if self.markers[-1].typ <= Marker.COMMENT:
                 break
-            last = self.list.pop()
+            last = self.markers.pop()
             if last.typ != Marker.SPACE:
                 tail.append(last)
         tail.reverse()
@@ -76,13 +77,13 @@ class Collector:
 
     def append(self, markers: list[Marker]) -> None:
         """Append cached markers"""
-        self.list.extend(markers)
+        self.markers.extend(markers)
 
     def add_space(self) -> None:
         """Add a space marker"""
-        if len(self.list) == 0:
+        if len(self.markers) == 0:
             return
-        if self.list[-1].typ >= Marker.IGNORE:
+        if self.markers[-1].typ >= Marker.IGNORE:
             return
         self.add_marker(Marker(Marker.SPACE, " ", "SPACE"))
 
@@ -92,8 +93,8 @@ class Collector:
 
     def add_blank(self) -> None:
         """Add a blank marker"""
-        if self.list[-1].typ >= Marker.BLANK:
-            self.list.pop()
+        if self.markers[-1].typ >= Marker.BLANK:
+            self.markers.pop()
         if self.wrapped:
             self.add_dedent()
             self.wrapped = False
@@ -101,7 +102,7 @@ class Collector:
 
     def add_linebreak(self) -> None:
         """Add a linebreak marker"""
-        if self.list[-1].typ >= Marker.BLANK:
+        if self.markers[-1].typ >= Marker.BLANK:
             return
         if self.wrapped:
             self.add_dedent()
@@ -124,7 +125,7 @@ class Collector:
         self.add_marker(Marker(Marker.DEDENT, "", "DEDENT"))
 
     def __repr__(self) -> str:
-        return [n.rep for n in self.list].__repr__()
+        return [n.rep for n in self.markers].__repr__()
 
     def __str__(self) -> str:
         return json.dumps(
