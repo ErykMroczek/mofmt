@@ -4,7 +4,18 @@ from mofmt.collecting.collector import Marker
 
 
 class Printer:
-    """Class used for markers printing"""
+    """
+    Class used for markers printing.
+
+    Attributes
+    ----------
+    lvl : int
+        Current indentation level
+    markers : list of Marker
+        Markers collected in the Collector object
+    printable : list of str
+        List of strings generated from Markers
+    """
 
     INDENT = "  "
     __slots__ = ("lvl", "markers", "printable")
