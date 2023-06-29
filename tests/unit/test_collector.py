@@ -10,14 +10,14 @@ def test_tokens():
     col.add_token(val_1)
     col.add_token(val_2)
     # Test if number of markers is correct
-    assert len(col.list) == 2
+    assert len(col.markers) == 2
     # Test if markers has a correct type
-    for m in col.list:
+    for m in col.markers:
         assert m.typ == Marker.TOKEN
     # Test markers values and representations
-    assert col.list[0].val == val_1
-    assert col.list[-1].val == val_2
-    assert col.list[0].val == col.list[0].rep
+    assert col.markers[0].val == val_1
+    assert col.markers[-1].val == val_2
+    assert col.markers[0].val == col.markers[0].rep
 
 
 def test_comments():
@@ -27,14 +27,14 @@ def test_comments():
     col.add_comment(val_1)
     col.add_comment(val_2)
     # Test if number of markers is correct
-    assert len(col.list) == 2
+    assert len(col.markers) == 2
     # Test if markers has a correct type
-    for m in col.list:
+    for m in col.markers:
         assert m.typ == Marker.COMMENT
     # Test markers values and representations
-    assert col.list[0].val == val_1
-    assert col.list[-1].val == val_2
-    assert col.list[0].val == col.list[0].rep
+    assert col.markers[0].val == val_1
+    assert col.markers[-1].val == val_2
+    assert col.markers[0].val == col.markers[0].rep
 
 
 def test_tail_caching():
@@ -51,8 +51,8 @@ def test_tail_caching():
     assert tail[0].typ == Marker.INDENT
     assert tail[1].typ == Marker.LINEBREAK
     # Only single token should be left in collector
-    assert len(col.list) == 1
-    assert col.list[0].typ == Marker.TOKEN
+    assert len(col.markers) == 1
+    assert col.markers[0].typ == Marker.TOKEN
 
 
 def test_space():
@@ -61,19 +61,19 @@ def test_space():
     # Initial spaces should be discarded
     col.add_space()
     col.add_space()
-    assert len(col.list) == 0
+    assert len(col.markers) == 0
     # But should be accepted when following a token or comment
     col.add_token("tok")
     col.add_space()
-    assert col.list[-1].typ == Marker.SPACE
+    assert col.markers[-1].typ == Marker.SPACE
     # But they should be discarded while following ignore marker or
     # newline
     col.add_ignore()
     col.add_space()
-    assert col.list[-1].typ == Marker.IGNORE
+    assert col.markers[-1].typ == Marker.IGNORE
     col.add_linebreak()
     col.add_space()
-    assert col.list[-1].typ == Marker.LINEBREAK
+    assert col.markers[-1].typ == Marker.LINEBREAK
 
 
 def test_blank():
@@ -85,5 +85,5 @@ def test_blank():
     col.add_blank()
     # Blank should overwrite previous newline marker and add dedent when
     # expression was wrapped
-    assert len(col.list) == 3
-    assert col.list[1].typ == Marker.DEDENT
+    assert len(col.markers) == 3
+    assert col.markers[1].typ == Marker.DEDENT

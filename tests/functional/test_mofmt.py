@@ -102,7 +102,7 @@ def test_errors(tmp_path):
     with pytest.raises(FileNotFoundError):
         format_files(["mofmt", "not_exists"])
     # Check file extension reckognition
-    p = Path(tmp_path, f"file.txt")
+    p = Path(tmp_path, "file.txt")
     p.write_text(INPUT_CODE, "utf-8")
     with pytest.raises(NotModelicaFileError):
         format_files(["mofmt", p.as_posix()])

@@ -1,5 +1,7 @@
 """Helper functions used to parse source code"""
 
+from typing import Callable
+
 import antlr4 as antlr
 
 from mofmt.collecting.collector import Marker
@@ -8,7 +10,12 @@ from .generated import Modelica, ModelicaLexer
 from .parser import Listener
 
 
-def parse_source(source: str, entry_rule=Modelica.stored_definition) -> list[Marker]:
+def parse_source(
+    source: str,
+    entry_rule: Callable[
+        [Modelica], antlr.ParserRuleContext
+    ] = Modelica.stored_definition,
+) -> list[Marker]:
     """
     Return list of printing markers generated from Modelica source code.
 
@@ -31,4 +38,4 @@ def parse_source(source: str, entry_rule=Modelica.stored_definition) -> list[Mar
     walker.walk(listener, entry_rule(parser))
     # Append empty line
     listener.collector.add_linebreak()
-    return listener.collector.list
+    return listener.collector.markers
