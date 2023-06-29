@@ -35,3 +35,17 @@ mofmt = "mofmt.mofmt:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+exclude = ['venv/', 'tests', 'mofmt/parsing/generated']
+warn_return_any = true
+strict = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "mofmt.parsing.generated.*"
+follow_imports = "skip"
+
+[[tool.mypy.overrides]]
+module = "antlr4"
+ignore_missing_imports = true
