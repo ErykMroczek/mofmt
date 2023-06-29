@@ -1,10 +1,12 @@
 """Pytest fixtures"""
 
+from pathlib import Path
+
 import pytest
+
 from mofmt.io import read_file
 from mofmt.parsing import parse_source
-from mofmt.printing import pretty_print
-from pathlib import Path
+from mofmt.printing import Printer
 
 
 @pytest.fixture(name="format_file", scope="function")
@@ -14,6 +16,6 @@ def format_file():
     def _format(file, entry):
         code = read_file(Path(file))
         parsed = parse_source(code, entry)
-        return pretty_print(parsed)
+        return Printer(parsed).pretty_print()
 
     return _format

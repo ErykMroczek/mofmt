@@ -1,9 +1,11 @@
 """Tests checking formatting style"""
 
-from .conftest import format_file
+from pathlib import Path
+
 from mofmt.io import read_file
 from mofmt.parsing.generated.Modelica import Modelica
-from pathlib import Path
+
+from .conftest import format_file
 
 
 def test_equations(format_file):
