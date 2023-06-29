@@ -15,7 +15,7 @@ include = ["CHANGELOG.md"]
 "changelog" = "https://github.com/ErykMroczek/mofmt/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 antlr4-python3-runtime = "4.13.0"
 
 [tool.poetry.group.dev.dependencies]
