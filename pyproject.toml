@@ -52,3 +52,7 @@ ignore_missing_imports = true
 
 [tool.isort]
 profile = "black"
+extend_skip = ["mofmt/parsing/generated"]
+
+[tool.black]
+extend-exclude = ['mofmt/parsing/generated']
