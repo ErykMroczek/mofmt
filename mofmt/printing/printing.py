@@ -4,6 +4,8 @@ from mofmt.collecting.collector import Marker
 
 
 class Printer:
+    """Class used for markers printing"""
+
     INDENT = "  "
     __slots__ = ("lvl", "markers", "printable")
 
