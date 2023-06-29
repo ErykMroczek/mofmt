@@ -15,19 +15,21 @@ include = ["CHANGELOG.md"]
 "changelog" = "https://github.com/ErykMroczek/mofmt/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-antlr4-python3-runtime = "4.12.0"
+python = "^3.8"
+antlr4-python3-runtime = "4.13.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2.1"
-pylint = "^2.16.2"
-black = "^23.1.0"
-flake8 = "^6.0.0"
-mypy = "^1.0.1"
-isort = "^5.12.0"
-autoflake = "^2.0.1"
-pydocstringformatter = "^0.7.3"
 pre-commit = "^3.3.2"
+tox = "^4.6.3"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.1"
+
+[tool.poetry.group.lint.dependencies]
+black = "^23.1.0"
+mypy = "^1.0.1"
+ruff = "^0.0.275"
+isort = "^5.12.0"
 
 [tool.poetry.scripts]
 mofmt = "mofmt.mofmt:main"
@@ -56,3 +58,7 @@ extend_skip = ["mofmt/parsing/generated"]
 
 [tool.black]
 extend-exclude = ['mofmt/parsing/generated']
+
+[tool.ruff]
+extend-exclude = ['mofmt/parsing/generated', 'tests/']
+extend-select = ["B"]
