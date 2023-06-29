@@ -1,2 +1,5 @@
 """Module related to pretty printing"""
-from .printing import pretty_print
+
+__all__ = ["Printer"]
+
+from .printing import Printer
