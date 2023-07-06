@@ -151,8 +151,11 @@ class Listener(ModelicaListener):  # type: ignore
             line_diff = comment.line - line
             if line_diff == 0:
                 self.collector.add_space()
-            else:
+            elif line_diff == 1:
                 self.collector.add_linebreak()
+            else:
+                if self.prev_token_text == ";":
+                    self.collector.add_blank()
             self.collector.add_comment(comment.text)
             line = comment.line
         if self.prev_token_line == 1:
@@ -181,8 +184,9 @@ class Listener(ModelicaListener):  # type: ignore
         )
         if self.prev_token_text == ";":
             self.collector.add_linebreak()
-            if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
-                self.collector.add_blank()
+            if not comments:
+                if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
+                    self.collector.add_blank()
         if comments:
             self.handle_comments(comments, line)
         if (
