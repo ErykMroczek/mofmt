@@ -9,7 +9,7 @@ def update_parser() -> None:
         [
             "antlr4",
             "-v",
-            "4.12.0",
+            "4.13.0",
             "-Dlanguage=Python3",
             "-o",
             "mofmt/parsing/generated",
