@@ -3,6 +3,13 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.2.1] - 2023-07-06
+
+### Fixed
+
+- Fix issue with additional blank lines when handling line comments
+  between elements
+
 ## [0.2.0] - 2023-06-21
 
 This release introduces changes to *mofmt* formatting style that makes
