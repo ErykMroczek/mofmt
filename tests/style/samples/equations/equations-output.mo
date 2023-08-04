@@ -41,3 +41,10 @@ for i in 1:passes loop
     connect(refrigerant.heatPort[i], wallWithConv.heatPorts_a_vap[i, k]);
   end for;
 end for;
+
+/* Softbreak after linewrap */
+
+a_nominal = Z_factor * func_a(b_nominal, c)
+  * Av * Y * func_b(
+    x = x_nominal * p_nominal * d_nominal,
+    x_small = d_limit * d_small);
