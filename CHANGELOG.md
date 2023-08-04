@@ -3,6 +3,13 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.2.2] - 2023-08-04
+
+### Fixed
+
+- Fix issue with incorrect indentation when function call is breaked
+  inside wrapped expression
+
 ## [0.2.1] - 2023-07-06
 
 ### Fixed
