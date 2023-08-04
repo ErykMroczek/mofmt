@@ -7,7 +7,7 @@ try to document them here.
 
 ### Fixed
 
-- Fix issue with incorrect indentation when function call is breaked
+- Fix issue with incorrect indentation when function call is broken
   inside wrapped expression
 
 ## [0.2.1] - 2023-07-06
