@@ -104,7 +104,7 @@ class Collector:
         """Add a linebreak marker"""
         if self.markers[-1].typ >= Marker.BLANK:
             return
-        if self.wrapped and self.markers[-2].val == ";":
+        if self.wrapped and ";" in {self.markers[-1].val, self.markers[-2].val}:
             self.add_dedent()
             self.wrapped = False
         self.add_marker(Marker(Marker.LINEBREAK, "\n", "LINEBREAK"))
