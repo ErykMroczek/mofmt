@@ -86,6 +86,11 @@ class Collector:
             return
         if self.markers[-1].typ >= Marker.IGNORE:
             return
+        if (
+            self.markers[-1].typ in {Marker.INDENT, Marker.DEDENT}
+            and self.markers[-2].typ >= Marker.BLANK
+        ):
+            return
         self.add_marker(Marker(Marker.SPACE, " ", "SPACE"))
 
     def add_ignore(self) -> None:
@@ -129,7 +134,10 @@ class Collector:
 
     def add_dedent(self) -> None:
         """Decrease indentation before next marker"""
-        self.add_marker(Marker(Marker.DEDENT, "", "DEDENT"))
+        if self.markers[-1].typ == Marker.INDENT:
+            self.markers.pop()
+        else:
+            self.add_marker(Marker(Marker.DEDENT, "", "DEDENT"))
 
     def __repr__(self) -> str:
         return [n.rep for n in self.markers].__repr__()

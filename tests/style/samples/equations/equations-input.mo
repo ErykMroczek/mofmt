@@ -1,6 +1,6 @@
 /* Simple equations */
 
-a = b*c;
+a = -b*c;
  x *( - y) = 2^z/ (m-n);
 
 /* Wrapped equations */
@@ -65,3 +65,6 @@ volumes = {diameter[i] * diameter[i]
 extent = [-10, 110; 10, 90];
 extent = [
     -10, 110; 10, 90];
+
+points={{-98,-60},{-64,
+          -60},{-64,-63.4667},{-27.1111,-63.4667}};
