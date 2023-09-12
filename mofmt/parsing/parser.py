@@ -273,5 +273,5 @@ class Listener(ModelicaListener):  # type: ignore
     def enterExpression(self, ctx: antlr.ParserRuleContext) -> None:
         self.wrap_stack.append(False)
 
-    def exitExpression(self, ctx: antlr.ParserRuleContext):
+    def exitExpression(self, ctx: antlr.ParserRuleContext) -> None:
         self.wrap_stack.pop()

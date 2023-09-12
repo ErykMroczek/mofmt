@@ -58,7 +58,7 @@ profile = "black"
 extend_skip = ["mofmt/parsing/generated"]
 
 [tool.black]
-extend-exclude = ['mofmt/parsing/generated']
+extend-exclude = 'mofmt/parsing/generated'
 
 [tool.ruff]
 extend-exclude = ['mofmt/parsing/generated', 'tests/']
