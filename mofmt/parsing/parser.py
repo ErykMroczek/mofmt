@@ -130,6 +130,7 @@ class Listener(ModelicaListener):  # type: ignore
         self.prev_token_text: str = ""
         self.group_stack: list[bool] = [False]
         self.group_precedent: list[str] = [""]
+        self.wrap_stack: list[bool] = [False]
 
     def handle_comments(self, comments: list[antlr.Token], current_line: int) -> None:
         """
@@ -152,21 +153,21 @@ class Listener(ModelicaListener):  # type: ignore
             if line_diff == 0:
                 self.collector.add_space()
             elif line_diff == 1:
-                self.collector.add_linebreak()
+                self.collector.add_hardbreak()
             else:
                 if self.prev_token_text == ";":
                     self.collector.add_blank()
             self.collector.add_comment(comment.text)
             line = comment.line
         if self.prev_token_line == 1:
-            self.collector.add_linebreak()
+            self.collector.add_hardbreak()
             return
         if len(tail) > 0:
             self.collector.append(tail)
             return
         line_diff = current_line - line
         if line_diff == 1:
-            self.collector.add_linebreak()
+            self.collector.add_hardbreak()
             return
         if line_diff > 1:
             self.collector.add_blank()
@@ -183,7 +184,7 @@ class Listener(ModelicaListener):  # type: ignore
             token.tokenIndex, ModelicaLexer.COMMENTS
         )
         if self.prev_token_text == ";":
-            self.collector.add_linebreak()
+            self.collector.add_hardbreak()
             if not comments:
                 if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
                     self.collector.add_blank()
@@ -227,13 +228,17 @@ class Listener(ModelicaListener):  # type: ignore
             if next_token.line > self.prev_token_line:
                 if ctx.parentCtx.getRuleIndex() != Modelica.RULE_unary_expression:
                     self.collector.add_wrappoint()
+                    self.wrap_stack[-1] = True
         if len(ctx.getText()) == 0:
             return
         if rule in HARD_BREAKS_AT:
-            self.collector.add_linebreak()
+            self.collector.add_hardbreak()
         if rule in SOFT_BREAKS_AT:
             if self.group_stack[-1]:
-                self.collector.add_linebreak()
+                if self.wrap_stack[-1]:
+                    self.collector.add_softbreak()
+                else:
+                    self.collector.add_hardbreak()
         if rule in BLANK_BEFORE:
             self.collector.add_blank()
         if rule in IGNORE_AT:
@@ -256,3 +261,9 @@ class Listener(ModelicaListener):  # type: ignore
             self.group_precedent.pop()
         if rule in INDENT_AT:
             self.collector.add_dedent()
+
+    def enterExpression(self, ctx: antlr.ParserRuleContext) -> None:
+        self.wrap_stack.append(False)
+
+    def exitExpression(self, ctx: antlr.ParserRuleContext):
+        self.wrap_stack.pop()

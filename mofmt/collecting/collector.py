@@ -25,8 +25,9 @@ class Marker:
     DEDENT = 4
     IGNORE = 5
     BLANK = 6
-    LINEBREAK = 7
-    WRAPPOINT = 8
+    HARDBREAK = 7
+    SOFTBREAK = 8
+    WRAPPOINT = 9
 
     __slots__ = ("typ", "val", "rep")
 
@@ -100,14 +101,20 @@ class Collector:
             self.wrapped = False
         self.add_marker(Marker(Marker.BLANK, "\n\n", "BLANK"))
 
-    def add_linebreak(self) -> None:
-        """Add a linebreak marker"""
+    def add_softbreak(self) -> None:
+        """Add a soft break marker"""
         if self.markers[-1].typ >= Marker.BLANK:
             return
-        if self.wrapped and ";" in {self.markers[-1].val, self.markers[-2].val}:
+        self.add_marker(Marker(Marker.SOFTBREAK, "\n", "SBREAK"))
+
+    def add_hardbreak(self) -> None:
+        """Add a hard break marker"""
+        if self.markers[-1].typ >= Marker.BLANK:
+            return
+        if self.wrapped:
             self.add_dedent()
             self.wrapped = False
-        self.add_marker(Marker(Marker.LINEBREAK, "\n", "LINEBREAK"))
+        self.add_marker(Marker(Marker.HARDBREAK, "\n", "HBREAK"))
 
     def add_wrappoint(self) -> None:
         """Add a soft break marker"""

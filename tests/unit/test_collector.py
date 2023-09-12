@@ -43,13 +43,13 @@ def test_tail_caching():
     col.add_token("tok")
     col.add_space()
     col.add_indent()
-    col.add_linebreak()
+    col.add_hardbreak()
     col.add_space()
     tail = col.cache_tail()
     # There should be just indent and break
     assert len(tail) == 2
     assert tail[0].typ == Marker.INDENT
-    assert tail[1].typ == Marker.LINEBREAK
+    assert tail[1].typ == Marker.HARDBREAK
     # Only single token should be left in collector
     assert len(col.markers) == 1
     assert col.markers[0].typ == Marker.TOKEN
@@ -71,16 +71,16 @@ def test_space():
     col.add_ignore()
     col.add_space()
     assert col.markers[-1].typ == Marker.IGNORE
-    col.add_linebreak()
+    col.add_hardbreak()
     col.add_space()
-    assert col.markers[-1].typ == Marker.LINEBREAK
+    assert col.markers[-1].typ == Marker.HARDBREAK
 
 
 def test_blank():
     """Check blanks collecting"""
     col = Collector()
     col.add_token("tok")
-    col.add_linebreak()
+    col.add_hardbreak()
     col.wrapped = True
     col.add_blank()
     # Blank should overwrite previous newline marker and add dedent when

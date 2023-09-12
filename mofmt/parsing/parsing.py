@@ -37,5 +37,5 @@ def parse_source(
     walker = antlr.ParseTreeWalker()
     walker.walk(listener, entry_rule(parser))
     # Append empty line
-    listener.collector.add_linebreak()
+    listener.collector.add_hardbreak()
     return listener.collector.markers
