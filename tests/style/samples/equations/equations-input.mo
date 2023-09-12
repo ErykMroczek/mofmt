@@ -58,4 +58,10 @@ x_small = d_limit * d_small)
 "Description";
 
 volumes = {diameter[i] * diameter[i]
-* 0.25 * length[i] for i in 1:n}
+* 0.25 * length[i] for i in 1:n};
+
+/* Matrices */
+
+extent = [-10, 110; 10, 90];
+extent = [
+    -10, 110; 10, 90];

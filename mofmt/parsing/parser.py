@@ -89,11 +89,11 @@ IGNORE_AT = (
     Modelica.RULE_unary_operand,
     Modelica.RULE_inheritance_modification,
     Modelica.RULE_connected_components,
+    Modelica.RULE_array_subscripts,
 )
 
 NO_SPACE_BEFORE = (
     ")",
-    "[",
     "]",
     "}",
     ";",
@@ -128,6 +128,7 @@ class Listener(ModelicaListener):  # type: ignore
         self.collector = Collector()
         self.prev_token_line: int = 1
         self.prev_token_text: str = ""
+        self.ignore_semi: bool = False
         self.group_stack: list[bool] = [False]
         self.group_precedent: list[str] = [""]
         self.wrap_stack: list[bool] = [False]
@@ -184,7 +185,11 @@ class Listener(ModelicaListener):  # type: ignore
             token.tokenIndex, ModelicaLexer.COMMENTS
         )
         if self.prev_token_text == ";":
-            self.collector.add_hardbreak()
+            if not self.ignore_semi:
+                self.collector.add_hardbreak()
+            else:
+                self.ignore_semi = False
+                self.collector.add_space()
             if not comments:
                 if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
                     self.collector.add_blank()
@@ -207,6 +212,8 @@ class Listener(ModelicaListener):  # type: ignore
         grammar rule.
         """
         rule = ctx.getRuleIndex()
+        if rule == Modelica.RULE_matrix_row:
+            self.ignore_semi = True
         if rule in INDENT_AT:
             self.collector.add_indent()
         if rule in GROUPS:
@@ -250,6 +257,7 @@ class Listener(ModelicaListener):  # type: ignore
         grammar rule.
         """
         rule = ctx.getRuleIndex()
+        self.ignore_semi = False
         if rule in GROUPS:
             if self.group_stack[-1]:
                 if (

@@ -53,4 +53,11 @@ a_nominal = Z_factor * func_a(b_nominal, c)
 volumes = {
   diameter[i] * diameter[i]
     * 0.25 * length[i]
-  for i in 1:n}
+  for i in 1:n};
+
+/* Matrices */
+
+extent = [-10, 110; 10, 90];
+extent = [
+  -10, 110;
+  10, 90];
