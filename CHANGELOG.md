@@ -3,6 +3,15 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.2.3] - 2023-09-12
+
+### Fixed
+
+- Fix increased indentation inside wrapped expressions
+- Fix unwanted line breaks inside matrices
+- Fix additonal space inserted before the array argument that was
+  breaked by the user
+
 ## [0.2.2] - 2023-08-04
 
 ### Fixed
