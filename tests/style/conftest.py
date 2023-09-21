@@ -15,7 +15,7 @@ def format_file():
 
     def _format(file, entry):
         code = read_file(Path(file))
-        parsed = parse_source(code, entry)
+        parsed = parse_source(Path(file), code, entry)
         return Printer(parsed).pretty_print()
 
     return _format

@@ -7,14 +7,6 @@ from mofmt.parsing import parse_source
 from mofmt.printing import Printer
 
 
-class ParsingError(Exception):
-    """Raised when parsing fails"""
-
-    def __init__(self, f: Path) -> None:
-        self.message = f"cannot parse {f}. Probably it is not a valid modelica file"
-        super().__init__(self.message)
-
-
 def main() -> None:
     format_files(sys.argv)
 
@@ -31,12 +23,15 @@ def format_files(args: list[str]) -> None:
     )
     for file in modelica_files:
         contents = read_file(file)
-        try:
-            parsed = parse_source(contents)
-        except Exception as e:
-            raise ParsingError(file) from e
-        fmt = Printer(parsed).pretty_print()
-        write_file(file, fmt)
+        parsed = parse_source(file, contents)
+        if parsed:
+            fmt = Printer(parsed).pretty_print()
+            write_file(file, fmt)
+        else:
+            print(
+                f"errors met while parsing {file}. Formatter will not modify it",
+                file=sys.stderr,
+            )
 
 
 if __name__ == "__main__":
