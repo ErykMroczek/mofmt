@@ -3,6 +3,16 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.0] - 2023-09-23
+
+### Added
+
+- Add info about formatted file path to error messages
+
+### Changed
+
+- Prevent formatter from formatting files that contain syntax errors
+
 ## [0.2.3] - 2023-09-12
 
 ### Fixed
