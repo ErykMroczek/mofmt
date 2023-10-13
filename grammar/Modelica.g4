@@ -99,7 +99,7 @@ external_element
     ;
 
 language_specification
-    : STRING    
+    : STRING
     ;
 
 external_function_call
@@ -380,7 +380,7 @@ for_indices
     ;
 
 for_index
-    : 
+    :
     IDENT (IN expression)?
     ;
 
@@ -540,7 +540,7 @@ primary
     | unary_expression
     | function_call
     | component_reference
-    | LPAREN output_expression_list RPAREN 
+    | LPAREN output_expression_list RPAREN
     | matrix
     | array
     | END
@@ -555,7 +555,7 @@ name
 
 // not present in spec
 matrix
-    : LBRACK matrix_arguments RBRACK 
+    : LBRACK matrix_arguments RBRACK
     ;
 
 // not present in spec
@@ -619,7 +619,12 @@ output_expression_list
     ;
 
 expression_list
-    : expression (COMMA expression)*
+    : expression_list_member (COMMA expression_list_member)*
+    ;
+
+// not present in spec
+expression_list_member
+    : expression
     ;
 
 array_arguments

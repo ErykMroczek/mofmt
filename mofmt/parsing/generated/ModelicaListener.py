@@ -919,6 +919,14 @@ class ModelicaListener(ParseTreeListener):
     def exitExpression_list(self, ctx: Modelica.Expression_listContext):
         pass
 
+    # Enter a parse tree produced by Modelica#expression_list_member.
+    def enterExpression_list_member(self, ctx: Modelica.Expression_list_memberContext):
+        pass
+
+    # Exit a parse tree produced by Modelica#expression_list_member.
+    def exitExpression_list_member(self, ctx: Modelica.Expression_list_memberContext):
+        pass
+
     # Enter a parse tree produced by Modelica#array_arguments.
     def enterArray_arguments(self, ctx: Modelica.Array_argumentsContext):
         pass
