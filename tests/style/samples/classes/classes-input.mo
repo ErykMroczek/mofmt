@@ -19,7 +19,8 @@ input Real P;
 output Real H;
 protected
     RefdllHandle h=dllHandle;
-external"C" H = h_pT(h,P,T)
+external"C" H = h_pT(h,
+P,T)
 annotation (Library="doesn't matter");
 end h_pT;
 
