@@ -4,9 +4,9 @@
 language. It aims to enhance readability and provide style constistency
 across different Modelica projects.
 
-This is initial version of this formatter. Although functionality is
-more or less finished, it is highly probable that it can exhibit buggy
-behavior. Better double-check changed files.
+Although functionality is basically finished, it can of course exhibit
+buggy behavior. *mofmt* doesn't modify files if it meets syntax errors.
+I advice to double-check changed files.
 
 Code style applied by the *mofmt* is described in `code-style.md`.
 
@@ -21,7 +21,7 @@ pip install mofmt
 ```
 
 On top of that, repo contains a necessary `pre-commit-hooks.yaml` file,
-so if you are using git, you can delegate running *mofmt* to
+so if you are using Git, you can delegate running *mofmt* to
 [pre-commit](https://pre-commit.com/) framework.
 
 ### Usage
@@ -47,11 +47,11 @@ placed in places that *mofmt* considers prohibited.
 ### Comments
 
 Modelica language specification allows you to place comments between any
-lexical units, but at least some software, like Dymola, doesn't respect
-that and displace your comments if it feels like it. *Mofmt* tries to
-avoid that (but bugs may happen!). Both comments and whitespaces between
-them are preserved. Additionally, *mofmt* preceeds your inline comments
-with a single space to enhance readability.
+lexical units, but at least some software doesn't respect that and
+displace your comments if it feels like it. *Mofmt* tries to avoid that
+(but bugs may happen!). Both comments and whitespaces between them are
+preserved. Additionally, *mofmt* preceeds your inline comments with a
+single space to enhance readability.
 
 ### Line wrapping
 
