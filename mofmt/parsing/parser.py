@@ -15,6 +15,7 @@ GROUPS = (
     Modelica.RULE_if_expression,
     Modelica.RULE_inheritance_modification,
     Modelica.RULE_array_subscripts,
+    Modelica.RULE_expression_list,
 )
 
 INDENT_AT = (
@@ -56,6 +57,7 @@ SOFT_BREAKS_AT = (
     Modelica.RULE_else_eval,
     Modelica.RULE_conditional_expression,
     Modelica.RULE_for_initializer,
+    Modelica.RULE_expression_list_member,
 )
 
 BLANK_BEFORE = (
