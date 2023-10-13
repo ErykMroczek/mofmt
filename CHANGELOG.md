@@ -3,6 +3,12 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.1] - 2023-10-13
+
+### Fixed
+
+- Fix line wrapping inside external function calls and matrix rows
+
 ## [0.3.0] - 2023-09-23
 
 ### Added
