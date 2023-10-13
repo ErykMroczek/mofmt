@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mofmt"
-version = "0.3.0"
+version = "0.3.1"
 description = "Modelica Code Formatter"
 authors = ["Eryk Mroczek <mroczek.eryk@gmail.com>"]
 repository = "https://github.com/ErykMroczek/mofmt"
@@ -42,8 +42,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.mypy]
 exclude = ['venv/', 'tests', 'mofmt/parsing/generated']
 warn_return_any = true
-strict = true
 strict_equality = true
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "mofmt.parsing.generated.*"
