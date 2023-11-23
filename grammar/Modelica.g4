@@ -156,25 +156,22 @@ declaration_clause
     ;
 
 extends_clause
-    : EXTENDS type_specifier inheritance_modification? annotation?
+    : EXTENDS type_specifier class_or_inheritance_modification? annotation?
     ;
 
 constraining_clause
     : CONSTRAINEDBY type_specifier class_modification?
     ;
 
-// originally called class-or-inheritance-modification in spec
+class_or_inheritance_modification
+    : LPAREN argument_or_inheritance_modification_list? RPAREN
+    ;
+
+argument_or_inheritance_modification_list
+    : (argument | inheritance_modification) (COMMA (argument | inheritance_modification))*
+    ;
+
 inheritance_modification
-    : LPAREN inheritance_modification_list? RPAREN
-    ;
-
-// originally called argument-or-inheritance-modification-list in spec
-inheritance_modification_list
-    : (argument | inheritance_modifier) (COMMA (argument | inheritance_modifier))*
-    ;
-
-// originally called inheritance-modification in spec
-inheritance_modifier
     : BREAK (connect_equation | IDENT)
     ;
 

@@ -10237,9 +10237,9 @@ class Modelica(Parser):
     RULE_declaration_clause = 25
     RULE_extends_clause = 26
     RULE_constraining_clause = 27
-    RULE_inheritance_modification = 28
-    RULE_inheritance_modification_list = 29
-    RULE_inheritance_modifier = 30
+    RULE_class_or_inheritance_modification = 28
+    RULE_argument_or_inheritance_modification_list = 29
+    RULE_inheritance_modification = 30
     RULE_component_clause = 31
     RULE_type_prefix = 32
     RULE_component_list = 33
@@ -10361,9 +10361,9 @@ class Modelica(Parser):
         "declaration_clause",
         "extends_clause",
         "constraining_clause",
+        "class_or_inheritance_modification",
+        "argument_or_inheritance_modification_list",
         "inheritance_modification",
-        "inheritance_modification_list",
-        "inheritance_modifier",
         "component_clause",
         "type_prefix",
         "component_list",
@@ -12448,8 +12448,10 @@ class Modelica(Parser):
         def type_specifier(self):
             return self.getTypedRuleContext(Modelica.Type_specifierContext, 0)
 
-        def inheritance_modification(self):
-            return self.getTypedRuleContext(Modelica.Inheritance_modificationContext, 0)
+        def class_or_inheritance_modification(self):
+            return self.getTypedRuleContext(
+                Modelica.Class_or_inheritance_modificationContext, 0
+            )
 
         def annotation(self):
             return self.getTypedRuleContext(Modelica.AnnotationContext, 0)
@@ -12480,7 +12482,7 @@ class Modelica(Parser):
             _la = self._input.LA(1)
             if _la == 7:
                 self.state = 498
-                self.inheritance_modification()
+                self.class_or_inheritance_modification()
 
             self.state = 502
             self._errHandler.sync(self)
@@ -12551,7 +12553,7 @@ class Modelica(Parser):
             self.exitRule()
         return localctx
 
-    class Inheritance_modificationContext(ParserRuleContext):
+    class Class_or_inheritance_modificationContext(ParserRuleContext):
         __slots__ = "parser"
 
         def __init__(
@@ -12566,25 +12568,27 @@ class Modelica(Parser):
         def RPAREN(self):
             return self.getToken(Modelica.RPAREN, 0)
 
-        def inheritance_modification_list(self):
+        def argument_or_inheritance_modification_list(self):
             return self.getTypedRuleContext(
-                Modelica.Inheritance_modification_listContext, 0
+                Modelica.Argument_or_inheritance_modification_listContext, 0
             )
 
         def getRuleIndex(self):
-            return Modelica.RULE_inheritance_modification
+            return Modelica.RULE_class_or_inheritance_modification
 
         def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterInheritance_modification"):
-                listener.enterInheritance_modification(self)
+            if hasattr(listener, "enterClass_or_inheritance_modification"):
+                listener.enterClass_or_inheritance_modification(self)
 
         def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitInheritance_modification"):
-                listener.exitInheritance_modification(self)
+            if hasattr(listener, "exitClass_or_inheritance_modification"):
+                listener.exitClass_or_inheritance_modification(self)
 
-    def inheritance_modification(self):
-        localctx = Modelica.Inheritance_modificationContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 56, self.RULE_inheritance_modification)
+    def class_or_inheritance_modification(self):
+        localctx = Modelica.Class_or_inheritance_modificationContext(
+            self, self._ctx, self.state
+        )
+        self.enterRule(localctx, 56, self.RULE_class_or_inheritance_modification)
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -12597,7 +12601,7 @@ class Modelica(Parser):
                 (1 << (_la - 44)) & 565168308224001
             ) != 0:
                 self.state = 510
-                self.inheritance_modification_list()
+                self.argument_or_inheritance_modification_list()
 
             self.state = 513
             self.match(Modelica.RPAREN)
@@ -12609,7 +12613,7 @@ class Modelica(Parser):
             self.exitRule()
         return localctx
 
-    class Inheritance_modification_listContext(ParserRuleContext):
+    class Argument_or_inheritance_modification_listContext(ParserRuleContext):
         __slots__ = "parser"
 
         def __init__(
@@ -12624,11 +12628,15 @@ class Modelica(Parser):
             else:
                 return self.getTypedRuleContext(Modelica.ArgumentContext, i)
 
-        def inheritance_modifier(self, i: int = None):
+        def inheritance_modification(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(Modelica.Inheritance_modifierContext)
+                return self.getTypedRuleContexts(
+                    Modelica.Inheritance_modificationContext
+                )
             else:
-                return self.getTypedRuleContext(Modelica.Inheritance_modifierContext, i)
+                return self.getTypedRuleContext(
+                    Modelica.Inheritance_modificationContext, i
+                )
 
         def COMMA(self, i: int = None):
             if i is None:
@@ -12637,21 +12645,23 @@ class Modelica(Parser):
                 return self.getToken(Modelica.COMMA, i)
 
         def getRuleIndex(self):
-            return Modelica.RULE_inheritance_modification_list
+            return Modelica.RULE_argument_or_inheritance_modification_list
 
         def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterInheritance_modification_list"):
-                listener.enterInheritance_modification_list(self)
+            if hasattr(listener, "enterArgument_or_inheritance_modification_list"):
+                listener.enterArgument_or_inheritance_modification_list(self)
 
         def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitInheritance_modification_list"):
-                listener.exitInheritance_modification_list(self)
+            if hasattr(listener, "exitArgument_or_inheritance_modification_list"):
+                listener.exitArgument_or_inheritance_modification_list(self)
 
-    def inheritance_modification_list(self):
-        localctx = Modelica.Inheritance_modification_listContext(
+    def argument_or_inheritance_modification_list(self):
+        localctx = Modelica.Argument_or_inheritance_modification_listContext(
             self, self._ctx, self.state
         )
-        self.enterRule(localctx, 58, self.RULE_inheritance_modification_list)
+        self.enterRule(
+            localctx, 58, self.RULE_argument_or_inheritance_modification_list
+        )
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -12664,7 +12674,7 @@ class Modelica(Parser):
                 pass
             elif token in [44]:
                 self.state = 516
-                self.inheritance_modifier()
+                self.inheritance_modification()
                 pass
             else:
                 raise NoViableAltException(self)
@@ -12684,7 +12694,7 @@ class Modelica(Parser):
                     pass
                 elif token in [44]:
                     self.state = 521
-                    self.inheritance_modifier()
+                    self.inheritance_modification()
                     pass
                 else:
                     raise NoViableAltException(self)
@@ -12701,7 +12711,7 @@ class Modelica(Parser):
             self.exitRule()
         return localctx
 
-    class Inheritance_modifierContext(ParserRuleContext):
+    class Inheritance_modificationContext(ParserRuleContext):
         __slots__ = "parser"
 
         def __init__(
@@ -12720,19 +12730,19 @@ class Modelica(Parser):
             return self.getToken(Modelica.IDENT, 0)
 
         def getRuleIndex(self):
-            return Modelica.RULE_inheritance_modifier
+            return Modelica.RULE_inheritance_modification
 
         def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterInheritance_modifier"):
-                listener.enterInheritance_modifier(self)
+            if hasattr(listener, "enterInheritance_modification"):
+                listener.enterInheritance_modification(self)
 
         def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitInheritance_modifier"):
-                listener.exitInheritance_modifier(self)
+            if hasattr(listener, "exitInheritance_modification"):
+                listener.exitInheritance_modification(self)
 
-    def inheritance_modifier(self):
-        localctx = Modelica.Inheritance_modifierContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 60, self.RULE_inheritance_modifier)
+    def inheritance_modification(self):
+        localctx = Modelica.Inheritance_modificationContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 60, self.RULE_inheritance_modification)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 529

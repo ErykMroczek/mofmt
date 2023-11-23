@@ -38,6 +38,8 @@ model Tank "Tank model"
   parameter SIunits.Area crossArea "Area of tank";
 
   extends Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel(
+    break someUselessVar,
+    anotherUselessVar = break, // Who need that?
     final fluidVolume = V,
     final fluidLevel = level,
     final fluidLevel_max = height,

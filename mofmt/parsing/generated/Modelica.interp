@@ -219,9 +219,9 @@ import_list
 declaration_clause
 extends_clause
 constraining_clause
+class_or_inheritance_modification
+argument_or_inheritance_modification_list
 inheritance_modification
-inheritance_modification_list
-inheritance_modifier
 component_clause
 type_prefix
 component_list
