@@ -13,7 +13,7 @@ GROUPS = (
     Modelica.RULE_array,
     Modelica.RULE_matrix,
     Modelica.RULE_if_expression,
-    Modelica.RULE_inheritance_modification,
+    Modelica.RULE_class_or_inheritance_modification,
     Modelica.RULE_array_subscripts,
     Modelica.RULE_expression_list,
 )
@@ -50,6 +50,7 @@ SOFT_BREAKS_AT = (
     Modelica.RULE_function_argument,
     Modelica.RULE_named_argument,
     Modelica.RULE_argument,
+    Modelica.RULE_inheritance_modification,
     Modelica.RULE_array_argument,
     Modelica.RULE_matrix_row,
     Modelica.RULE_if_eval,
@@ -89,7 +90,7 @@ IGNORE_AT = (
     Modelica.RULE_class_modification,
     Modelica.RULE_enumerations,
     Modelica.RULE_unary_operand,
-    Modelica.RULE_inheritance_modification,
+    Modelica.RULE_class_or_inheritance_modification,
     Modelica.RULE_connected_components,
     Modelica.RULE_array_subscripts,
 )
