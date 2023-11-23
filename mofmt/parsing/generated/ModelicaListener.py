@@ -233,6 +233,30 @@ class ModelicaListener(ParseTreeListener):
     def exitConstraining_clause(self, ctx: Modelica.Constraining_clauseContext):
         pass
 
+    # Enter a parse tree produced by Modelica#class_or_inheritance_modification.
+    def enterClass_or_inheritance_modification(
+        self, ctx: Modelica.Class_or_inheritance_modificationContext
+    ):
+        pass
+
+    # Exit a parse tree produced by Modelica#class_or_inheritance_modification.
+    def exitClass_or_inheritance_modification(
+        self, ctx: Modelica.Class_or_inheritance_modificationContext
+    ):
+        pass
+
+    # Enter a parse tree produced by Modelica#argument_or_inheritance_modification_list.
+    def enterArgument_or_inheritance_modification_list(
+        self, ctx: Modelica.Argument_or_inheritance_modification_listContext
+    ):
+        pass
+
+    # Exit a parse tree produced by Modelica#argument_or_inheritance_modification_list.
+    def exitArgument_or_inheritance_modification_list(
+        self, ctx: Modelica.Argument_or_inheritance_modification_listContext
+    ):
+        pass
+
     # Enter a parse tree produced by Modelica#inheritance_modification.
     def enterInheritance_modification(
         self, ctx: Modelica.Inheritance_modificationContext
@@ -243,26 +267,6 @@ class ModelicaListener(ParseTreeListener):
     def exitInheritance_modification(
         self, ctx: Modelica.Inheritance_modificationContext
     ):
-        pass
-
-    # Enter a parse tree produced by Modelica#inheritance_modification_list.
-    def enterInheritance_modification_list(
-        self, ctx: Modelica.Inheritance_modification_listContext
-    ):
-        pass
-
-    # Exit a parse tree produced by Modelica#inheritance_modification_list.
-    def exitInheritance_modification_list(
-        self, ctx: Modelica.Inheritance_modification_listContext
-    ):
-        pass
-
-    # Enter a parse tree produced by Modelica#inheritance_modifier.
-    def enterInheritance_modifier(self, ctx: Modelica.Inheritance_modifierContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#inheritance_modifier.
-    def exitInheritance_modifier(self, ctx: Modelica.Inheritance_modifierContext):
         pass
 
     # Enter a parse tree produced by Modelica#component_clause.
