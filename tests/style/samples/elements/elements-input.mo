@@ -1,4 +1,4 @@
-replaceable package Medium = Modelica.Media.Interfaces.PartialMedium
+replaceable package Medium = .Modelica.Media.Interfaces.PartialMedium
       "Medium model" annotation (choicesAllMatching=true);
 
 
@@ -24,6 +24,6 @@ else 1 "Number of lumped flow models";
 
 final parameter SIunits.Height[n,m] height={
     {pass_bottom[i] + j*(pass[i] - pass_bottom[i])/n for i in 1:n} for j in 1:m};
-final parameter SIunits.Height[n,m] height={{pass_bottom[i] + j*(pass[i] - pass_bottom[i])/n 
+final parameter SIunits.Height[n,m] height={{pass_bottom[i] + j*(pass[i] - pass_bottom[i])/n
 for i in 1:n}
  for j in 1:m};

@@ -1,6 +1,6 @@
 
 
-  replaceable package Medium = Modelica.Media.Interfaces.PartialMedium
+  replaceable package Medium = .Modelica.Media.Interfaces.PartialMedium
     "Medium model"
     annotation (choicesAllMatching = true);
 
