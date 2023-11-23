@@ -95,29 +95,29 @@ IGNORE_AT = (
 )
 
 NO_SPACE_BEFORE = (
-    ")",
-    "]",
-    "}",
-    ";",
-    ",",
-    ".",
-    ":",
+    ModelicaLexer.RPAREN,
+    ModelicaLexer.RBRACK,
+    ModelicaLexer.RCURLY,
+    ModelicaLexer.SEMICOLON,
+    ModelicaLexer.COMMA,
+    ModelicaLexer.DOT,
+    ModelicaLexer.COLON,
 )
 
 NO_SPACE_AFTER = (
-    "(",
-    ".",
-    "[",
-    "{",
-    ";",
-    ":",
+    ModelicaLexer.LPAREN,
+    ModelicaLexer.DOT,
+    ModelicaLexer.LBRACK,
+    ModelicaLexer.LCURLY,
+    ModelicaLexer.SEMICOLON,
+    ModelicaLexer.COLON,
 )
 
 NO_BREAK_BEFORE = (
-    "end",
-    "else",
-    "elseif",
-    "elsewhen",
+    ModelicaLexer.END,
+    ModelicaLexer.ELSE,
+    ModelicaLexer.ELSEIF,
+    ModelicaLexer.ELSEWHEN,
 )
 
 
@@ -129,10 +129,10 @@ class Listener(ModelicaListener):  # type: ignore
         self.stream = stream
         self.collector = Collector()
         self.prev_token_line: int = 1
-        self.prev_token_text: str = ""
+        self.prev_token: int = 0
         self.ignore_semi: bool = False
         self.group_stack: list[bool] = [False]
-        self.group_precedent: list[str] = [""]
+        self.group_precedent: list[int] = [0]
         self.wrap_stack: list[bool] = [False]
 
     def handle_comments(self, comments: list[antlr.Token], current_line: int) -> None:
@@ -158,7 +158,7 @@ class Listener(ModelicaListener):  # type: ignore
             elif line_diff == 1:
                 self.collector.add_hardbreak()
             else:
-                if self.prev_token_text == ";":
+                if self.prev_token == ModelicaLexer.SEMICOLON:
                     self.collector.add_blank()
             self.collector.add_comment(comment.text)
             line = comment.line
@@ -181,31 +181,28 @@ class Listener(ModelicaListener):  # type: ignore
         terminal.
         """
         token: antlr.Token = node.getSymbol()
-        content = token.text
+        kind = token.type
         line = token.line
         comments = self.stream.getHiddenTokensToLeft(
             token.tokenIndex, ModelicaLexer.COMMENTS
         )
-        if self.prev_token_text == ";":
+        if self.prev_token == ModelicaLexer.SEMICOLON:
             if not self.ignore_semi:
                 self.collector.add_hardbreak()
             else:
                 self.ignore_semi = False
                 self.collector.add_space()
             if not comments:
-                if line - self.prev_token_line > 1 and content not in NO_BREAK_BEFORE:
+                if line - self.prev_token_line > 1 and kind not in NO_BREAK_BEFORE:
                     self.collector.add_blank()
         if comments:
             self.handle_comments(comments, line)
-        if (
-            content not in NO_SPACE_BEFORE
-            and self.prev_token_text not in NO_SPACE_AFTER
-        ):
+        if kind not in NO_SPACE_BEFORE and self.prev_token not in NO_SPACE_AFTER:
             self.collector.add_space()
-        self.collector.add_token(content)
-        if content == "annotation":
+        self.collector.add_token(token.text)
+        if kind == ModelicaLexer.ANNOTATION:
             self.collector.add_space()
-        self.prev_token_text = content
+        self.prev_token = kind
         self.prev_token_line = line
 
     def enterEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
@@ -220,12 +217,12 @@ class Listener(ModelicaListener):  # type: ignore
             self.collector.add_indent()
         if rule in GROUPS:
             self.group_stack.append(False)
-            self.group_precedent.append(self.prev_token_text)
+            self.group_precedent.append(self.prev_token)
             if ctx.stop.line - ctx.start.line > 0:
                 self.group_stack[-1] = True
                 if (
                     rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == "="
+                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
                 ):
                     self.collector.add_indent()
         if rule in WRAP_AT:
@@ -264,7 +261,7 @@ class Listener(ModelicaListener):  # type: ignore
             if self.group_stack[-1]:
                 if (
                     rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == "="
+                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
                 ):
                     self.collector.add_dedent()
             self.group_stack.pop()
@@ -277,3 +274,7 @@ class Listener(ModelicaListener):  # type: ignore
 
     def exitExpression(self, ctx: antlr.ParserRuleContext) -> None:
         self.wrap_stack.pop()
+
+    def enterType_specifier(self, ctx: antlr.ParserRuleContext):
+        if ctx.start.type == ModelicaLexer.DOT:
+            self.collector.add_space()

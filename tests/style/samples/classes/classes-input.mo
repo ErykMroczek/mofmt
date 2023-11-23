@@ -1,7 +1,7 @@
 within ;
 function length "Return length of a vector"
 
-  extends Modelica.Icons.Function;
+  extends .Modelica.Icons.Function;
 
   input Complex v[:] "Vector";
   output Real result "Length";
