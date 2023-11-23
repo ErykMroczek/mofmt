@@ -274,3 +274,7 @@ class Listener(ModelicaListener):  # type: ignore
 
     def exitExpression(self, ctx: antlr.ParserRuleContext) -> None:
         self.wrap_stack.pop()
+
+    def enterType_specifier(self, ctx: antlr.ParserRuleContext):
+        if ctx.start.type == ModelicaLexer.DOT:
+            self.collector.add_space()
