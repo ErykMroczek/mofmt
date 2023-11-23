@@ -96,4 +96,10 @@ initial equation
 <p>Some documentation</p>
 </html>"));
 
-end OpenTank;
+end Tank;
+
+partial record 'Quoted "record"'
+
+  import It.is.empty;
+
+end 'Quoted "record"';

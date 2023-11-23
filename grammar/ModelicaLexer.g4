@@ -136,6 +136,8 @@ fragment Q_CHAR
     | '^'
     | '{' | '}'
     | '|' | '~'
+    | '"'
+    | ' '
     ;
 fragment Q_IDENT : '\'' (Q_CHAR | S_ESCAPE)* '\'' ;
 fragment S_CHAR : ~ ["\\] ;
