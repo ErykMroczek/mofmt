@@ -3,4 +3,4 @@
   description: Make your Modelica code pretty
   entry: mofmt
   language: python
-  files: '.*\.mo'
+  files: '.*\.mo$'
