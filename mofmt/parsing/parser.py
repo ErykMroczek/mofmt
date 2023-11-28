@@ -219,19 +219,15 @@ class Listener(ModelicaListener):  # type: ignore
         if rule in GROUPS:
             self.group_stack.append(False)
             self.group_precedent.append(self.prev_token)
-            if ctx.stop.line - ctx.start.line > 0:
+            if is_multiline(ctx):
                 self.group_stack[-1] = True
-                if (
-                    rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
-                ):
+                if rule == Modelica.RULE_if_expression:
+                    if self.group_precedent[-1] == ModelicaLexer.EQUAL:
+                        self.collector.add_indent()
+                else:
                     self.collector.add_indent()
         if rule in WRAP_AT:
-            token: antlr.Token = ctx.stop
-            next_token_id = self.stream.nextTokenOnChannel(
-                token.tokenIndex + 1, token.channel
-            )
-            next_token = self.stream.getTokens(next_token_id, next_token_id + 1)[0]
+            next_token = get_following_token(ctx, self.stream)
             if next_token.line > self.prev_token_line:
                 if ctx.parentCtx.getRuleIndex() != Modelica.RULE_unary_expression:
                     self.collector.add_wrappoint()
@@ -260,10 +256,10 @@ class Listener(ModelicaListener):  # type: ignore
         self.ignore_semi = False
         if rule in GROUPS:
             if self.group_stack[-1]:
-                if (
-                    rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
-                ):
+                if rule == Modelica.RULE_if_expression:
+                    if self.group_precedent[-1] == ModelicaLexer.EQUAL:
+                        self.collector.add_dedent()
+                else:
                     self.collector.add_dedent()
             self.group_stack.pop()
             self.group_precedent.pop()
@@ -279,3 +275,29 @@ class Listener(ModelicaListener):  # type: ignore
     def enterType_specifier(self, ctx: antlr.ParserRuleContext):
         if ctx.start.type == ModelicaLexer.DOT:
             self.collector.add_space()
+
+
+# Helper functions
+
+
+def is_multiline(ctx: antlr.ParserRuleContext) -> bool:
+    """Return `True` if the rule is multiline"""
+    return ctx.stop.line - ctx.start.line > 0
+
+
+def get_preceding_token(
+    ctx: antlr.ParserRuleContext, stream: antlr.CommonTokenStream
+) -> antlr.Token:
+    """Return token that precedes this rule"""
+    prev_token_idx = stream.nextTokenOnChannel(
+        ctx.start.tokenIndex - 1, ctx.start.channel
+    )
+    return stream.getTokens(prev_token_idx - 1, prev_token_idx)[0]
+
+
+def get_following_token(
+    ctx: antlr.ParserRuleContext, stream: antlr.CommonTokenStream
+) -> antlr.Token:
+    """Return token that follows this rule"""
+    next_token_id = stream.nextTokenOnChannel(ctx.stop.tokenIndex + 1, ctx.stop.channel)
+    return stream.getTokens(next_token_id, next_token_id + 1)[0]
