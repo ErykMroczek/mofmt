@@ -365,7 +365,9 @@ class Listener(ModelicaListener):  # type: ignore
 
 def is_multiline(ctx: antlr.ParserRuleContext) -> bool:
     """Return `True` if the rule is multiline"""
-    return ctx.stop.line - ctx.start.line > 0
+    # To satisfy the mypy
+    result: bool = (ctx.stop.line - ctx.start.line) > 0
+    return result
 
 
 def get_preceding_token(
