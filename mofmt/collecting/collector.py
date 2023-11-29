@@ -25,9 +25,8 @@ class Marker:
     DEDENT = 4
     IGNORE = 5
     BLANK = 6
-    HARDBREAK = 7
-    SOFTBREAK = 8
-    WRAPPOINT = 9
+    BREAK = 7
+    WRAPPOINT = 8
 
     __slots__ = ("typ", "val", "rep")
 
@@ -50,7 +49,6 @@ class Collector:
 
     def __init__(self) -> None:
         self.markers: list[Marker] = []
-        self.wrapped: bool = False
 
     def add_marker(self, marker: Marker) -> None:
         """Add marker"""
@@ -86,6 +84,8 @@ class Collector:
             return
         if self.markers[-1].typ >= Marker.IGNORE:
             return
+        if self.markers[-1].typ == Marker.SPACE:
+            return
         if (
             self.markers[-1].typ in {Marker.INDENT, Marker.DEDENT}
             and self.markers[-2].typ >= Marker.BLANK
@@ -101,31 +101,16 @@ class Collector:
         """Add a blank marker"""
         if self.markers[-1].typ >= Marker.BLANK:
             self.markers.pop()
-        if self.wrapped:
-            self.add_dedent()
-            self.wrapped = False
         self.add_marker(Marker(Marker.BLANK, "\n\n", "BLANK"))
 
-    def add_softbreak(self) -> None:
-        """Add a soft break marker"""
-        if self.markers[-1].typ >= Marker.BLANK:
-            return
-        self.add_marker(Marker(Marker.SOFTBREAK, "\n", "SBREAK"))
-
-    def add_hardbreak(self) -> None:
+    def add_break(self) -> None:
         """Add a hard break marker"""
         if self.markers[-1].typ >= Marker.BLANK:
             return
-        if self.wrapped:
-            self.add_dedent()
-            self.wrapped = False
-        self.add_marker(Marker(Marker.HARDBREAK, "\n", "HBREAK"))
+        self.add_marker(Marker(Marker.BREAK, "\n", "BREAK"))
 
     def add_wrappoint(self) -> None:
         """Add a soft break marker"""
-        if not self.wrapped:
-            self.add_indent()
-            self.wrapped = True
         self.add_marker(Marker(Marker.WRAPPOINT, "\n", "WRAP"))
 
     def add_indent(self) -> None:
