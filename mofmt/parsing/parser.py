@@ -7,94 +7,6 @@ from mofmt.collecting.collector import Collector
 
 from .generated import Modelica, ModelicaLexer, ModelicaListener
 
-GROUPS = (
-    Modelica.RULE_class_modification,
-    Modelica.RULE_function_call_args,
-    Modelica.RULE_array,
-    Modelica.RULE_matrix,
-    Modelica.RULE_if_expression,
-    Modelica.RULE_class_or_inheritance_modification,
-    Modelica.RULE_array_subscripts,
-    Modelica.RULE_expression_list,
-)
-
-INDENT_AT = (
-    Modelica.RULE_description_string,
-    Modelica.RULE_annotation,
-    Modelica.RULE_constraining_clause,
-    Modelica.RULE_element_list,
-    Modelica.RULE_equation_list,
-    Modelica.RULE_statement_list,
-    Modelica.RULE_conditional_expression,
-    Modelica.RULE_conditional_equations,
-    Modelica.RULE_conditional_statements,
-    Modelica.RULE_enum_list,
-    Modelica.RULE_external_element,
-    Modelica.RULE_class_annotation,
-)
-
-HARD_BREAKS_AT = (
-    Modelica.RULE_description_string,
-    Modelica.RULE_annotation,
-    Modelica.RULE_constraining_clause,
-    Modelica.RULE_conditional_equations,
-    Modelica.RULE_conditional_statements,
-    Modelica.RULE_enumeration_literal,
-    Modelica.RULE_elseif_branch,
-    Modelica.RULE_else_branch,
-    Modelica.RULE_elsewhen_branch,
-)
-
-SOFT_BREAKS_AT = (
-    Modelica.RULE_subscript,
-    Modelica.RULE_function_argument,
-    Modelica.RULE_named_argument,
-    Modelica.RULE_argument,
-    Modelica.RULE_inheritance_modification,
-    Modelica.RULE_array_argument,
-    Modelica.RULE_matrix_row,
-    Modelica.RULE_if_eval,
-    Modelica.RULE_elseif_eval,
-    Modelica.RULE_else_eval,
-    Modelica.RULE_conditional_expression,
-    Modelica.RULE_for_initializer,
-    Modelica.RULE_expression_list_member,
-)
-
-BLANK_BEFORE = (
-    Modelica.RULE_equation_section,
-    Modelica.RULE_algorithm_section,
-    Modelica.RULE_protected_element_list,
-    Modelica.RULE_public_element_list,
-    Modelica.RULE_element_list,
-    Modelica.RULE_equation_list,
-    Modelica.RULE_statement_list,
-    Modelica.RULE_external_element,
-    Modelica.RULE_end_clause,
-    Modelica.RULE_class_annotation,
-)
-
-WRAP_AT = (
-    Modelica.RULE_exp_operator,
-    Modelica.RULE_mul_operator,
-    Modelica.RULE_add_operator,
-    Modelica.RULE_relational_operator,
-    Modelica.RULE_cat_operator,
-    Modelica.RULE_or_operator,
-    Modelica.RULE_and_operator,
-)
-
-IGNORE_AT = (
-    Modelica.RULE_function_call_args,
-    Modelica.RULE_external_function_args,
-    Modelica.RULE_class_modification,
-    Modelica.RULE_enumerations,
-    Modelica.RULE_unary_operand,
-    Modelica.RULE_class_or_inheritance_modification,
-    Modelica.RULE_connected_components,
-    Modelica.RULE_array_subscripts,
-)
-
 NO_SPACE_BEFORE = (
     ModelicaLexer.RPAREN,
     ModelicaLexer.RBRACK,
@@ -131,10 +43,11 @@ class Listener(ModelicaListener):  # type: ignore
         self.collector = Collector()
         self.prev_token_line: int = 1
         self.prev_token: int = 0
-        self.ignore_semi: bool = False
+        self.rule_stack = [0]
         self.group_stack: list[bool] = [False]
-        self.group_precedent: list[int] = [0]
         self.wrap_stack: list[bool] = [False]
+        # Number of unclosed brackets
+        self.bracket_counter: int = 0
 
     def handle_comments(self, comments: list[antlr.Token], current_line: int) -> None:
         """
@@ -157,21 +70,21 @@ class Listener(ModelicaListener):  # type: ignore
             if line_diff == 0:
                 self.collector.add_space()
             elif line_diff == 1:
-                self.collector.add_hardbreak()
+                self.collector.add_break()
             else:
                 if self.prev_token == ModelicaLexer.SEMICOLON:
                     self.collector.add_blank()
             self.collector.add_comment(comment.text)
             line = comment.line
         if self.prev_token_line == 1:
-            self.collector.add_hardbreak()
+            self.collector.add_break()
             return
         if len(tail) > 0:
             self.collector.append(tail)
             return
         line_diff = current_line - line
         if line_diff == 1:
-            self.collector.add_hardbreak()
+            self.collector.add_break()
             return
         if line_diff > 1:
             self.collector.add_blank()
@@ -188,16 +101,23 @@ class Listener(ModelicaListener):  # type: ignore
             token.tokenIndex, ModelicaLexer.COMMENTS
         )
         if self.prev_token == ModelicaLexer.SEMICOLON:
-            if not self.ignore_semi:
-                self.collector.add_hardbreak()
+            if self.bracket_counter == 0:
+                self.collector.add_break()
             else:
-                self.ignore_semi = False
                 self.collector.add_space()
             if not comments:
                 if line - self.prev_token_line > 1 and kind not in NO_BREAK_BEFORE:
                     self.collector.add_blank()
         if comments:
             self.handle_comments(comments, line)
+
+        # Handle special cases
+        if kind == ModelicaLexer.LBRACK:
+            self.bracket_counter += 1
+        elif kind == ModelicaLexer.RBRACK:
+            self.bracket_counter -= 1
+        elif kind == ModelicaLexer.FOR:
+            self.break_or_space()
         if kind not in NO_SPACE_BEFORE and self.prev_token not in NO_SPACE_AFTER:
             self.collector.add_space()
         self.collector.add_token(token.text)
@@ -206,76 +126,263 @@ class Listener(ModelicaListener):  # type: ignore
         self.prev_token = kind
         self.prev_token_line = line
 
+    def enter_grouped_rule(self, ctx: antlr.ParserRuleContext) -> None:
+        self.group_stack.append(False)
+        if is_multiline(ctx):
+            self.group_stack[-1] = True
+            if ctx.getRuleIndex() == Modelica.RULE_if_expression:
+                if get_preceding_token(ctx, self.stream).type == ModelicaLexer.EQUAL:
+                    self.collector.add_indent()
+            elif ctx.getRuleIndex() == Modelica.RULE_expression_list:
+                if not self.group_stack[-2]:
+                    self.collector.add_indent()
+            else:
+                self.collector.add_indent()
+
+    def exit_grouped_rule(self, ctx: antlr.ParserRuleContext) -> None:
+        if self.group_stack[-1]:
+            if ctx.getRuleIndex() == Modelica.RULE_if_expression:
+                if get_preceding_token(ctx, self.stream).type == ModelicaLexer.EQUAL:
+                    self.collector.add_dedent()
+            elif ctx.getRuleIndex() == Modelica.RULE_expression_list:
+                if not self.group_stack[-2]:
+                    self.collector.add_dedent()
+            else:
+                self.collector.add_dedent()
+        self.group_stack.pop()
+
+    def break_or_space(self):
+        if self.group_stack[-1]:
+            self.collector.add_break()
+        else:
+            if self.prev_token not in NO_SPACE_AFTER:
+                self.collector.add_space()
+
+    def wrap_expression(self, ctx: antlr.ParserRuleContext):
+        next_token = get_following_token(ctx, self.stream)
+        # Check if there was a line break around the wrap point
+        if next_token.line > self.prev_token_line:
+            # Exclude unary expressions
+            if ctx.parentCtx.getRuleIndex() != Modelica.RULE_unary_expression:
+                self.collector.add_indent()
+                self.collector.add_wrappoint()
+                self.wrap_stack[-1] = True
+
     def enterEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
         """
         Generic method called by Antlr listener every time it enters a
         grammar rule.
         """
-        rule = ctx.getRuleIndex()
-        if rule == Modelica.RULE_matrix_row:
-            self.ignore_semi = True
-        if rule in INDENT_AT:
-            self.collector.add_indent()
-        if rule in GROUPS:
-            self.group_stack.append(False)
-            self.group_precedent.append(self.prev_token)
-            if ctx.stop.line - ctx.start.line > 0:
-                self.group_stack[-1] = True
-                if (
-                    rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
-                ):
-                    self.collector.add_indent()
-        if rule in WRAP_AT:
-            token: antlr.Token = ctx.stop
-            next_token_id = self.stream.nextTokenOnChannel(
-                token.tokenIndex + 1, token.channel
-            )
-            next_token = self.stream.getTokens(next_token_id, next_token_id + 1)[0]
-            if next_token.line > self.prev_token_line:
-                if ctx.parentCtx.getRuleIndex() != Modelica.RULE_unary_expression:
-                    self.collector.add_wrappoint()
-                    self.wrap_stack[-1] = True
         if len(ctx.getText()) == 0:
             return
-        if rule in HARD_BREAKS_AT:
-            self.collector.add_hardbreak()
-        if rule in SOFT_BREAKS_AT:
-            if self.group_stack[-1]:
-                if self.wrap_stack[-1]:
-                    self.collector.add_softbreak()
-                else:
-                    self.collector.add_hardbreak()
-        if rule in BLANK_BEFORE:
+        rule = ctx.getRuleIndex()
+        self.rule_stack.append(rule)
+        if rule == Modelica.RULE_description_string:
+            self.collector.add_indent()
+            self.collector.add_break()
+        elif rule == Modelica.RULE_annotation:
+            self.collector.add_indent()
+            self.collector.add_break()
+        elif rule == Modelica.RULE_constraining_clause:
+            self.collector.add_indent()
+            self.collector.add_break()
+        elif rule == Modelica.RULE_conditional_equations:
+            self.collector.add_indent()
+            self.collector.add_break()
+        elif rule == Modelica.RULE_conditional_statements:
+            self.collector.add_indent()
+            self.collector.add_break()
+        elif rule == Modelica.RULE_enumeration_literal:
+            self.collector.add_break()
+        elif rule == Modelica.RULE_elseif_branch:
+            self.collector.add_break()
+        elif rule == Modelica.RULE_else_branch:
+            self.collector.add_break()
+        elif rule == Modelica.RULE_elsewhen_branch:
+            self.collector.add_break()
+        elif rule == Modelica.RULE_element_list:
+            self.collector.add_indent()
             self.collector.add_blank()
-        if rule in IGNORE_AT:
+        elif rule == Modelica.RULE_external_element:
+            self.collector.add_indent()
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_equation_list:
+            self.collector.add_indent()
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_statement_list:
+            self.collector.add_indent()
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_class_annotation:
+            self.collector.add_indent()
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_enum_list:
+            self.collector.add_indent()
+        elif rule == Modelica.RULE_conditional_expression:
+            self.collector.add_indent()
+            self.break_or_space()
+        elif rule == Modelica.RULE_equation_section:
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_algorithm_section:
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_protected_element_list:
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_public_element_list:
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_end_clause:
+            self.collector.add_blank()
+        elif rule == Modelica.RULE_external_function_args:
             self.collector.add_ignore()
+        elif rule == Modelica.RULE_enumerations:
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_unary_operand:
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_connected_components:
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_if_expression:
+            self.enter_grouped_rule(ctx)
+        elif rule == Modelica.RULE_primary:
+            # Handle matrix or array
+            if ctx.start.type in (ModelicaLexer.LBRACK, ModelicaLexer.LCURLY):
+                self.enter_grouped_rule(ctx)
+        elif rule == Modelica.RULE_function_call_args:
+            self.enter_grouped_rule(ctx)
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_class_or_inheritance_modification:
+            self.enter_grouped_rule(ctx)
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_class_modification:
+            self.enter_grouped_rule(ctx)
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_array_subscripts:
+            self.enter_grouped_rule(ctx)
+            self.collector.add_ignore()
+        elif rule == Modelica.RULE_expression_list:
+            self.break_or_space()
+            self.enter_grouped_rule(ctx)
+        elif rule == Modelica.RULE_subscript:
+            self.break_or_space()
+        elif rule == Modelica.RULE_function_argument:
+            # do not break if it is part of named arg
+            if self.prev_token != ModelicaLexer.EQUAL:
+                self.break_or_space()
+        elif rule == Modelica.RULE_named_argument:
+            self.break_or_space()
+        elif rule == Modelica.RULE_argument:
+            self.break_or_space()
+        elif rule == Modelica.RULE_inheritance_modification:
+            self.break_or_space()
+        elif rule == Modelica.RULE_if_eval:
+            self.break_or_space()
+        elif rule == Modelica.RULE_elseif_eval:
+            self.break_or_space()
+        elif rule == Modelica.RULE_else_eval:
+            self.break_or_space()
+        elif rule == Modelica.RULE_conditional_expression:
+            self.break_or_space()
+        elif rule == Modelica.RULE_exp_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_mul_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_add_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_relational_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_cat_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_or_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_and_operator:
+            self.wrap_expression(ctx)
+        elif rule == Modelica.RULE_expression:
+            # Handle arguments etc.
+            if self.rule_stack[-2] in (
+                Modelica.RULE_expression_list,
+                Modelica.RULE_external_function_args,
+                Modelica.RULE_array_arguments,
+            ):
+                self.break_or_space()
+            self.wrap_stack.append(False)
+        elif rule == Modelica.RULE_type_specifier:
+            if ctx.start.type == ModelicaLexer.DOT:
+                self.collector.add_space()
 
     def exitEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
         """
         Generic method called by Antlr listener every time it exits a
         grammar rule.
         """
-        rule = ctx.getRuleIndex()
-        self.ignore_semi = False
-        if rule in GROUPS:
-            if self.group_stack[-1]:
-                if (
-                    rule != Modelica.RULE_if_expression
-                    or self.group_precedent[-1] == ModelicaLexer.EQUAL
-                ):
-                    self.collector.add_dedent()
-            self.group_stack.pop()
-            self.group_precedent.pop()
-        if rule in INDENT_AT:
+        if len(ctx.getText()) == 0:
+            return
+        rule = self.rule_stack.pop()
+        if rule == Modelica.RULE_description_string:
             self.collector.add_dedent()
+        elif rule == Modelica.RULE_annotation:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_constraining_clause:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_conditional_equations:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_conditional_statements:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_element_list:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_external_element:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_equation_list:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_statement_list:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_class_annotation:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_enum_list:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_conditional_expression:
+            self.collector.add_dedent()
+        elif rule == Modelica.RULE_if_expression:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_primary:
+            # Handle matrix
+            if ctx.start.type in (ModelicaLexer.LBRACK, ModelicaLexer.LCURLY):
+                self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_function_call_args:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_class_or_inheritance_modification:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_class_modification:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_array_subscripts:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_expression_list:
+            self.exit_grouped_rule(ctx)
+        elif rule == Modelica.RULE_expression:
+            wrapped = self.wrap_stack.pop()
+            if wrapped:
+                self.collector.add_dedent()
 
-    def enterExpression(self, ctx: antlr.ParserRuleContext) -> None:
-        self.wrap_stack.append(False)
 
-    def exitExpression(self, ctx: antlr.ParserRuleContext) -> None:
-        self.wrap_stack.pop()
+# Helper functions
 
-    def enterType_specifier(self, ctx: antlr.ParserRuleContext):
-        if ctx.start.type == ModelicaLexer.DOT:
-            self.collector.add_space()
+
+def is_multiline(ctx: antlr.ParserRuleContext) -> bool:
+    """Return `True` if the rule is multiline"""
+    # To satisfy the mypy
+    result: bool = (ctx.stop.line - ctx.start.line) > 0
+    return result
+
+
+def get_preceding_token(
+    ctx: antlr.ParserRuleContext, stream: antlr.CommonTokenStream
+) -> antlr.Token:
+    """Return token that precedes this rule"""
+    prev_token_idx = stream.previousTokenOnChannel(
+        ctx.start.tokenIndex, ctx.start.channel
+    )
+    return stream.getTokens(prev_token_idx - 1, prev_token_idx)[0]
+
+
+def get_following_token(
+    ctx: antlr.ParserRuleContext, stream: antlr.CommonTokenStream
+) -> antlr.Token:
+    """Return token that follows this rule"""
+    next_token_id = stream.nextTokenOnChannel(ctx.stop.tokenIndex + 1, ctx.stop.channel)
+    return stream.getTokens(next_token_id, next_token_id + 1)[0]

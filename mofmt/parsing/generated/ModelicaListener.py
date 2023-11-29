@@ -807,46 +807,6 @@ class ModelicaListener(ParseTreeListener):
     def exitName(self, ctx: Modelica.NameContext):
         pass
 
-    # Enter a parse tree produced by Modelica#matrix.
-    def enterMatrix(self, ctx: Modelica.MatrixContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#matrix.
-    def exitMatrix(self, ctx: Modelica.MatrixContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#matrix_arguments.
-    def enterMatrix_arguments(self, ctx: Modelica.Matrix_argumentsContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#matrix_arguments.
-    def exitMatrix_arguments(self, ctx: Modelica.Matrix_argumentsContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#matrix_row.
-    def enterMatrix_row(self, ctx: Modelica.Matrix_rowContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#matrix_row.
-    def exitMatrix_row(self, ctx: Modelica.Matrix_rowContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#array.
-    def enterArray(self, ctx: Modelica.ArrayContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#array.
-    def exitArray(self, ctx: Modelica.ArrayContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#function_call.
-    def enterFunction_call(self, ctx: Modelica.Function_callContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#function_call.
-    def exitFunction_call(self, ctx: Modelica.Function_callContext):
-        pass
-
     # Enter a parse tree produced by Modelica#component_reference.
     def enterComponent_reference(self, ctx: Modelica.Component_referenceContext):
         pass
@@ -871,6 +831,22 @@ class ModelicaListener(ParseTreeListener):
     def exitFunction_arguments(self, ctx: Modelica.Function_argumentsContext):
         pass
 
+    # Enter a parse tree produced by Modelica#named_arguments.
+    def enterNamed_arguments(self, ctx: Modelica.Named_argumentsContext):
+        pass
+
+    # Exit a parse tree produced by Modelica#named_arguments.
+    def exitNamed_arguments(self, ctx: Modelica.Named_argumentsContext):
+        pass
+
+    # Enter a parse tree produced by Modelica#named_argument.
+    def enterNamed_argument(self, ctx: Modelica.Named_argumentContext):
+        pass
+
+    # Exit a parse tree produced by Modelica#named_argument.
+    def exitNamed_argument(self, ctx: Modelica.Named_argumentContext):
+        pass
+
     # Enter a parse tree produced by Modelica#function_argument.
     def enterFunction_argument(self, ctx: Modelica.Function_argumentContext):
         pass
@@ -891,22 +867,6 @@ class ModelicaListener(ParseTreeListener):
     ):
         pass
 
-    # Enter a parse tree produced by Modelica#named_arguments.
-    def enterNamed_arguments(self, ctx: Modelica.Named_argumentsContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#named_arguments.
-    def exitNamed_arguments(self, ctx: Modelica.Named_argumentsContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#named_argument.
-    def enterNamed_argument(self, ctx: Modelica.Named_argumentContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#named_argument.
-    def exitNamed_argument(self, ctx: Modelica.Named_argumentContext):
-        pass
-
     # Enter a parse tree produced by Modelica#output_expression_list.
     def enterOutput_expression_list(self, ctx: Modelica.Output_expression_listContext):
         pass
@@ -923,14 +883,6 @@ class ModelicaListener(ParseTreeListener):
     def exitExpression_list(self, ctx: Modelica.Expression_listContext):
         pass
 
-    # Enter a parse tree produced by Modelica#expression_list_member.
-    def enterExpression_list_member(self, ctx: Modelica.Expression_list_memberContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#expression_list_member.
-    def exitExpression_list_member(self, ctx: Modelica.Expression_list_memberContext):
-        pass
-
     # Enter a parse tree produced by Modelica#array_arguments.
     def enterArray_arguments(self, ctx: Modelica.Array_argumentsContext):
         pass
@@ -939,36 +891,12 @@ class ModelicaListener(ParseTreeListener):
     def exitArray_arguments(self, ctx: Modelica.Array_argumentsContext):
         pass
 
-    # Enter a parse tree produced by Modelica#for_initializer.
-    def enterFor_initializer(self, ctx: Modelica.For_initializerContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#for_initializer.
-    def exitFor_initializer(self, ctx: Modelica.For_initializerContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#array_argument.
-    def enterArray_argument(self, ctx: Modelica.Array_argumentContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#array_argument.
-    def exitArray_argument(self, ctx: Modelica.Array_argumentContext):
-        pass
-
     # Enter a parse tree produced by Modelica#array_subscripts.
     def enterArray_subscripts(self, ctx: Modelica.Array_subscriptsContext):
         pass
 
     # Exit a parse tree produced by Modelica#array_subscripts.
     def exitArray_subscripts(self, ctx: Modelica.Array_subscriptsContext):
-        pass
-
-    # Enter a parse tree produced by Modelica#subscript_list.
-    def enterSubscript_list(self, ctx: Modelica.Subscript_listContext):
-        pass
-
-    # Exit a parse tree produced by Modelica#subscript_list.
-    def exitSubscript_list(self, ctx: Modelica.Subscript_listContext):
         pass
 
     # Enter a parse tree produced by Modelica#subscript.
