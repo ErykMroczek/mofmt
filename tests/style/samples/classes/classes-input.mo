@@ -79,3 +79,8 @@ end Tank;
 partial record 'Quoted "record"'
 import It.is.empty;
 end 'Quoted "record"';
+
+block Foo
+import Modelica.Units.SI;
+  .Modelica.Blocks.Interfaces.BooleanInput b;
+end Foo;
