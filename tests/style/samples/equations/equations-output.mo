@@ -68,6 +68,12 @@ a[:, :] = [
   2,
   2,
   2];
+m[:, :] = Math.Matrices.sort(
+  [
+    Math.Vectors.length(v1),
+    Math.Vectors.length(v2);
+    Math.Vectors.length(v1 + v2),
+    Math.Vectors.length(v2 - v1)]);
 
 points = {
   {-98, -60},
