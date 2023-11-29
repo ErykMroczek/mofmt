@@ -287,16 +287,15 @@ equation
         | for_equation
         | connect_equation
         | when_equation
-        | function_call
+        | component_reference function_call_args
     )
     description
     ;
 
 statement
     : (
-        component_reference ASSIGN expression
-        | function_call
-        | LPAREN output_expression_list RPAREN ASSIGN function_call
+        component_reference (ASSIGN expression | function_call_args)
+        | LPAREN output_expression_list RPAREN ASSIGN component_reference function_call_args
         | BREAK
         | RETURN
         | if_statement
@@ -361,13 +360,13 @@ conditional_statements
     ;
 
 for_equation
-    : for_initializer LOOP
+    : FOR for_indices LOOP
       conditional_equations
       END FOR
     ;
 
 for_statement
-    : for_initializer LOOP
+    : FOR for_indices LOOP
       conditional_statements
       END FOR
     ;
@@ -535,11 +534,11 @@ primary
     | STRING
     | BOOL
     | unary_expression
-    | function_call
+    | (component_reference | DER | INITIAL | PURE) function_call_args
     | component_reference
     | LPAREN output_expression_list RPAREN
-    | matrix
-    | array
+    | LBRACK expression_list (SEMICOLON expression_list)* RBRACK
+    | LCURLY array_arguments RCURLY
     | END
     ;
 
@@ -548,37 +547,6 @@ type_specifier
 
 name
     : IDENT (DOT IDENT)*
-    ;
-
-// not present in spec
-matrix
-    : LBRACK matrix_arguments RBRACK
-    ;
-
-// not present in spec
-matrix_arguments
-    : matrix_row (SEMICOLON matrix_row)*
-    ;
-
-// not present in spec
-matrix_row
-    : expression_list
-    ;
-
-// not present in spec
-array
-    : LCURLY array_arguments RCURLY
-    ;
-
-// not present in spec
-function_call
-    : (
-        component_reference
-        | DER
-        | INITIAL
-        | PURE
-    )
-    function_call_args
     ;
 
 component_reference
@@ -590,8 +558,17 @@ function_call_args
     ;
 
 function_arguments
-    : (function_argument | named_argument)
-      ((COMMA (function_argument | named_argument))* | for_initializer)
+    : expression FOR for_indices
+    | function_argument (COMMA function_argument)* named_arguments?
+    | named_arguments
+    ;
+
+named_arguments
+    : named_argument (COMMA named_argument)*
+    ;
+
+named_argument
+    : IDENT EQUAL function_argument
     ;
 
 function_argument
@@ -603,48 +580,20 @@ function_partial_application
     : FUNCTION type_specifier LPAREN named_arguments? RPAREN
     ;
 
-named_arguments
-    : named_argument (COMMA named_argument)*
-    ;
-
-named_argument
-    : IDENT EQUAL (function_partial_application | expression)
-    ;
-
 output_expression_list
     : expression? (COMMA expression?)*
     ;
 
 expression_list
-    : expression_list_member (COMMA expression_list_member)*
-    ;
-
-// not present in spec
-expression_list_member
-    : expression
+    : expression (COMMA expression)*
     ;
 
 array_arguments
-    : array_argument ((COMMA array_argument)* | for_initializer)
-    ;
-
-// not present in spec
-for_initializer
-    : FOR for_indices
-    ;
-
-// not present in spec
-array_argument
-    : expression
+    : expression ((COMMA expression)* | FOR for_indices)
     ;
 
 array_subscripts
-    : LBRACK subscript_list RBRACK
-    ;
-
-// not present in spec
-subscript_list
-    : subscript (COMMA subscript)*
+    : LBRACK subscript (COMMA subscript)* RBRACK
     ;
 
 subscript
