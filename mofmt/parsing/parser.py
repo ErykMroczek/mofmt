@@ -13,7 +13,6 @@ NO_SPACE_BEFORE = (
     ModelicaLexer.RCURLY,
     ModelicaLexer.SEMICOLON,
     ModelicaLexer.COMMA,
-    ModelicaLexer.DOT,
     ModelicaLexer.COLON,
 )
 
@@ -118,8 +117,13 @@ class Listener(ModelicaListener):  # type: ignore
             self.bracket_counter -= 1
         elif kind == ModelicaLexer.FOR:
             self.break_or_space()
-        if kind not in NO_SPACE_BEFORE and self.prev_token not in NO_SPACE_AFTER:
+        elif kind == ModelicaLexer.DOT:
+            # Only first dot in type specifiers etc. can be preceded with a space
+            if self.prev_token not in (ModelicaLexer.IDENT, ModelicaLexer.RBRACK):
+                self.collector.add_space()
+        elif kind not in NO_SPACE_BEFORE and self.prev_token not in NO_SPACE_AFTER:
             self.collector.add_space()
+
         self.collector.add_token(token.text)
         if kind == ModelicaLexer.ANNOTATION:
             self.collector.add_space()
@@ -127,6 +131,7 @@ class Listener(ModelicaListener):  # type: ignore
         self.prev_token_line = line
 
     def enter_grouped_rule(self, ctx: antlr.ParserRuleContext) -> None:
+        """If the rule was wrapped add info to the stack and increase indent"""
         self.group_stack.append(False)
         if is_multiline(ctx):
             self.group_stack[-1] = True
@@ -140,6 +145,7 @@ class Listener(ModelicaListener):  # type: ignore
                 self.collector.add_indent()
 
     def exit_grouped_rule(self, ctx: antlr.ParserRuleContext) -> None:
+        """Decrease indent when leaving wrapped group"""
         if self.group_stack[-1]:
             if ctx.getRuleIndex() == Modelica.RULE_if_expression:
                 if get_preceding_token(ctx, self.stream).type == ModelicaLexer.EQUAL:
@@ -152,6 +158,7 @@ class Listener(ModelicaListener):  # type: ignore
         self.group_stack.pop()
 
     def break_or_space(self):
+        """Insert line break or space"""
         if self.group_stack[-1]:
             self.collector.add_break()
         else:
@@ -159,6 +166,7 @@ class Listener(ModelicaListener):  # type: ignore
                 self.collector.add_space()
 
     def wrap_expression(self, ctx: antlr.ParserRuleContext):
+        """Wrap the expression"""
         next_token = get_following_token(ctx, self.stream)
         # Check if there was a line break around the wrap point
         if next_token.line > self.prev_token_line:
@@ -302,9 +310,6 @@ class Listener(ModelicaListener):  # type: ignore
             ):
                 self.break_or_space()
             self.wrap_stack.append(False)
-        elif rule == Modelica.RULE_type_specifier:
-            if ctx.start.type == ModelicaLexer.DOT:
-                self.collector.add_space()
 
     def exitEveryRule(self, ctx: antlr.ParserRuleContext) -> None:
         """
