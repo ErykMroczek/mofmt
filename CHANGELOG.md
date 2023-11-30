@@ -3,12 +3,20 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.3] - 2023-11-30
+
+### Fixed
+
+- Fix increased indentation and empty lines in wrapped matrices
+- Fix additional spaces placed in lines before type specifiers that use
+  global paths
+
 ## [0.3.2] - 2023-11-23
 
 ### Fixed
 
 - Fix line wrapping at inheritance modifiers (`break` statements inside `extends` clauses)
-- Fix missing whitespaces before type specifiers that uses global paths (starts with a dot)
+- Fix missing whitespaces before type specifiers that use global paths (starts with a dot)
 - Fix errors caused by quoted identifiers containing spaces and double quotes
 
 ## [0.3.1] - 2023-10-13
