@@ -113,6 +113,8 @@ class Listener(ModelicaListener):  # type: ignore
         # Handle special cases
         if kind == ModelicaLexer.LBRACK:
             self.bracket_counter += 1
+            if self.prev_token != ModelicaLexer.IDENT:
+                self.collector.add_space()
         elif kind == ModelicaLexer.RBRACK:
             self.bracket_counter -= 1
         elif kind == ModelicaLexer.FOR:
