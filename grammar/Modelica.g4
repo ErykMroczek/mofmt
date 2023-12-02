@@ -559,7 +559,7 @@ function_call_args
 
 function_arguments
     : expression FOR for_indices
-    | function_argument (COMMA function_argument)* named_arguments?
+    | function_argument (COMMA function_argument)* (COMMA named_arguments)?
     | named_arguments
     ;
 
