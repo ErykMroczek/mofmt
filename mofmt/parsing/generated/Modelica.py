@@ -16,7 +16,7 @@ def serializedATN():
         4,
         1,
         93,
-        1132,
+        1133,
         2,
         0,
         7,
@@ -2228,16 +2228,18 @@ def serializedATN():
         99,
         1,
         99,
+        1,
+        99,
         3,
         99,
-        1036,
+        1037,
         8,
         99,
         1,
         99,
         3,
         99,
-        1039,
+        1040,
         8,
         99,
         1,
@@ -2248,14 +2250,14 @@ def serializedATN():
         100,
         5,
         100,
-        1044,
+        1045,
         8,
         100,
         10,
         100,
         12,
         100,
-        1047,
+        1048,
         9,
         100,
         1,
@@ -2272,7 +2274,7 @@ def serializedATN():
         102,
         3,
         102,
-        1055,
+        1056,
         8,
         102,
         1,
@@ -2285,7 +2287,7 @@ def serializedATN():
         103,
         3,
         103,
-        1061,
+        1062,
         8,
         103,
         1,
@@ -2296,7 +2298,7 @@ def serializedATN():
         104,
         3,
         104,
-        1066,
+        1067,
         8,
         104,
         1,
@@ -2305,19 +2307,19 @@ def serializedATN():
         104,
         3,
         104,
-        1070,
+        1071,
         8,
         104,
         5,
         104,
-        1072,
+        1073,
         8,
         104,
         10,
         104,
         12,
         104,
-        1075,
+        1076,
         9,
         104,
         1,
@@ -2328,14 +2330,14 @@ def serializedATN():
         105,
         5,
         105,
-        1080,
+        1081,
         8,
         105,
         10,
         105,
         12,
         105,
-        1083,
+        1084,
         9,
         105,
         1,
@@ -2346,14 +2348,14 @@ def serializedATN():
         106,
         5,
         106,
-        1088,
+        1089,
         8,
         106,
         10,
         106,
         12,
         106,
-        1091,
+        1092,
         9,
         106,
         1,
@@ -2362,7 +2364,7 @@ def serializedATN():
         106,
         3,
         106,
-        1095,
+        1096,
         8,
         106,
         1,
@@ -2375,14 +2377,14 @@ def serializedATN():
         107,
         5,
         107,
-        1101,
+        1102,
         8,
         107,
         10,
         107,
         12,
         107,
-        1104,
+        1105,
         9,
         107,
         1,
@@ -2395,7 +2397,7 @@ def serializedATN():
         108,
         3,
         108,
-        1110,
+        1111,
         8,
         108,
         1,
@@ -2404,7 +2406,7 @@ def serializedATN():
         109,
         3,
         109,
-        1114,
+        1115,
         8,
         109,
         1,
@@ -2417,19 +2419,19 @@ def serializedATN():
         110,
         5,
         110,
-        1120,
+        1121,
         8,
         110,
         10,
         110,
         12,
         110,
-        1123,
+        1124,
         9,
         110,
         3,
         110,
-        1125,
+        1126,
         8,
         110,
         1,
@@ -2600,7 +2602,7 @@ def serializedATN():
         19,
         24,
         24,
-        1183,
+        1184,
         0,
         231,
         1,
@@ -3196,85 +3198,85 @@ def serializedATN():
         0,
         0,
         198,
-        1038,
+        1039,
         1,
         0,
         0,
         0,
         200,
-        1040,
+        1041,
         1,
         0,
         0,
         0,
         202,
-        1048,
+        1049,
         1,
         0,
         0,
         0,
         204,
-        1054,
+        1055,
         1,
         0,
         0,
         0,
         206,
-        1056,
+        1057,
         1,
         0,
         0,
         0,
         208,
-        1065,
+        1066,
         1,
         0,
         0,
         0,
         210,
-        1076,
+        1077,
         1,
         0,
         0,
         0,
         212,
-        1084,
+        1085,
         1,
         0,
         0,
         0,
         214,
-        1096,
+        1097,
         1,
         0,
         0,
         0,
         216,
-        1109,
+        1110,
         1,
         0,
         0,
         0,
         218,
-        1111,
+        1112,
         1,
         0,
         0,
         0,
         220,
-        1124,
+        1125,
         1,
         0,
         0,
         0,
         222,
-        1126,
+        1127,
         1,
         0,
         0,
         0,
         224,
-        1128,
+        1129,
         1,
         0,
         0,
@@ -8956,7 +8958,7 @@ def serializedATN():
         63,
         0,
         1025,
-        1039,
+        1040,
         1,
         0,
         0,
@@ -9004,7 +9006,7 @@ def serializedATN():
         0,
         0,
         1032,
-        1035,
+        1036,
         1,
         0,
         0,
@@ -9016,199 +9018,199 @@ def serializedATN():
         0,
         0,
         1034,
-        1036,
+        1035,
+        5,
+        3,
+        0,
+        0,
+        1035,
+        1037,
         3,
         200,
         100,
         0,
-        1035,
+        1036,
         1034,
         1,
         0,
         0,
         0,
-        1035,
         1036,
-        1,
-        0,
-        0,
-        0,
-        1036,
-        1039,
+        1037,
         1,
         0,
         0,
         0,
         1037,
-        1039,
+        1040,
+        1,
+        0,
+        0,
+        0,
+        1038,
+        1040,
         3,
         200,
         100,
         0,
-        1038,
+        1039,
         1022,
         1,
         0,
         0,
         0,
-        1038,
+        1039,
         1026,
         1,
         0,
         0,
         0,
-        1038,
-        1037,
-        1,
-        0,
-        0,
-        0,
         1039,
-        199,
+        1038,
         1,
         0,
         0,
         0,
         1040,
+        199,
+        1,
+        0,
+        0,
+        0,
+        1041,
+        1046,
+        3,
+        202,
+        101,
+        0,
+        1042,
+        1043,
+        5,
+        3,
+        0,
+        0,
+        1043,
         1045,
         3,
         202,
         101,
         0,
-        1041,
-        1042,
-        5,
-        3,
-        0,
-        0,
-        1042,
         1044,
-        3,
-        202,
-        101,
-        0,
-        1043,
-        1041,
+        1042,
         1,
         0,
         0,
         0,
+        1045,
+        1048,
+        1,
+        0,
+        0,
+        0,
+        1046,
         1044,
+        1,
+        0,
+        0,
+        0,
+        1046,
         1047,
         1,
         0,
         0,
         0,
-        1045,
-        1043,
-        1,
-        0,
-        0,
-        0,
-        1045,
-        1046,
-        1,
-        0,
-        0,
-        0,
-        1046,
+        1047,
         201,
         1,
         0,
         0,
         0,
-        1047,
-        1045,
+        1048,
+        1046,
         1,
         0,
         0,
         0,
-        1048,
         1049,
+        1050,
         5,
         93,
         0,
         0,
-        1049,
         1050,
+        1051,
         5,
         13,
         0,
         0,
-        1050,
         1051,
+        1052,
         3,
         204,
         102,
         0,
-        1051,
+        1052,
         203,
         1,
         0,
         0,
         0,
-        1052,
-        1055,
+        1053,
+        1056,
         3,
         206,
         103,
         0,
-        1053,
-        1055,
+        1054,
+        1056,
         3,
         144,
         72,
         0,
-        1054,
-        1052,
-        1,
-        0,
-        0,
-        0,
-        1054,
+        1055,
         1053,
         1,
         0,
         0,
         0,
         1055,
-        205,
+        1054,
         1,
         0,
         0,
         0,
         1056,
+        205,
+        1,
+        0,
+        0,
+        0,
         1057,
+        1058,
         5,
         51,
         0,
         0,
-        1057,
         1058,
+        1059,
         3,
         190,
         95,
         0,
-        1058,
-        1060,
+        1059,
+        1061,
         5,
         7,
         0,
         0,
-        1059,
-        1061,
+        1060,
+        1062,
         3,
         200,
         100,
         0,
-        1060,
-        1059,
-        1,
-        0,
-        0,
-        0,
-        1060,
         1061,
+        1060,
         1,
         0,
         0,
@@ -9221,479 +9223,485 @@ def serializedATN():
         0,
         1062,
         1063,
+        1,
+        0,
+        0,
+        0,
+        1063,
+        1064,
         5,
         8,
         0,
         0,
-        1063,
+        1064,
         207,
         1,
         0,
         0,
         0,
-        1064,
-        1066,
+        1065,
+        1067,
         3,
         144,
         72,
         0,
-        1065,
-        1064,
-        1,
-        0,
-        0,
-        0,
-        1065,
         1066,
+        1065,
         1,
         0,
         0,
         0,
         1066,
-        1073,
+        1067,
         1,
         0,
         0,
         0,
         1067,
-        1069,
+        1074,
+        1,
+        0,
+        0,
+        0,
+        1068,
+        1070,
         5,
         3,
         0,
         0,
-        1068,
-        1070,
+        1069,
+        1071,
         3,
         144,
         72,
         0,
-        1069,
-        1068,
-        1,
-        0,
-        0,
-        0,
-        1069,
         1070,
+        1069,
         1,
         0,
         0,
         0,
         1070,
-        1072,
+        1071,
         1,
         0,
         0,
         0,
         1071,
-        1067,
+        1073,
         1,
         0,
         0,
         0,
         1072,
+        1068,
+        1,
+        0,
+        0,
+        0,
+        1073,
+        1076,
+        1,
+        0,
+        0,
+        0,
+        1074,
+        1072,
+        1,
+        0,
+        0,
+        0,
+        1074,
         1075,
         1,
         0,
         0,
         0,
-        1073,
-        1071,
-        1,
-        0,
-        0,
-        0,
-        1073,
-        1074,
-        1,
-        0,
-        0,
-        0,
-        1074,
+        1075,
         209,
         1,
         0,
         0,
         0,
-        1075,
-        1073,
+        1076,
+        1074,
         1,
         0,
         0,
         0,
-        1076,
+        1077,
+        1082,
+        3,
+        144,
+        72,
+        0,
+        1078,
+        1079,
+        5,
+        3,
+        0,
+        0,
+        1079,
         1081,
         3,
         144,
         72,
         0,
-        1077,
-        1078,
-        5,
-        3,
-        0,
-        0,
-        1078,
         1080,
-        3,
-        144,
-        72,
-        0,
-        1079,
-        1077,
+        1078,
         1,
         0,
         0,
         0,
+        1081,
+        1084,
+        1,
+        0,
+        0,
+        0,
+        1082,
         1080,
+        1,
+        0,
+        0,
+        0,
+        1082,
         1083,
         1,
         0,
         0,
         0,
-        1081,
-        1079,
-        1,
-        0,
-        0,
-        0,
-        1081,
-        1082,
-        1,
-        0,
-        0,
-        0,
-        1082,
+        1083,
         211,
         1,
         0,
         0,
         0,
-        1083,
-        1081,
+        1084,
+        1082,
         1,
         0,
         0,
         0,
-        1084,
-        1094,
+        1085,
+        1095,
         3,
         144,
         72,
         0,
-        1085,
         1086,
+        1087,
         5,
         3,
         0,
         0,
-        1086,
-        1088,
+        1087,
+        1089,
         3,
         144,
         72,
         0,
-        1087,
-        1085,
-        1,
-        0,
-        0,
-        0,
         1088,
-        1091,
+        1086,
         1,
         0,
         0,
         0,
         1089,
-        1087,
-        1,
-        0,
-        0,
-        0,
-        1089,
-        1090,
+        1092,
         1,
         0,
         0,
         0,
         1090,
-        1095,
+        1088,
+        1,
+        0,
+        0,
+        0,
+        1090,
+        1091,
         1,
         0,
         0,
         0,
         1091,
-        1089,
+        1096,
         1,
         0,
         0,
         0,
         1092,
+        1090,
+        1,
+        0,
+        0,
+        0,
         1093,
+        1094,
         5,
         35,
         0,
         0,
-        1093,
-        1095,
+        1094,
+        1096,
         3,
         126,
         63,
         0,
-        1094,
-        1089,
-        1,
-        0,
-        0,
-        0,
-        1094,
-        1092,
+        1095,
+        1090,
         1,
         0,
         0,
         0,
         1095,
-        213,
+        1093,
         1,
         0,
         0,
         0,
         1096,
+        213,
+        1,
+        0,
+        0,
+        0,
         1097,
+        1098,
         5,
         11,
         0,
         0,
-        1097,
-        1102,
+        1098,
+        1103,
         3,
         216,
         108,
         0,
-        1098,
         1099,
+        1100,
         5,
         3,
         0,
         0,
-        1099,
-        1101,
+        1100,
+        1102,
         3,
         216,
         108,
         0,
-        1100,
-        1098,
-        1,
-        0,
-        0,
-        0,
         1101,
-        1104,
+        1099,
         1,
         0,
         0,
         0,
         1102,
-        1100,
-        1,
-        0,
-        0,
-        0,
-        1102,
-        1103,
-        1,
-        0,
-        0,
-        0,
-        1103,
         1105,
         1,
         0,
         0,
         0,
-        1104,
-        1102,
+        1103,
+        1101,
         1,
         0,
         0,
         0,
-        1105,
+        1103,
+        1104,
+        1,
+        0,
+        0,
+        0,
+        1104,
         1106,
+        1,
+        0,
+        0,
+        0,
+        1105,
+        1103,
+        1,
+        0,
+        0,
+        0,
+        1106,
+        1107,
         5,
         12,
         0,
         0,
-        1106,
+        1107,
         215,
         1,
         0,
         0,
         0,
-        1107,
-        1110,
+        1108,
+        1111,
         5,
         6,
         0,
         0,
-        1108,
-        1110,
+        1109,
+        1111,
         3,
         144,
         72,
         0,
-        1109,
-        1107,
-        1,
-        0,
-        0,
-        0,
-        1109,
+        1110,
         1108,
         1,
         0,
         0,
         0,
         1110,
-        217,
+        1109,
         1,
         0,
         0,
         0,
         1111,
-        1113,
+        217,
+        1,
+        0,
+        0,
+        0,
+        1112,
+        1114,
         3,
         220,
         110,
         0,
-        1112,
-        1114,
+        1113,
+        1115,
         3,
         224,
         112,
         0,
-        1113,
-        1112,
-        1,
-        0,
-        0,
-        0,
-        1113,
         1114,
+        1113,
         1,
         0,
         0,
         0,
         1114,
+        1115,
+        1,
+        0,
+        0,
+        0,
+        1115,
         219,
         1,
         0,
         0,
         0,
-        1115,
-        1121,
+        1116,
+        1122,
         5,
         90,
         0,
         0,
-        1116,
         1117,
+        1118,
         3,
         222,
         111,
         0,
-        1117,
         1118,
+        1119,
         5,
         90,
         0,
         0,
-        1118,
+        1119,
+        1121,
+        1,
+        0,
+        0,
+        0,
+        1120,
+        1117,
+        1,
+        0,
+        0,
+        0,
+        1121,
+        1124,
+        1,
+        0,
+        0,
+        0,
+        1122,
         1120,
         1,
         0,
         0,
         0,
-        1119,
+        1122,
+        1123,
+        1,
+        0,
+        0,
+        0,
+        1123,
+        1126,
+        1,
+        0,
+        0,
+        0,
+        1124,
+        1122,
+        1,
+        0,
+        0,
+        0,
+        1125,
         1116,
         1,
         0,
         0,
         0,
-        1120,
-        1123,
-        1,
-        0,
-        0,
-        0,
-        1121,
-        1119,
-        1,
-        0,
-        0,
-        0,
-        1121,
-        1122,
-        1,
-        0,
-        0,
-        0,
-        1122,
         1125,
-        1,
-        0,
-        0,
-        0,
-        1123,
-        1121,
-        1,
-        0,
-        0,
-        0,
-        1124,
-        1115,
-        1,
-        0,
-        0,
-        0,
-        1124,
-        1125,
-        1,
-        0,
-        0,
-        0,
-        1125,
-        221,
+        1126,
         1,
         0,
         0,
         0,
         1126,
+        221,
+        1,
+        0,
+        0,
+        0,
         1127,
+        1128,
         5,
         15,
         0,
         0,
-        1127,
+        1128,
         223,
         1,
         0,
         0,
         0,
-        1128,
         1129,
+        1130,
         5,
         86,
         0,
         0,
-        1129,
         1130,
+        1131,
         3,
         76,
         38,
         0,
-        1130,
+        1131,
         225,
         1,
         0,
@@ -9814,22 +9822,22 @@ def serializedATN():
         1013,
         1018,
         1031,
-        1035,
-        1038,
-        1045,
-        1054,
-        1060,
-        1065,
-        1069,
-        1073,
-        1081,
-        1089,
-        1094,
-        1102,
-        1109,
-        1113,
-        1121,
-        1124,
+        1036,
+        1039,
+        1046,
+        1055,
+        1061,
+        1066,
+        1070,
+        1074,
+        1082,
+        1090,
+        1095,
+        1103,
+        1110,
+        1114,
+        1122,
+        1125,
     ]
 
 
@@ -16880,7 +16888,7 @@ class Modelica(Parser):
         self.enterRule(localctx, 198, self.RULE_function_arguments)
         self._la = 0  # Token type
         try:
-            self.state = 1038
+            self.state = 1039
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input, 115, self._ctx)
             if la_ == 1:
@@ -16899,28 +16907,31 @@ class Modelica(Parser):
                 self.function_argument()
                 self.state = 1031
                 self._errHandler.sync(self)
-                _la = self._input.LA(1)
-                while _la == 3:
-                    self.state = 1027
-                    self.match(Modelica.COMMA)
-                    self.state = 1028
-                    self.function_argument()
+                _alt = self._interp.adaptivePredict(self._input, 113, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
+                        self.state = 1027
+                        self.match(Modelica.COMMA)
+                        self.state = 1028
+                        self.function_argument()
                     self.state = 1033
                     self._errHandler.sync(self)
-                    _la = self._input.LA(1)
+                    _alt = self._interp.adaptivePredict(self._input, 113, self._ctx)
 
-                self.state = 1035
+                self.state = 1036
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la == 93:
+                if _la == 3:
                     self.state = 1034
+                    self.match(Modelica.COMMA)
+                    self.state = 1035
                     self.named_arguments()
 
                 pass
 
             elif la_ == 3:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 1037
+                self.state = 1038
                 self.named_arguments()
                 pass
 
@@ -16970,17 +16981,17 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1040
+            self.state = 1041
             self.named_argument()
-            self.state = 1045
+            self.state = 1046
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la == 3:
-                self.state = 1041
-                self.match(Modelica.COMMA)
                 self.state = 1042
+                self.match(Modelica.COMMA)
+                self.state = 1043
                 self.named_argument()
-                self.state = 1047
+                self.state = 1048
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -17026,11 +17037,11 @@ class Modelica(Parser):
         self.enterRule(localctx, 202, self.RULE_named_argument)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1048
-            self.match(Modelica.IDENT)
             self.state = 1049
-            self.match(Modelica.EQUAL)
+            self.match(Modelica.IDENT)
             self.state = 1050
+            self.match(Modelica.EQUAL)
+            self.state = 1051
             self.function_argument()
         except RecognitionException as re:
             localctx.exception = re
@@ -17072,12 +17083,12 @@ class Modelica(Parser):
         localctx = Modelica.Function_argumentContext(self, self._ctx, self.state)
         self.enterRule(localctx, 204, self.RULE_function_argument)
         try:
-            self.state = 1054
+            self.state = 1055
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [51]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 1052
+                self.state = 1053
                 self.function_partial_application()
                 pass
             elif token in [
@@ -17101,7 +17112,7 @@ class Modelica(Parser):
                 93,
             ]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 1053
+                self.state = 1054
                 self.expression()
                 pass
             else:
@@ -17158,20 +17169,20 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1056
-            self.match(Modelica.FUNCTION)
             self.state = 1057
-            self.type_specifier()
+            self.match(Modelica.FUNCTION)
             self.state = 1058
+            self.type_specifier()
+            self.state = 1059
             self.match(Modelica.LPAREN)
-            self.state = 1060
+            self.state = 1061
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la == 93:
-                self.state = 1059
+                self.state = 1060
                 self.named_arguments()
 
-            self.state = 1062
+            self.state = 1063
             self.match(Modelica.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
@@ -17219,31 +17230,31 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1065
+            self.state = 1066
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3F) == 0 and ((1 << _la) & 6485183534283721360) != 0) or (
                 (((_la - 90)) & ~0x3F) == 0 and ((1 << (_la - 90)) & 15) != 0
             ):
-                self.state = 1064
+                self.state = 1065
                 self.expression()
 
-            self.state = 1073
+            self.state = 1074
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la == 3:
-                self.state = 1067
+                self.state = 1068
                 self.match(Modelica.COMMA)
-                self.state = 1069
+                self.state = 1070
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 if (
                     ((_la) & ~0x3F) == 0 and ((1 << _la) & 6485183534283721360) != 0
                 ) or ((((_la - 90)) & ~0x3F) == 0 and ((1 << (_la - 90)) & 15) != 0):
-                    self.state = 1068
+                    self.state = 1069
                     self.expression()
 
-                self.state = 1075
+                self.state = 1076
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -17293,17 +17304,17 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1076
+            self.state = 1077
             self.expression()
-            self.state = 1081
+            self.state = 1082
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la == 3:
-                self.state = 1077
-                self.match(Modelica.COMMA)
                 self.state = 1078
+                self.match(Modelica.COMMA)
+                self.state = 1079
                 self.expression()
-                self.state = 1083
+                self.state = 1084
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -17359,29 +17370,29 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1084
+            self.state = 1085
             self.expression()
-            self.state = 1094
+            self.state = 1095
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [3, 10]:
-                self.state = 1089
+                self.state = 1090
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la == 3:
-                    self.state = 1085
-                    self.match(Modelica.COMMA)
                     self.state = 1086
+                    self.match(Modelica.COMMA)
+                    self.state = 1087
                     self.expression()
-                    self.state = 1091
+                    self.state = 1092
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
                 pass
             elif token in [35]:
-                self.state = 1092
-                self.match(Modelica.FOR)
                 self.state = 1093
+                self.match(Modelica.FOR)
+                self.state = 1094
                 self.for_indices()
                 pass
             else:
@@ -17439,23 +17450,23 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1096
-            self.match(Modelica.LBRACK)
             self.state = 1097
+            self.match(Modelica.LBRACK)
+            self.state = 1098
             self.subscript()
-            self.state = 1102
+            self.state = 1103
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la == 3:
-                self.state = 1098
-                self.match(Modelica.COMMA)
                 self.state = 1099
+                self.match(Modelica.COMMA)
+                self.state = 1100
                 self.subscript()
-                self.state = 1104
+                self.state = 1105
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 1105
+            self.state = 1106
             self.match(Modelica.RBRACK)
         except RecognitionException as re:
             localctx.exception = re
@@ -17495,12 +17506,12 @@ class Modelica(Parser):
         localctx = Modelica.SubscriptContext(self, self._ctx, self.state)
         self.enterRule(localctx, 216, self.RULE_subscript)
         try:
-            self.state = 1109
+            self.state = 1110
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [6]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 1107
+                self.state = 1108
                 self.match(Modelica.COLON)
                 pass
             elif token in [
@@ -17524,7 +17535,7 @@ class Modelica(Parser):
                 93,
             ]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 1108
+                self.state = 1109
                 self.expression()
                 pass
             else:
@@ -17570,13 +17581,13 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1111
+            self.state = 1112
             self.description_string()
-            self.state = 1113
+            self.state = 1114
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la == 86:
-                self.state = 1112
+                self.state = 1113
                 self.annotation()
 
         except RecognitionException as re:
@@ -17625,21 +17636,21 @@ class Modelica(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1124
+            self.state = 1125
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la == 90:
-                self.state = 1115
+                self.state = 1116
                 self.match(Modelica.STRING)
-                self.state = 1121
+                self.state = 1122
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la == 15:
-                    self.state = 1116
-                    self.cat_operator()
                     self.state = 1117
+                    self.cat_operator()
+                    self.state = 1118
                     self.match(Modelica.STRING)
-                    self.state = 1123
+                    self.state = 1124
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
@@ -17679,7 +17690,7 @@ class Modelica(Parser):
         self.enterRule(localctx, 222, self.RULE_cat_operator)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1126
+            self.state = 1127
             self.match(Modelica.PLUS)
         except RecognitionException as re:
             localctx.exception = re
@@ -17720,9 +17731,9 @@ class Modelica(Parser):
         self.enterRule(localctx, 224, self.RULE_annotation)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1128
-            self.match(Modelica.ANNOTATION)
             self.state = 1129
+            self.match(Modelica.ANNOTATION)
+            self.state = 1130
             self.class_modification()
         except RecognitionException as re:
             localctx.exception = re
