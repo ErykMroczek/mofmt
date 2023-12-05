@@ -19,18 +19,18 @@ Options:
 
 
 def main() -> None:
+    if len(sys.argv) < 2:
+        raise SystemExit(HELP_MSG)
+    else:
+        if sys.argv[1] in ("-h", "--help"):
+            raise SystemExit(HELP_MSG)
+        elif sys.argv[1] in ("-v", "--version"):
+            raise SystemExit(f"mofmt, {__version__}")
     format_files(sys.argv)
 
 
 def format_files(args: list[str]) -> None:
     """Format files specified in argument list"""
-    if len(args) < 2:
-        raise SystemExit(HELP_MSG)
-    else:
-        if args[1] in ("-h", "--help"):
-            raise SystemExit(HELP_MSG)
-        elif args[1] in ("-v", "--version"):
-            raise SystemExit(f"mofmt, {__version__}")
     paths = [Path(arg) for arg in args[1:]]
     modelica_files = list(
         chain.from_iterable(
