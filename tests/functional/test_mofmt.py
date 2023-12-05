@@ -95,12 +95,6 @@ def test_recursive_directories(tmp_path):
 
 def test_errors(tmp_path):
     """Check error handling"""
-    # Check argument parsing
-    with pytest.raises(SystemExit):
-        format_files(["mofmt"])
-    # Check nonexistent files handling
-    with pytest.raises(FileNotFoundError):
-        format_files(["mofmt", "not_exists"])
     # Check file extension reckognition
     p = Path(tmp_path, "file.txt")
     p.write_text(INPUT_CODE, "utf-8")

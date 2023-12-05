@@ -2,19 +2,35 @@ import sys
 from itertools import chain
 from pathlib import Path
 
+from mofmt import __version__
 from mofmt.io import get_files_from_dir, read_file, write_file
 from mofmt.parsing import parse_source
 from mofmt.printing import Printer
 
+HELP_MSG = """
+mofmt: Modelica code formatter
+
+Usage: mofmt SRC ...
+
+Options:
+-h, --help: display this message and exit
+-v, --version: display a version number and exit
+"""
+
 
 def main() -> None:
+    if len(sys.argv) < 2:
+        raise SystemExit(HELP_MSG)
+    else:
+        if sys.argv[1] in ("-h", "--help"):
+            raise SystemExit(HELP_MSG)
+        elif sys.argv[1] in ("-v", "--version"):
+            raise SystemExit(f"mofmt, {__version__}")
     format_files(sys.argv)
 
 
 def format_files(args: list[str]) -> None:
     """Format files specified in argument list"""
-    if len(args) < 2:
-        raise SystemExit("mofmt takes at least one argument (file/directory path)")
     paths = [Path(arg) for arg in args[1:]]
     modelica_files = list(
         chain.from_iterable(
