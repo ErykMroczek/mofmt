@@ -3,6 +3,17 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.4] - 2023-12-06
+
+### Added
+
+- Add CLI options to print help message and `mofmt` version number
+
+### Fixed
+
+- Remove the parsing error when parsing function calls with mixed
+  positional and named arguments
+
 ## [0.3.3] - 2023-11-30
 
 ### Fixed
