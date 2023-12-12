@@ -114,7 +114,7 @@ class Listener(ModelicaListener):  # type: ignore
         # Handle special cases
         if kind == ModelicaLexer.LBRACK:
             self.bracket_counter += 1
-            if self.prev_token != ModelicaLexer.IDENT:
+            if self.prev_token not in (ModelicaLexer.IDENT,) + NO_SPACE_AFTER:
                 self.collector.add_space()
         elif kind == ModelicaLexer.RBRACK:
             self.bracket_counter -= 1
@@ -122,7 +122,10 @@ class Listener(ModelicaListener):  # type: ignore
             self.break_or_space()
         elif kind == ModelicaLexer.DOT:
             # Only first dot in type specifiers etc. can be preceded with a space
-            if self.prev_token not in (ModelicaLexer.IDENT, ModelicaLexer.RBRACK):
+            if (
+                self.prev_token
+                not in (ModelicaLexer.IDENT, ModelicaLexer.RBRACK) + NO_SPACE_AFTER
+            ):
                 self.collector.add_space()
         elif kind not in NO_SPACE_BEFORE and self.prev_token not in NO_SPACE_AFTER:
             self.collector.add_space()

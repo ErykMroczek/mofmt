@@ -3,6 +3,8 @@
 a = -b*c;
  x *( - y) = 2^z/ (m-n);
 
+A = toString([2.12,-4.34;-2.56, -1.67]);
+
 /* Wrapped equations */
 
 Q_flow = alpha * surfaceArea*
@@ -74,6 +76,9 @@ m[:,:] = Math.Matrices.sort(
       Math.Vectors.length(v1 + v2),
       Math.Vectors.length(v2 - v1)
     ]);
+
+A = toString([2.12,-4.34;
+    -2.56, -1.67]);
 
 points={{-98,-60},{-64,
           -60},{-64,-63.4667},{-27.1111,-63.4667}};
