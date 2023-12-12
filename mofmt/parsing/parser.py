@@ -184,7 +184,8 @@ class Listener(ModelicaListener):  # type: ignore
         if next_token.line > self.prev_token_line:
             # Exclude unary expressions
             if ctx.parentCtx.getRuleIndex() != Modelica.RULE_unary_expression:
-                self.collector.add_indent()
+                if not self.wrap_stack[-1]:
+                    self.collector.add_indent()
                 self.collector.add_wrappoint()
                 self.wrap_stack[-1] = True
 
