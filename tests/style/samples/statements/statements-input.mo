@@ -7,8 +7,8 @@ else baz
 /* Multiline statements */
 
 y := u1 > 0
-    and u2 > 0
-      and u3 > 0
+and u2 > 0 and
+u3 > 0
         and u4 > 0;
 
 Modelica.Utilities.Streams.print(

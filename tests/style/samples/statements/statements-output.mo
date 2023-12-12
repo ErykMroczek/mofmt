@@ -14,6 +14,5 @@ y := u1 > 0
   and u4 > 0;
 
 Modelica.Utilities.Streams.print(
-  "foo"
-    + "bar"
+  "foo" + "bar"
     + "baz");
