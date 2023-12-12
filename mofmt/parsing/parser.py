@@ -2,6 +2,7 @@
 # In future this code should be replaced by custom parser.
 
 import antlr4 as antlr
+from antlr4.Lexer import Lexer
 
 from mofmt.collecting.collector import Collector
 
@@ -138,7 +139,10 @@ class Listener(ModelicaListener):  # type: ignore
         if is_multiline(ctx):
             self.group_stack[-1] = True
             if ctx.getRuleIndex() == Modelica.RULE_if_expression:
-                if get_preceding_token(ctx, self.stream).type == ModelicaLexer.EQUAL:
+                if get_preceding_token(ctx, self.stream).type in (
+                    ModelicaLexer.EQUAL,
+                    ModelicaLexer.ASSIGN,
+                ):
                     self.collector.add_indent()
             elif ctx.getRuleIndex() == Modelica.RULE_expression_list:
                 if not self.group_stack[-2]:
@@ -150,7 +154,10 @@ class Listener(ModelicaListener):  # type: ignore
         """Decrease indent when leaving wrapped group"""
         if self.group_stack[-1]:
             if ctx.getRuleIndex() == Modelica.RULE_if_expression:
-                if get_preceding_token(ctx, self.stream).type == ModelicaLexer.EQUAL:
+                if get_preceding_token(ctx, self.stream).type in (
+                    ModelicaLexer.EQUAL,
+                    ModelicaLexer.ASSIGN,
+                ):
                     self.collector.add_dedent()
             elif ctx.getRuleIndex() == Modelica.RULE_expression_list:
                 if not self.group_stack[-2]:
@@ -382,14 +389,20 @@ def get_preceding_token(
 ) -> antlr.Token:
     """Return token that precedes this rule"""
     prev_token_idx = stream.previousTokenOnChannel(
-        ctx.start.tokenIndex, ctx.start.channel
+        ctx.start.tokenIndex - 1, Lexer.DEFAULT_TOKEN_CHANNEL
     )
-    return stream.getTokens(prev_token_idx - 1, prev_token_idx)[0]
+    return stream.filterForChannel(
+        prev_token_idx, prev_token_idx, Lexer.DEFAULT_TOKEN_CHANNEL
+    )[0]
 
 
 def get_following_token(
     ctx: antlr.ParserRuleContext, stream: antlr.CommonTokenStream
 ) -> antlr.Token:
     """Return token that follows this rule"""
-    next_token_id = stream.nextTokenOnChannel(ctx.stop.tokenIndex + 1, ctx.stop.channel)
-    return stream.getTokens(next_token_id, next_token_id + 1)[0]
+    next_token_id = stream.nextTokenOnChannel(
+        ctx.stop.tokenIndex + 1, Lexer.DEFAULT_TOKEN_CHANNEL
+    )
+    return stream.filterForChannel(
+        next_token_id, next_token_id + 1, Lexer.DEFAULT_TOKEN_CHANNEL
+    )[0]

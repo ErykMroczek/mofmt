@@ -18,6 +18,16 @@ def test_equations(format_file):
     assert actual == expected
 
 
+def test_statements(format_file):
+    """Check formatting in statements"""
+    input_file = "tests/style/samples/statements/statements-input.mo"
+    template_file = "tests/style/samples/statements/statements-output.mo"
+    entry = Modelica.statement_list
+    actual = format_file(input_file, entry)
+    expected = read_file(Path(template_file))
+    assert actual == expected
+
+
 def test_elements(format_file):
     """Check formatting in elements"""
     input_file = "tests/style/samples/elements/elements-input.mo"
