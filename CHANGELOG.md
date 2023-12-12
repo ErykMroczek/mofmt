@@ -3,6 +3,14 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.5] - 2023-12-XX
+
+### Fixed
+
+- Fix the issue with increasing indentation in expressions that are wrapped multiple times
+- Remove unnecessary whitespaces inserted before matrices in function arguments
+- Correct indentation in if-expressions
+
 ## [0.3.4] - 2023-12-06
 
 ### Added
