@@ -1,21 +1,11 @@
 use moparse::{Payload, SyntaxEvent, SyntaxKind, Terminal, Token, TokenCollection, TokenKind};
+use crate::markers::{Marker, MarkerCollector};
 
-enum Marker {
-    Token(usize),
-    Comment(usize),
-    Space,
-    Indent,
-    Dedent,
-    Ignore,
-    Blank,
-    Break,
-    Wrap,
-}
 
 struct Formatter<'a> {
     tokens: &'a TokenCollection,
     events: &'a Vec<SyntaxEvent>,
-    markers: Vec<Marker>,
+    markers: MarkerCollector,
     prev_token: TokenKind,
     prev_line: usize,
     brackets: usize,
@@ -52,7 +42,7 @@ impl<'a> Formatter<'a> {
         Formatter {
             tokens,
             events,
-            markers: Vec::new(),
+            markers: MarkerCollector::new(),
             prev_token: TokenKind::EOF,
             prev_line: 1,
             brackets: 0,
