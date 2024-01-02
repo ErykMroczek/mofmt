@@ -1,4 +1,4 @@
-use moparse::{SyntaxEvent, SyntaxKind, Terminal, Token, TokenCollection, TokenKind};
+use moparse::{Payload, SyntaxEvent, SyntaxKind, Terminal, Token, TokenCollection, TokenKind};
 
 enum Marker {
     Token(usize),
@@ -138,17 +138,10 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    fn enter_group(&mut self, typ: SyntaxKind, start: usize, exit: usize) {
+    fn enter_group(&mut self, enter: &Payload, exit: &Payload) {
         // Check if group was multiline
-        let end;
-        match self.events[exit] {
-            SyntaxEvent::Exit { tok, .. } => {
-                end = tok;
-            }
-            _ => unreachable!(),
-        }
-        let first_tok = self.tokens.get_token(start).unwrap();
-        let last_tok = self.tokens.get_token(end).unwrap();
+        let first_tok = self.tokens.get_token(enter.tok).unwrap();
+        let last_tok = self.tokens.get_token(exit.tok).unwrap();
         if first_tok.start.line > last_tok.end.line {
             // Handle conditional expression
             if first_tok.typ == TokenKind::If
@@ -156,7 +149,7 @@ impl<'a> Formatter<'a> {
             {
                 self.markers.push(Marker::Indent);
             // Handle matrix row
-            } else if typ == SyntaxKind::ExpressionList {
+            } else if enter.typ == SyntaxKind::ExpressionList {
                 if !*self.groups.last().unwrap() {
                     self.markers.push(Marker::Indent);
                 }
@@ -169,24 +162,17 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    fn exit_group(&mut self, typ: SyntaxKind, enter: usize) {
+    fn exit_group(&mut self, enter: &Payload, exit: &Payload) {
         let group_broken = self.groups.pop().unwrap();
-        let start;
-        match self.events[enter] {
-            SyntaxEvent::Enter { tok, .. } => {
-                start = tok;
-            }
-            _ => unreachable!(),
-        }
         if group_broken {
             // Handle conditional expression
-            if self.tokens.get_token(start).unwrap().typ == TokenKind::If
+            if self.tokens.get_token(enter.tok).unwrap().typ == TokenKind::If
                 && [TokenKind::Equal, TokenKind::Assign]
-                    .contains(&self.tokens.get_token(start - 1).unwrap().typ)
+                    .contains(&self.tokens.get_token(enter.tok - 1).unwrap().typ)
             {
                 self.markers.push(Marker::Dedent);
             // Handle matrix row
-            } else if typ == SyntaxKind::ExpressionList {
+            } else if exit.typ == SyntaxKind::ExpressionList {
                 if !*self.groups.last().unwrap() {
                     self.markers.push(Marker::Dedent);
                 }
@@ -361,14 +347,19 @@ impl<'a> Formatter<'a> {
                     Terminal::Token(i) => self.handle_token(*i),
                     _ => (),
                 },
-                SyntaxEvent::Enter { typ, tok, exit } => {
-                    match typ {
+                SyntaxEvent::Enter(p_start) => {
+                    let p_end;
+                    match &self.events[p_start.pair] {
+                        SyntaxEvent::Exit(exit) => p_end = exit,
+                        _ => unreachable!(),
+                    }
+                    match p_start.typ {
                         SyntaxKind::DescriptionString
                         | SyntaxKind::AnnotationClause
                         | SyntaxKind::ConstrainingClause => {
                             self.markers.push(Marker::Indent);
                             // Handle class annotations
-                            if *typ == SyntaxKind::AnnotationClause
+                            if p_start.typ == SyntaxKind::AnnotationClause
                                 && *self.rules.last().unwrap() == SyntaxKind::Composition
                             {
                                 self.markers.push(Marker::Blank);
@@ -397,21 +388,21 @@ impl<'a> Formatter<'a> {
                         SyntaxKind::Primary => {
                             // Handle matrix or array
                             if [TokenKind::LBracket, TokenKind::LCurly]
-                                .contains(&self.tokens.get_token(*tok).unwrap().typ)
+                                .contains(&self.tokens.get_token(p_start.tok).unwrap().typ)
                             {
-                                self.enter_group(*typ, *tok, *exit);
+                                self.enter_group(p_start, p_end);
                             }
                         }
                         SyntaxKind::FunctionCallArgs
                         | SyntaxKind::ClassOrInheritanceModification
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts => {
-                            self.enter_group(*typ, *tok, *exit);
+                            self.enter_group(p_start, p_end);
                             self.markers.push(Marker::Ignore);
                         }
                         SyntaxKind::ExpressionList => {
                             self.break_or_space();
-                            self.enter_group(*typ, *tok, *exit);
+                            self.enter_group(p_start, p_end);
                         }
                         SyntaxKind::FunctionArgument => {
                             // do not break if it is part of named arg
@@ -431,8 +422,10 @@ impl<'a> Formatter<'a> {
                             {
                                 self.break_or_space();
                             // Handle conditional expression
-                            } else if self.tokens.get_token(*tok).unwrap().typ == TokenKind::If {
-                                self.enter_group(*typ, *tok, *exit);
+                            } else if self.tokens.get_token(p_start.tok).unwrap().typ
+                                == TokenKind::If
+                            {
+                                self.enter_group(p_start, p_end);
                             // Handle conditional parts in conditional expression
                             } else if [TokenKind::Then, TokenKind::Else].contains(&self.prev_token)
                                 && *self.rules.last().unwrap() == SyntaxKind::Expression
@@ -444,10 +437,15 @@ impl<'a> Formatter<'a> {
                         }
                         _ => (),
                     }
-                    self.rules.push(*typ);
+                    self.rules.push(p_start.typ);
                 }
-                SyntaxEvent::Exit { typ, tok, enter } => {
-                    match typ {
+                SyntaxEvent::Exit(p_end) => {
+                    let p_start;
+                    match &self.events[p_end.pair] {
+                        SyntaxEvent::Enter(enter) => p_start = enter,
+                        _ => unreachable!(),
+                    }
+                    match p_end.typ {
                         // TODO: Conditional equations, conditional statements, external element, equation list, statement list, conditional expression, conditional branch
                         SyntaxKind::DescriptionString
                         | SyntaxKind::AnnotationClause
@@ -457,16 +455,16 @@ impl<'a> Formatter<'a> {
                         SyntaxKind::Primary => {
                             // Handle matrix or array
                             if [TokenKind::RBracket, TokenKind::RCurly]
-                                .contains(&self.tokens.get_token(*tok).unwrap().typ)
+                                .contains(&self.tokens.get_token(p_end.tok).unwrap().typ)
                             {
-                                self.exit_group(*typ, *enter);
+                                self.exit_group(p_start, p_end);
                             }
                         }
                         SyntaxKind::FunctionCallArgs
                         | SyntaxKind::ClassOrInheritanceModification
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts
-                        | SyntaxKind::ExpressionList => self.exit_group(*typ, *enter),
+                        | SyntaxKind::ExpressionList => self.exit_group(p_start, p_end),
                         SyntaxKind::Expression => {
                             let wrapped = self.wraps.pop().unwrap();
                             if wrapped {
