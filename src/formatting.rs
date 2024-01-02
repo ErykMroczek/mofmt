@@ -16,8 +16,6 @@ struct Formatter<'a> {
     tokens: &'a TokenCollection,
     events: &'a Vec<SyntaxEvent>,
     markers: Vec<Marker>,
-    token: usize,
-    comment: usize,
     prev_token: TokenKind,
     prev_line: usize,
     brackets: usize,
@@ -48,26 +46,6 @@ const NO_BREAK_BEFORE: [TokenKind; 4] = [
     TokenKind::Elif,
     TokenKind::Elwhen,
 ];
-const OPERATORS: [TokenKind; 18] = [
-    TokenKind::Plus,
-    TokenKind::DotPlus,
-    TokenKind::Minus,
-    TokenKind::DotMinus,
-    TokenKind::Star,
-    TokenKind::DotStar,
-    TokenKind::Slash,
-    TokenKind::DotSlash,
-    TokenKind::Flex,
-    TokenKind::DotFlex,
-    TokenKind::And,
-    TokenKind::Or,
-    TokenKind::Gre,
-    TokenKind::Geq,
-    TokenKind::Les,
-    TokenKind::Leq,
-    TokenKind::Eq,
-    TokenKind::Neq,
-];
 
 impl<'a> Formatter<'a> {
     fn new(tokens: &'a TokenCollection, events: &'a Vec<SyntaxEvent>) -> Self {
@@ -75,8 +53,6 @@ impl<'a> Formatter<'a> {
             tokens,
             events,
             markers: Vec::new(),
-            token: 0,
-            comment: 0,
             prev_token: TokenKind::EOF,
             prev_line: 1,
             brackets: 0,
@@ -138,18 +114,16 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    fn enter_group(&mut self, enter: &Payload, exit: &Payload) {
-        // Check if group was multiline
-        let first_tok = self.tokens.get_token(enter.tok).unwrap();
-        let last_tok = self.tokens.get_token(exit.tok).unwrap();
-        if first_tok.start.line > last_tok.end.line {
+    fn enter_group(&mut self, typ: SyntaxKind, first: &Token, last: &Token) {
+        // Mark the group as broken if group was multiline
+        if first.start.line > last.end.line {
             // Handle conditional expression
-            if first_tok.typ == TokenKind::If
+            if first.typ == TokenKind::If
                 && [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token)
             {
                 self.markers.push(Marker::Indent);
             // Handle matrix row
-            } else if enter.typ == SyntaxKind::ExpressionList {
+            } else if typ == SyntaxKind::ExpressionList {
                 if !*self.groups.last().unwrap() {
                     self.markers.push(Marker::Indent);
                 }
@@ -216,6 +190,7 @@ impl<'a> Formatter<'a> {
     fn handle_token(&mut self, i: usize) {
         let tok = self.tokens.get_item(i).unwrap();
         let kind = tok.typ;
+        let parent = *self.rules.last().unwrap();
         let comments = preceding_comments(self.tokens, tok.idx);
         if self.prev_token == TokenKind::Semi {
             if self.brackets == 0 {
@@ -245,9 +220,17 @@ impl<'a> Formatter<'a> {
             }
             TokenKind::RBracket => self.brackets -= 1,
             TokenKind::For => self.break_or_space(),
+            TokenKind::End => {
+                // Handle end clause in class specifiers
+                if parent == SyntaxKind::LongClassSpecifier {
+                    self.markers.push(Marker::Blank);
+                } else {
+                    self.markers.push(Marker::Space);
+                }
+            }
             TokenKind::Elif | TokenKind::Else | TokenKind::Elwhen => {
                 // Handle conditional expression context
-                if *self.rules.last().unwrap() == SyntaxKind::Expression {
+                if parent == SyntaxKind::Expression {
                     self.break_or_space();
                 } else if [
                     SyntaxKind::IfEquation,
@@ -255,7 +238,7 @@ impl<'a> Formatter<'a> {
                     SyntaxKind::WhenEquation,
                     SyntaxKind::WhenStatement,
                 ]
-                .contains(self.rules.last().unwrap())
+                .contains(&parent)
                 {
                     self.markers.push(Marker::Break);
                 }
@@ -323,14 +306,12 @@ impl<'a> Formatter<'a> {
                     SyntaxKind::ForEquation,
                     SyntaxKind::ForStatement,
                 ]
-                .contains(self.rules.last().unwrap())
+                .contains(&parent)
                 {
-                    self.markers.push(Marker::Indent);
                     self.markers.push(Marker::Break);
                 }
             }
             TokenKind::Equation | TokenKind::Algorithm => {
-                self.markers.push(Marker::Indent);
                 self.markers.push(Marker::Blank);
             }
             _ => (),
@@ -347,88 +328,69 @@ impl<'a> Formatter<'a> {
                     Terminal::Token(i) => self.handle_token(*i),
                     _ => (),
                 },
-                SyntaxEvent::Enter(p_start) => {
-                    let p_end;
-                    match &self.events[p_start.pair] {
-                        SyntaxEvent::Exit(exit) => p_end = exit,
-                        _ => unreachable!(),
-                    }
-                    match p_start.typ {
+                SyntaxEvent::Enter(p) => {
+                    let first = self.tokens.get_token(p.tok).unwrap();
+                    let last = self.events[p.pair].get_token(self.tokens);
+                    let parent = self.rules.last().unwrap();
+                    match p.typ {
                         SyntaxKind::DescriptionString
                         | SyntaxKind::AnnotationClause
-                        | SyntaxKind::ConstrainingClause => {
+                        | SyntaxKind::ConstrainingClause
+                        | SyntaxKind::EnumerationLiteral => {
                             self.markers.push(Marker::Indent);
                             // Handle class annotations
-                            if p_start.typ == SyntaxKind::AnnotationClause
-                                && *self.rules.last().unwrap() == SyntaxKind::Composition
+                            if p.typ == SyntaxKind::AnnotationClause
+                                && *parent == SyntaxKind::Composition
                             {
                                 self.markers.push(Marker::Blank);
                             } else {
                                 self.markers.push(Marker::Break);
                             }
                         }
-                        SyntaxKind::Equation | SyntaxKind::Statement => {
-                            if [SyntaxKind::IfEquation, SyntaxKind::IfStatement]
-                                .contains(self.rules.last().unwrap())
-                            {
-                                self.markers.push(Marker::Indent);
-                            }
-                        }
-                        SyntaxKind::EnumerationLiteral => self.markers.push(Marker::Break),
-                        // TODO: external function call
-                        SyntaxKind::ElementList => {
+                        SyntaxKind::Equation | SyntaxKind::Statement | SyntaxKind::Element => {
                             self.markers.push(Marker::Indent);
-                            self.markers.push(Marker::Blank);
                         }
-                        SyntaxKind::EnumList => self.markers.push(Marker::Indent),
-                        // TODO: end clause
-                        SyntaxKind::EquationSection | SyntaxKind::AlgorithmSection => {
-                            self.markers.push(Marker::Blank)
+                        SyntaxKind::ElementList
+                        | SyntaxKind::EquationSection
+                        | SyntaxKind::AlgorithmSection => {
+                            self.markers.push(Marker::Blank);
                         }
                         SyntaxKind::Primary => {
                             // Handle matrix or array
-                            if [TokenKind::LBracket, TokenKind::LCurly]
-                                .contains(&self.tokens.get_token(p_start.tok).unwrap().typ)
-                            {
-                                self.enter_group(p_start, p_end);
+                            if [TokenKind::LBracket, TokenKind::LCurly].contains(&first.typ) {
+                                self.enter_group(p.typ, first, last);
                             }
                         }
                         SyntaxKind::FunctionCallArgs
                         | SyntaxKind::ClassOrInheritanceModification
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts => {
-                            self.enter_group(p_start, p_end);
-                            self.markers.push(Marker::Ignore);
+                            self.enter_group(p.typ, first, last);
+                            // self.markers.push(Marker::Ignore);
                         }
                         SyntaxKind::ExpressionList => {
                             self.break_or_space();
-                            self.enter_group(p_start, p_end);
-                        }
-                        SyntaxKind::FunctionArgument => {
-                            // do not break if it is part of named arg
-                            if self.prev_token != TokenKind::Equal {
-                                self.break_or_space();
-                            }
+                            self.enter_group(p.typ, first, last);
                         }
                         SyntaxKind::Subscript
                         | SyntaxKind::NamedArgument
                         | SyntaxKind::Argument
-                        | SyntaxKind::InheritanceModification => {
+                        | SyntaxKind::InheritanceModification
+                        | SyntaxKind::FunctionArgumentsNonFirst
+                        | SyntaxKind::FunctionArguments
+                        | SyntaxKind::ArrayArguments
+                        | SyntaxKind::ArrayArgumentsNonFirst => {
                             self.break_or_space();
                         }
                         SyntaxKind::Expression => {
-                            if [SyntaxKind::ExpressionList, SyntaxKind::ArrayArguments]
-                                .contains(&self.rules[self.rules.len() - 1])
-                            {
+                            if *parent == SyntaxKind::ExpressionList {
                                 self.break_or_space();
                             // Handle conditional expression
-                            } else if self.tokens.get_token(p_start.tok).unwrap().typ
-                                == TokenKind::If
-                            {
-                                self.enter_group(p_start, p_end);
+                            } else if first.typ == TokenKind::If {
+                                self.enter_group(p.typ, first, last);
                             // Handle conditional parts in conditional expression
                             } else if [TokenKind::Then, TokenKind::Else].contains(&self.prev_token)
-                                && *self.rules.last().unwrap() == SyntaxKind::Expression
+                                && *parent == SyntaxKind::Expression
                             {
                                 self.markers.push(Marker::Indent);
                                 self.break_or_space();
@@ -437,26 +399,29 @@ impl<'a> Formatter<'a> {
                         }
                         _ => (),
                     }
-                    self.rules.push(p_start.typ);
+                    self.rules.push(p.typ);
                 }
                 SyntaxEvent::Exit(p_end) => {
+                    let typ = self.rules.pop().unwrap();
                     let p_start;
                     match &self.events[p_end.pair] {
                         SyntaxEvent::Enter(enter) => p_start = enter,
                         _ => unreachable!(),
                     }
-                    match p_end.typ {
-                        // TODO: Conditional equations, conditional statements, external element, equation list, statement list, conditional expression, conditional branch
+                    let first = self.tokens.get_token(p_start.tok).unwrap();
+                    let last = self.tokens.get_token(p_end.tok).unwrap();
+                    match typ {
+                        // TODO: external element
                         SyntaxKind::DescriptionString
                         | SyntaxKind::AnnotationClause
                         | SyntaxKind::ConstrainingClause
-                        | SyntaxKind::ElementList
-                        | SyntaxKind::EnumList => self.markers.push(Marker::Dedent),
+                        | SyntaxKind::Equation
+                        | SyntaxKind::Statement
+                        | SyntaxKind::Element
+                        | SyntaxKind::EnumerationLiteral => self.markers.push(Marker::Dedent),
                         SyntaxKind::Primary => {
                             // Handle matrix or array
-                            if [TokenKind::RBracket, TokenKind::RCurly]
-                                .contains(&self.tokens.get_token(p_end.tok).unwrap().typ)
-                            {
+                            if [TokenKind::RBracket, TokenKind::RCurly].contains(&last.typ) {
                                 self.exit_group(p_start, p_end);
                             }
                         }
@@ -466,6 +431,15 @@ impl<'a> Formatter<'a> {
                         | SyntaxKind::ArraySubscripts
                         | SyntaxKind::ExpressionList => self.exit_group(p_start, p_end),
                         SyntaxKind::Expression => {
+                            // Handle conditional expression
+                            if first.typ == TokenKind::If {
+                                self.exit_group(p_start, p_end);
+                            // Handle conditional part of the expression
+                            } else if [TokenKind::Then, TokenKind::Else].contains(&first.typ)
+                                && *self.rules.last().unwrap() == SyntaxKind::Expression
+                            {
+                                self.markers.push(Marker::Dedent);
+                            }
                             let wrapped = self.wraps.pop().unwrap();
                             if wrapped {
                                 self.markers.push(Marker::Dedent);
