@@ -2,21 +2,26 @@ use moparse::TokenCollection;
 
 use crate::markers::Marker;
 
-
-pub struct Printer<'a> {
-    indent: usize,
-    tokens: &'a TokenCollection,
-    markers: &'a Vec<Marker>,
-    formatted: String,
+pub fn pretty_print(tokens: &TokenCollection, markers: &Vec<Marker>) -> String {
+    let mut printer = Printer::new();
+    let mut formatted = String::new();
+    for marker in markers {
+        let s = printer.print_marker(marker, tokens);
+        formatted += s.as_str();
+    }
+    formatted
 }
 
-impl<'a> Printer<'a> {
+struct Printer {
+    indent: usize,
+}
 
-    pub fn new(tokens: &'a TokenCollection, markers: &'a Vec<Marker>) -> Self {
-        Printer { indent: 0, tokens, markers, formatted: String::new() }
+impl Printer {
+    fn new() -> Self {
+        Printer { indent: 0 }
     }
 
-    fn print_marker(&mut self, m: &Marker) -> String {
+    fn print_marker(&mut self, m: &Marker, tokens: &TokenCollection) -> String {
         const INDENT: &str = "  ";
         match m {
             Marker::Space => String::from("  "),
@@ -29,9 +34,9 @@ impl<'a> Printer<'a> {
                 self.indent -= 1;
                 String::new()
             }
-            Marker::Token(i) | Marker::Comment(i) => self.tokens.get_item(*i).unwrap().text.clone(),
+            Marker::Token(i) | Marker::Comment(i) => tokens.get_item(*i).unwrap().text.clone(),
             _ => {
-                let mut out = String::from("\n");;
+                let mut out = String::from("\n");
                 if m == &Marker::Blank {
                     out += "\n";
                 }
@@ -40,14 +45,6 @@ impl<'a> Printer<'a> {
                 }
                 out
             }
-        }
-
-    }
-
-    pub fn pretty_print(&mut self) {
-        for marker in self.markers {
-            let s = self.print_marker(marker);
-            self.formatted += s.as_str();
         }
     }
 }
