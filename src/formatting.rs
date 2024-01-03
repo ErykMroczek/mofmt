@@ -1,6 +1,11 @@
-use moparse::*;
 use crate::markers::{Marker, MarkerCollector};
+use moparse::*;
 
+pub fn format(tokens: &TokenCollection, events: &Vec<SyntaxEvent>) -> Vec<Marker> {
+    let mut fmt = Formatter::new(tokens, events);
+    fmt.walk_events();
+    fmt.markers.markers
+}
 
 struct Formatter<'a> {
     tokens: &'a TokenCollection,
@@ -46,9 +51,9 @@ impl<'a> Formatter<'a> {
             prev_token: TokenKind::EOF,
             prev_line: 1,
             brackets: 0,
-            groups: Vec::new(),
-            rules: Vec::new(),
-            wraps: Vec::new(),
+            groups: vec![false],
+            rules: vec![SyntaxKind::StoredDefinition],
+            wraps: vec![false],
         }
     }
 
@@ -106,7 +111,7 @@ impl<'a> Formatter<'a> {
 
     fn enter_group(&mut self, typ: SyntaxKind, first: &Token, last: &Token) {
         // Mark the group as broken if group was multiline
-        if first.start.line > last.end.line {
+        if first.start.line < last.end.line {
             // Handle conditional expression
             if first.typ == TokenKind::If
                 && [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token)
@@ -178,11 +183,12 @@ impl<'a> Formatter<'a> {
     }
 
     fn handle_token(&mut self, i: usize) {
-        let tok = self.tokens.get_item(i).unwrap();
+        let tok = self.tokens.get_token(i).unwrap();
         let kind = tok.typ;
         let parent = *self.rules.last().unwrap();
         let comments = preceding_comments(self.tokens, tok.idx);
         if self.prev_token == TokenKind::Semi {
+            // Handle matrix rows
             if self.brackets == 0 {
                 self.markers.push(Marker::Break);
             } else {
@@ -231,15 +237,6 @@ impl<'a> Formatter<'a> {
                 .contains(&parent)
                 {
                     self.markers.push(Marker::Break);
-                }
-            }
-            TokenKind::If => {
-                // Handle conditional expressions
-                if *self.groups.last().unwrap()
-                    && [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token)
-                {
-                    self.markers.push(Marker::Indent);
-                    self.break_or_space();
                 }
             }
             TokenKind::Dot => {
@@ -324,23 +321,27 @@ impl<'a> Formatter<'a> {
                     let parent = self.rules.last().unwrap();
                     match p.typ {
                         SyntaxKind::DescriptionString
-                        | SyntaxKind::AnnotationClause
                         | SyntaxKind::ConstrainingClause
                         | SyntaxKind::EnumerationLiteral => {
                             self.markers.push(Marker::Indent);
+                            self.markers.push(Marker::Break);
+                        }
+                        SyntaxKind::AnnotationClause => {
+                            self.markers.push(Marker::Indent);
                             // Handle class annotations
-                            if p.typ == SyntaxKind::AnnotationClause
-                                && *parent == SyntaxKind::Composition
-                            {
+                            if *parent == SyntaxKind::Composition {
                                 self.markers.push(Marker::Blank);
                             } else {
                                 self.markers.push(Marker::Break);
                             }
                         }
-                        SyntaxKind::Equation | SyntaxKind::Statement | SyntaxKind::Element => {
+                        SyntaxKind::Equation | SyntaxKind::Statement => {
                             self.markers.push(Marker::Indent);
                         }
-                        SyntaxKind::ElementList
+                        SyntaxKind::ElementList => {
+                            self.markers.push(Marker::Indent);
+                            self.markers.push(Marker::Blank);
+                        }
                         | SyntaxKind::EquationSection
                         | SyntaxKind::AlgorithmSection => {
                             self.markers.push(Marker::Blank);
@@ -356,7 +357,7 @@ impl<'a> Formatter<'a> {
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts => {
                             self.enter_group(p.typ, first, last);
-                            // self.markers.push(Marker::Ignore);
+                            self.markers.push(Marker::Ignore);
                         }
                         SyntaxKind::ExpressionList => {
                             self.break_or_space();
@@ -378,6 +379,7 @@ impl<'a> Formatter<'a> {
                             // Handle conditional expression
                             } else if first.typ == TokenKind::If {
                                 self.enter_group(p.typ, first, last);
+                                self.break_or_space();
                             // Handle conditional parts in conditional expression
                             } else if [TokenKind::Then, TokenKind::Else].contains(&self.prev_token)
                                 && *parent == SyntaxKind::Expression
@@ -407,11 +409,11 @@ impl<'a> Formatter<'a> {
                         | SyntaxKind::ConstrainingClause
                         | SyntaxKind::Equation
                         | SyntaxKind::Statement
-                        | SyntaxKind::Element
+                        | SyntaxKind::ElementList
                         | SyntaxKind::EnumerationLiteral => self.markers.push(Marker::Dedent),
                         SyntaxKind::Primary => {
                             // Handle matrix or array
-                            if [TokenKind::RBracket, TokenKind::RCurly].contains(&last.typ) {
+                            if [TokenKind::LBracket, TokenKind::LCurly].contains(&first.typ) {
                                 self.exit_group(p_start, p_end);
                             }
                         }
@@ -425,7 +427,7 @@ impl<'a> Formatter<'a> {
                             if first.typ == TokenKind::If {
                                 self.exit_group(p_start, p_end);
                             // Handle conditional part of the expression
-                            } else if [TokenKind::Then, TokenKind::Else].contains(&first.typ)
+                            } else if [TokenKind::Then, TokenKind::Else].contains(&self.tokens.get_token(p_start.tok-1).unwrap().typ)
                                 && *self.rules.last().unwrap() == SyntaxKind::Expression
                             {
                                 self.markers.push(Marker::Dedent);
@@ -467,3 +469,5 @@ fn preceding_comments(tokens: &TokenCollection, i: usize) -> Option<Vec<&Token>>
         Some(comments)
     }
 }
+
+mod test {}

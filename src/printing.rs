@@ -24,7 +24,7 @@ impl Printer {
     fn print_marker(&mut self, m: &Marker, tokens: &TokenCollection) -> String {
         const INDENT: &str = "  ";
         match m {
-            Marker::Space => String::from("  "),
+            Marker::Space => String::from(" "),
             Marker::Ignore => String::new(),
             Marker::Indent => {
                 self.indent += 1;
@@ -40,7 +40,7 @@ impl Printer {
                 if m == &Marker::Blank {
                     out += "\n";
                 }
-                for i in 1..self.indent {
+                for i in 0..self.indent {
                     out += INDENT
                 }
                 out

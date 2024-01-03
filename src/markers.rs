@@ -1,4 +1,3 @@
-
 #[derive(PartialEq, PartialOrd)]
 pub enum Marker {
     Token(usize),
@@ -13,21 +12,20 @@ pub enum Marker {
 }
 
 pub struct MarkerCollector {
-    markers: Vec<Marker>,
+    pub markers: Vec<Marker>,
 }
 
 impl MarkerCollector {
-
     pub fn new() -> Self {
-        MarkerCollector { markers: Vec::new() }
+        MarkerCollector {
+            markers: Vec::new(),
+        }
     }
 
     pub fn push(&mut self, m: Marker) {
         match m {
             Marker::Space => {
-                if self.markers.len() == 0 {
-                    return;
-                } else if [Marker::Ignore, Marker::Space, Marker::Indent, Marker::Dedent].contains(&self.markers.last().unwrap()) {
+                if self.markers.len() == 0 || *self.markers.last().unwrap() >= Marker::Space {
                     return;
                 }
             }
@@ -47,5 +45,4 @@ impl MarkerCollector {
         }
         self.markers.push(m);
     }
-
 }
