@@ -86,8 +86,7 @@ impl<'a> Formatter<'a> {
             self.markers.push(Marker::Break);
         } else if tail.len() > 0 {
             self.markers.append(&mut tail);
-        }
-        else if diff == 1 {
+        } else if diff == 1 {
             self.markers.push(Marker::Break);
         } else if diff > 1 {
             self.markers.push(Marker::Blank);
@@ -119,7 +118,14 @@ impl<'a> Formatter<'a> {
         if first.start.line < last.end.line {
             // Handle conditional expression
             if first.typ == TokenKind::If {
-                if [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token) {
+                if [
+                    TokenKind::Equal,
+                    TokenKind::Assign,
+                    TokenKind::Then,
+                    TokenKind::Else,
+                ]
+                .contains(&self.prev_token)
+                {
                     self.markers.push(Marker::Indent);
                 }
             // Handle matrix row
@@ -141,8 +147,13 @@ impl<'a> Formatter<'a> {
         if group_broken {
             // Handle conditional expression
             if self.tokens.get_token(enter.tok).unwrap().typ == TokenKind::If {
-                if [TokenKind::Equal, TokenKind::Assign]
-                    .contains(&self.tokens.get_token(enter.tok - 1).unwrap().typ)
+                if [
+                    TokenKind::Equal,
+                    TokenKind::Assign,
+                    TokenKind::Then,
+                    TokenKind::Else,
+                ]
+                .contains(&self.tokens.get_token(enter.tok - 1).unwrap().typ)
                 {
                     self.markers.push(Marker::Dedent);
                 }
@@ -294,7 +305,7 @@ impl<'a> Formatter<'a> {
         match kind {
             TokenKind::Annotation => self.markers.push(Marker::Space),
             TokenKind::Equation | TokenKind::Algorithm => {
-                self.markers.push(Marker::Blank);
+                self.markers.push(Marker::Break);
             }
             TokenKind::Plus | TokenKind::DotPlus | TokenKind::Minus | TokenKind::DotMinus => {
                 // Do not add next space if unary operator
@@ -351,8 +362,14 @@ impl<'a> Formatter<'a> {
                         }
                         SyntaxKind::Equation | SyntaxKind::Statement => {
                             self.markers.push(Marker::Indent);
-                            if [TokenKind::Loop, TokenKind::Then, TokenKind::Else]
-                                .contains(&self.prev_token)
+                            if [
+                                TokenKind::Loop,
+                                TokenKind::Then,
+                                TokenKind::Else,
+                                TokenKind::Equation,
+                                TokenKind::Algorithm,
+                            ]
+                            .contains(&self.prev_token)
                             {
                                 self.markers.push(Marker::Break);
                             }
@@ -461,6 +478,8 @@ impl<'a> Formatter<'a> {
                 }
             }
         }
+    // Add one trailing newline
+    self.markers.push(Marker::Break);
     }
 }
 
@@ -474,9 +493,13 @@ fn preceding_comments(tokens: &TokenCollection, i: usize) -> Option<Vec<&Token>>
     let mut comments = Vec::new();
     loop {
         let prev_item = tokens.get_item(rest).unwrap();
-        rest -= 1;
         if [TokenKind::LineComment, TokenKind::BlockComment].contains(&prev_item.typ) {
             comments.push(prev_item);
+        } else {
+            break;
+        }
+        if rest > 0 {
+            rest -= 1;
         } else {
             break;
         }
@@ -488,5 +511,3 @@ fn preceding_comments(tokens: &TokenCollection, i: usize) -> Option<Vec<&Token>>
         Some(comments)
     }
 }
-
-mod test {}
