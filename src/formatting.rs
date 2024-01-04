@@ -19,13 +19,14 @@ struct Formatter<'a> {
     wraps: Vec<bool>,
 }
 
-const NO_SPACE_AFTER: [TokenKind; 6] = [
+const NO_SPACE_AFTER: [TokenKind; 7] = [
     TokenKind::LParen,
     TokenKind::Dot,
     TokenKind::LBracket,
     TokenKind::LCurly,
     TokenKind::Semi,
     TokenKind::Colon,
+    TokenKind::Connect,
 ];
 const NO_SPACE_BEFORE: [TokenKind; 6] = [
     TokenKind::RParen,
@@ -60,10 +61,11 @@ impl<'a> Formatter<'a> {
     /// Handle comments and separate them if needed.
     fn handle_comments(&mut self, comments: Vec<&Token>, current_line: usize) {
         let mut line = self.prev_line;
-        let mut diff = comments[0].end.line - line;
+        let mut diff = comments[0].start.line - line;
+        let mut tail = Vec::new();
         if diff == 0 {
-            // TODO: Handle inline comments
-            ();
+            // Handle inline comments
+            tail = self.markers.cache_tail();
         }
         for comment in comments {
             diff = comment.start.line - line;
@@ -77,12 +79,15 @@ impl<'a> Formatter<'a> {
                 }
             }
             self.markers.push(Marker::Comment(comment.idx));
-            line = comment.end.line;
+            line = comment.start.line;
         }
         diff = current_line - line;
         if self.prev_line == 1 {
             self.markers.push(Marker::Break);
-        } else if diff == 1 {
+        } else if tail.len() > 0 {
+            self.markers.append(&mut tail);
+        }
+        else if diff == 1 {
             self.markers.push(Marker::Break);
         } else if diff > 1 {
             self.markers.push(Marker::Blank);
@@ -113,10 +118,10 @@ impl<'a> Formatter<'a> {
         // Mark the group as broken if group was multiline
         if first.start.line < last.end.line {
             // Handle conditional expression
-            if first.typ == TokenKind::If
-                && [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token)
-            {
-                self.markers.push(Marker::Indent);
+            if first.typ == TokenKind::If {
+                if [TokenKind::Equal, TokenKind::Assign].contains(&self.prev_token) {
+                    self.markers.push(Marker::Indent);
+                }
             // Handle matrix row
             } else if typ == SyntaxKind::ExpressionList {
                 if !*self.groups.last().unwrap() {
@@ -135,11 +140,12 @@ impl<'a> Formatter<'a> {
         let group_broken = self.groups.pop().unwrap();
         if group_broken {
             // Handle conditional expression
-            if self.tokens.get_token(enter.tok).unwrap().typ == TokenKind::If
-                && [TokenKind::Equal, TokenKind::Assign]
+            if self.tokens.get_token(enter.tok).unwrap().typ == TokenKind::If {
+                if [TokenKind::Equal, TokenKind::Assign]
                     .contains(&self.tokens.get_token(enter.tok - 1).unwrap().typ)
-            {
-                self.markers.push(Marker::Dedent);
+                {
+                    self.markers.push(Marker::Dedent);
+                }
             // Handle matrix row
             } else if exit.typ == SyntaxKind::ExpressionList {
                 if !*self.groups.last().unwrap() {
@@ -178,6 +184,10 @@ impl<'a> Formatter<'a> {
                     *wrapped = true;
                 }
                 self.markers.push(Marker::Wrap);
+            }
+        } else {
+            if !NO_SPACE_AFTER.contains(&self.prev_token) {
+                self.markers.push(Marker::Space);
             }
         }
     }
@@ -241,7 +251,7 @@ impl<'a> Formatter<'a> {
             }
             TokenKind::Dot => {
                 // Only first dot in type specifiers etc. can be preceded with a space
-                if ![TokenKind::Ident, TokenKind::LBracket].contains(&self.prev_token)
+                if ![TokenKind::Ident, TokenKind::RBracket].contains(&self.prev_token)
                     && !NO_SPACE_AFTER.contains(&self.prev_token)
                 {
                     self.markers.push(Marker::Space);
@@ -283,23 +293,27 @@ impl<'a> Formatter<'a> {
 
         match kind {
             TokenKind::Annotation => self.markers.push(Marker::Space),
-            TokenKind::Then | TokenKind::Else | TokenKind::Loop => {
-                if [
-                    SyntaxKind::IfEquation,
-                    SyntaxKind::IfStatement,
-                    SyntaxKind::WhenEquation,
-                    SyntaxKind::WhenStatement,
-                    SyntaxKind::WhileStatement,
-                    SyntaxKind::ForEquation,
-                    SyntaxKind::ForStatement,
-                ]
-                .contains(&parent)
-                {
-                    self.markers.push(Marker::Break);
-                }
-            }
             TokenKind::Equation | TokenKind::Algorithm => {
                 self.markers.push(Marker::Blank);
+            }
+            TokenKind::Plus | TokenKind::DotPlus | TokenKind::Minus | TokenKind::DotMinus => {
+                // Do not add next space if unary operator
+                if ![
+                    TokenKind::RBracket,
+                    TokenKind::RParen,
+                    TokenKind::RCurly,
+                    TokenKind::Ident,
+                    TokenKind::String,
+                    TokenKind::Uint,
+                    TokenKind::Ureal,
+                    TokenKind::True,
+                    TokenKind::False,
+                    TokenKind::End,
+                ]
+                .contains(&self.prev_token)
+                {
+                    self.markers.push(Marker::Ignore);
+                }
             }
             _ => (),
         }
@@ -337,13 +351,17 @@ impl<'a> Formatter<'a> {
                         }
                         SyntaxKind::Equation | SyntaxKind::Statement => {
                             self.markers.push(Marker::Indent);
+                            if [TokenKind::Loop, TokenKind::Then, TokenKind::Else]
+                                .contains(&self.prev_token)
+                            {
+                                self.markers.push(Marker::Break);
+                            }
                         }
                         SyntaxKind::ElementList => {
                             self.markers.push(Marker::Indent);
                             self.markers.push(Marker::Blank);
                         }
-                        | SyntaxKind::EquationSection
-                        | SyntaxKind::AlgorithmSection => {
+                        SyntaxKind::EquationSection | SyntaxKind::AlgorithmSection => {
                             self.markers.push(Marker::Blank);
                         }
                         SyntaxKind::Primary => {
@@ -427,7 +445,8 @@ impl<'a> Formatter<'a> {
                             if first.typ == TokenKind::If {
                                 self.exit_group(p_start, p_end);
                             // Handle conditional part of the expression
-                            } else if [TokenKind::Then, TokenKind::Else].contains(&self.tokens.get_token(p_start.tok-1).unwrap().typ)
+                            } else if [TokenKind::Then, TokenKind::Else]
+                                .contains(&self.tokens.get_token(p_start.tok - 1).unwrap().typ)
                                 && *self.rules.last().unwrap() == SyntaxKind::Expression
                             {
                                 self.markers.push(Marker::Dedent);
