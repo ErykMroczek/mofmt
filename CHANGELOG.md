@@ -3,6 +3,18 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.3.6] - 2024-01-XX
+
+Bugfixes and performance improvements.
+
+### Changed
+
+- Improve the performance up to 50%
+
+### Fixed
+
+- Remove the false syntax error caused by two comments separated with a blank line
+
 ## [0.3.5] - 2023-12-12
 
 ### Fixed

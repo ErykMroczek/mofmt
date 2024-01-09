@@ -72,7 +72,10 @@ class Listener(ModelicaListener):  # type: ignore
             elif line_diff == 1:
                 self.collector.add_break()
             else:
-                if self.prev_token == ModelicaLexer.SEMICOLON:
+                if (
+                    self.prev_token == ModelicaLexer.SEMICOLON
+                    or line > self.prev_token_line
+                ):
                     self.collector.add_blank()
             self.collector.add_comment(comment.text)
             line = comment.line
@@ -194,7 +197,7 @@ class Listener(ModelicaListener):  # type: ignore
         Generic method called by Antlr listener every time it enters a
         grammar rule.
         """
-        if len(ctx.getText()) == 0:
+        if ctx.getChildCount() == 0:
             return
         rule = ctx.getRuleIndex()
         self.rule_stack.append(rule)
@@ -329,7 +332,7 @@ class Listener(ModelicaListener):  # type: ignore
         Generic method called by Antlr listener every time it exits a
         grammar rule.
         """
-        if len(ctx.getText()) == 0:
+        if ctx.getChildCount() == 0:
             return
         rule = self.rule_stack.pop()
         if rule == Modelica.RULE_description_string:
