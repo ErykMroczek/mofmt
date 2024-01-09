@@ -84,3 +84,14 @@ block Foo
 import Modelica.Units.SI;
   .Modelica.Blocks.Interfaces.BooleanInput b;
 end Foo;
+
+model TestComments
+
+  // Single-line comment
+
+  /*
+  Multi-line comment 1
+  Multi-line comment 2
+  */
+
+end TestComments;
