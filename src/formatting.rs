@@ -74,7 +74,7 @@ impl<'a> Formatter<'a> {
             } else if diff == 1 {
                 self.markers.push(Marker::Break);
             } else {
-                if self.prev_token == TokenKind::Semi {
+                if self.prev_token == TokenKind::Semi || line > self.prev_line {
                     self.markers.push(Marker::Blank);
                 }
             }
@@ -478,8 +478,8 @@ impl<'a> Formatter<'a> {
                 }
             }
         }
-    // Add one trailing newline
-    self.markers.push(Marker::Break);
+        // Add one trailing newline
+        self.markers.push(Marker::Break);
     }
 }
 

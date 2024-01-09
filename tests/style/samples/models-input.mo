@@ -27,6 +27,12 @@ protected
 /* It is too valuable to be public */
  Integer n_protected;
 public
+  // Here we have to comments
+
+  /*
+  And they are separated
+  with a single blank line
+  */
 .Modelica.Blocks.Interfaces.BooleanInput b
 annotation (Placement(
     transformation(
