@@ -3,7 +3,7 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
-## [0.3.6] - 2024-01-XX
+## [0.3.6] - 2024-01-09
 
 Bugfixes and performance improvements.
 
