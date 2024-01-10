@@ -270,7 +270,6 @@ impl<'a> Formatter<'a> {
             }
             TokenKind::Protected | TokenKind::Public => self.markers.push(Marker::Blank),
             TokenKind::External => {
-                self.markers.push(Marker::Indent);
                 self.markers.push(Marker::Blank);
             }
             TokenKind::Plus
@@ -292,6 +291,20 @@ impl<'a> Formatter<'a> {
             | TokenKind::Eq
             | TokenKind::Neq => {
                 self.wrap_expression(i);
+            }
+            TokenKind::LParen => {
+                if ![
+                    TokenKind::Ident,
+                    TokenKind::Pure,
+                    TokenKind::Der,
+                    TokenKind::Initial,
+                    TokenKind::RBracket,
+                ]
+                .contains(&self.prev_token)
+                    && !NO_SPACE_AFTER.contains(&self.prev_token)
+                {
+                    self.markers.push(Marker::Space);
+                }
             }
             _ => {
                 if !NO_SPACE_BEFORE.contains(&kind) && !NO_SPACE_AFTER.contains(&self.prev_token) {
@@ -354,7 +367,10 @@ impl<'a> Formatter<'a> {
                         SyntaxKind::AnnotationClause => {
                             self.markers.push(Marker::Indent);
                             // Handle class annotations
-                            if *parent == SyntaxKind::Composition {
+                            if *parent == SyntaxKind::Composition
+                                && ![TokenKind::External, TokenKind::String, TokenKind::RParen]
+                                    .contains(&self.prev_token)
+                            {
                                 self.markers.push(Marker::Blank);
                             } else {
                                 self.markers.push(Marker::Break);
@@ -390,9 +406,9 @@ impl<'a> Formatter<'a> {
                         SyntaxKind::FunctionCallArgs
                         | SyntaxKind::ClassOrInheritanceModification
                         | SyntaxKind::ClassModification
-                        | SyntaxKind::ArraySubscripts => {
+                        | SyntaxKind::ArraySubscripts
+                        | SyntaxKind::OutputExpressionList => {
                             self.enter_group(p.typ, first, last);
-                            self.markers.push(Marker::Ignore);
                         }
                         SyntaxKind::ExpressionList => {
                             self.break_or_space();
@@ -409,7 +425,7 @@ impl<'a> Formatter<'a> {
                             self.break_or_space();
                         }
                         SyntaxKind::Expression => {
-                            if *parent == SyntaxKind::ExpressionList {
+                            if [SyntaxKind::ExpressionList, SyntaxKind::OutputExpressionList].contains(parent) {
                                 self.break_or_space();
                             // Handle conditional expression
                             } else if first.typ == TokenKind::If {
@@ -456,7 +472,8 @@ impl<'a> Formatter<'a> {
                         | SyntaxKind::ClassOrInheritanceModification
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts
-                        | SyntaxKind::ExpressionList => self.exit_group(p_start, p_end),
+                        | SyntaxKind::ExpressionList
+                        | SyntaxKind::OutputExpressionList => self.exit_group(p_start, p_end),
                         SyntaxKind::Expression => {
                             // Handle conditional expression
                             if first.typ == TokenKind::If {
@@ -478,8 +495,6 @@ impl<'a> Formatter<'a> {
                 }
             }
         }
-        // Add one trailing newline
-        self.markers.push(Marker::Break);
     }
 }
 
