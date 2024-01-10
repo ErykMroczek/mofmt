@@ -316,7 +316,7 @@ impl<'a> Formatter<'a> {
         self.markers.push(Marker::Token(tok.idx));
 
         match kind {
-            TokenKind::Annotation => self.markers.push(Marker::Space),
+            //TokenKind::Annotation => self.markers.push(Marker::Space),
             TokenKind::Equation | TokenKind::Algorithm => {
                 self.markers.push(Marker::Break);
             }
@@ -425,7 +425,9 @@ impl<'a> Formatter<'a> {
                             self.break_or_space();
                         }
                         SyntaxKind::Expression => {
-                            if [SyntaxKind::ExpressionList, SyntaxKind::OutputExpressionList].contains(parent) {
+                            if [SyntaxKind::ExpressionList, SyntaxKind::OutputExpressionList]
+                                .contains(parent)
+                            {
                                 self.break_or_space();
                             // Handle conditional expression
                             } else if first.typ == TokenKind::If {
@@ -495,6 +497,8 @@ impl<'a> Formatter<'a> {
                 }
             }
         }
+        // Add one trailing newline
+        self.markers.push(Marker::Break);
     }
 }
 

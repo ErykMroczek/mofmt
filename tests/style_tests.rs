@@ -13,7 +13,13 @@ fn format_file(path: &str) -> String {
 
 #[test]
 fn models_formatting() {
-    let formatted = format_file("tests/style/samples/models-input.mo");
-    let expected = fs::read_to_string("tests/style/samples/models-output.mo").expect("error");
+    let formatted = format_file("tests/samples/models-input.mo");
+    let expected = fs::read_to_string("tests/samples/models-output.mo").expect("error");
+    assert_eq!(expected, formatted);
+}
+#[test]
+fn functions_formatting() {
+    let formatted = format_file("tests/samples/functions-input.mo");
+    let expected = fs::read_to_string("tests/samples/functions-output.mo").expect("error");
     assert_eq!(expected, formatted);
 }
