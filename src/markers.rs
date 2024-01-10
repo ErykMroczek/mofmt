@@ -28,6 +28,11 @@ impl MarkerCollector {
                 if self.markers.len() == 0 || *self.markers.last().unwrap() >= Marker::Space {
                     return;
                 }
+                if [Marker::Indent, Marker::Dedent].contains(self.markers.last().unwrap())
+                    && *self.markers.get(self.markers.len() - 2).unwrap() >= Marker::Blank
+                {
+                    return;
+                }
             }
             Marker::Blank => {
                 // Remove preceding break

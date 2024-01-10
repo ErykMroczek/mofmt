@@ -78,6 +78,13 @@ equation
 
   A = toString([2.12, -4.34; -2.56, -1.67]);
 
+  foo = bar(
+    x,
+    y,
+    baz(
+      a,
+      b));
+
   /* Wrapped equations */
 
   Q_flow = alpha * surfaceArea
@@ -158,7 +165,7 @@ equation
 
   points = {
     {-98, -60},
-     {
+    {
       -64,
       -60},
     {-64, -63.4667},
