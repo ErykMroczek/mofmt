@@ -52,9 +52,9 @@ impl<'a> Formatter<'a> {
             prev_token: TokenKind::EOF,
             prev_line: 1,
             brackets: 0,
-            groups: vec![false],
-            rules: vec![SyntaxKind::StoredDefinition],
-            wraps: vec![false],
+            groups: Vec::new(),
+            rules: Vec::new(),
+            wraps: Vec::new(),
         }
     }
 
@@ -62,11 +62,8 @@ impl<'a> Formatter<'a> {
     fn handle_comments(&mut self, comments: Vec<&Token>, current_line: usize) {
         let mut line = self.prev_line;
         let mut diff = comments[0].start.line - line;
-        let mut tail = Vec::new();
-        if diff == 0 {
-            // Handle inline comments
-            tail = self.markers.cache_tail();
-        }
+        // Handle inline comments
+        let tail = if diff == 0 { None } else { self.markers.cache_tail() };
         for comment in comments {
             diff = comment.start.line - line;
             if diff == 0 {
@@ -84,7 +81,7 @@ impl<'a> Formatter<'a> {
         diff = current_line - line;
         if self.prev_line == 1 {
             self.markers.push(Marker::Break);
-        } else if tail.len() > 0 {
+        } else if let Some(mut tail) = tail {
             self.markers.append(&mut tail);
         } else if diff == 1 {
             self.markers.push(Marker::Break);
@@ -95,26 +92,22 @@ impl<'a> Formatter<'a> {
 
     /// Insert line break or space
     fn break_or_space(&mut self) {
-        match self.groups.last() {
-            Some(b) => {
-                if *b {
-                    self.markers.push(Marker::Break);
-                } else {
-                    if !NO_SPACE_AFTER.contains(&self.prev_token) {
-                        self.markers.push(Marker::Space);
-                    }
-                }
-            }
-            None => {
+        if let Some(b) = self.groups.last() {
+            if *b {
+                self.markers.push(Marker::Break);
+            } else {
                 if !NO_SPACE_AFTER.contains(&self.prev_token) {
                     self.markers.push(Marker::Space);
                 }
+            }
+        } else {
+            if !NO_SPACE_AFTER.contains(&self.prev_token) {
+                self.markers.push(Marker::Space);
             }
         }
     }
 
     fn enter_group(&mut self, typ: SyntaxKind, first: &Token, last: &Token) {
-        // Mark the group as broken if group was multiline
         if first.start.line < last.end.line {
             // Handle conditional expression
             if first.typ == TokenKind::If {
@@ -130,20 +123,19 @@ impl<'a> Formatter<'a> {
                 }
             // Handle matrix row
             } else if typ == SyntaxKind::ExpressionList {
-                if !*self.groups.last().unwrap() {
+                if !*self.groups.last().unwrap_or_else(|| &false) {
                     self.markers.push(Marker::Indent);
                 }
             } else {
                 self.markers.push(Marker::Indent);
             }
-            self.groups.push(true);
-        } else {
-            self.groups.push(false);
         }
+        // Mark the group as broken if group was multiline
+        self.groups.push(first.start.line < last.end.line);
     }
 
-    fn exit_group(&mut self, enter: &Payload, exit: &Payload) {
-        let group_broken = self.groups.pop().unwrap();
+    fn exit_group(&mut self, enter: &Payload) {
+        let group_broken = self.groups.pop().unwrap_or_else(|| false);
         if group_broken {
             // Handle conditional expression
             if self.tokens.get_token(enter.tok).unwrap().typ == TokenKind::If {
@@ -158,8 +150,8 @@ impl<'a> Formatter<'a> {
                     self.markers.push(Marker::Dedent);
                 }
             // Handle matrix row
-            } else if exit.typ == SyntaxKind::ExpressionList {
-                if !*self.groups.last().unwrap() {
+            } else if enter.typ == SyntaxKind::ExpressionList {
+                if !*self.groups.last().unwrap_or_else(|| &false) {
                     self.markers.push(Marker::Dedent);
                 }
             } else {
@@ -189,12 +181,13 @@ impl<'a> Formatter<'a> {
             .contains(&self.prev_token)
             {
                 // Only indent if this is a first wrap
-                let wrapped = self.wraps.last_mut().unwrap();
-                if !*wrapped {
-                    self.markers.push(Marker::Indent);
-                    *wrapped = true;
+                if let Some(wrapped) = self.wraps.last_mut() {
+                    if !*wrapped {
+                        self.markers.push(Marker::Indent);
+                        *wrapped = true;
+                    }
+                    self.markers.push(Marker::Wrap);
                 }
-                self.markers.push(Marker::Wrap);
             }
         } else {
             if !NO_SPACE_AFTER.contains(&self.prev_token) {
@@ -206,7 +199,10 @@ impl<'a> Formatter<'a> {
     fn handle_token(&mut self, i: usize) {
         let tok = self.tokens.get_token(i).unwrap();
         let kind = tok.typ;
-        let parent = *self.rules.last().unwrap();
+        let parent = *self
+            .rules
+            .last()
+            .unwrap_or_else(|| &SyntaxKind::StoredDefinition);
         let comments = preceding_comments(self.tokens, tok.idx);
         if self.prev_token == TokenKind::Semi {
             // Handle matrix rows
@@ -247,9 +243,7 @@ impl<'a> Formatter<'a> {
             }
             TokenKind::Elif | TokenKind::Else | TokenKind::Elwhen => {
                 // Handle conditional expression context
-                if parent == SyntaxKind::Expression {
-                    self.break_or_space();
-                } else if [
+                if [
                     SyntaxKind::IfEquation,
                     SyntaxKind::IfStatement,
                     SyntaxKind::WhenEquation,
@@ -258,6 +252,8 @@ impl<'a> Formatter<'a> {
                 .contains(&parent)
                 {
                     self.markers.push(Marker::Break);
+                } else {
+                    self.break_or_space();
                 }
             }
             TokenKind::Dot => {
@@ -268,9 +264,8 @@ impl<'a> Formatter<'a> {
                     self.markers.push(Marker::Space);
                 }
             }
-            TokenKind::Protected | TokenKind::Public => self.markers.push(Marker::Blank),
-            TokenKind::External => {
-                self.markers.push(Marker::Blank);
+            TokenKind::Protected | TokenKind::Public | TokenKind::External => {
+                self.markers.push(Marker::Blank)
             }
             TokenKind::Plus
             | TokenKind::DotPlus
@@ -347,8 +342,8 @@ impl<'a> Formatter<'a> {
     }
 
     fn walk_events(&mut self) {
-        for idx in 0..self.events.len() {
-            match &self.events[idx] {
+        for event in self.events {
+            match event {
                 SyntaxEvent::Advance(t) => match t {
                     Terminal::Token(i) => self.handle_token(*i),
                     _ => (),
@@ -356,7 +351,10 @@ impl<'a> Formatter<'a> {
                 SyntaxEvent::Enter(p) => {
                     let first = self.tokens.get_token(p.tok).unwrap();
                     let last = self.events[p.pair].get_token(self.tokens);
-                    let parent = self.rules.last().unwrap();
+                    let parent = self
+                        .rules
+                        .last()
+                        .unwrap_or_else(|| &SyntaxKind::StoredDefinition);
                     match p.typ {
                         SyntaxKind::DescriptionString
                         | SyntaxKind::ConstrainingClause
@@ -447,16 +445,17 @@ impl<'a> Formatter<'a> {
                     self.rules.push(p.typ);
                 }
                 SyntaxEvent::Exit(p_end) => {
-                    let typ = self.rules.pop().unwrap();
+                    let typ = self
+                        .rules
+                        .pop()
+                        .unwrap_or_else(|| SyntaxKind::StoredDefinition);
                     let p_start;
                     match &self.events[p_end.pair] {
                         SyntaxEvent::Enter(enter) => p_start = enter,
                         _ => unreachable!(),
                     }
                     let first = self.tokens.get_token(p_start.tok).unwrap();
-                    let last = self.tokens.get_token(p_end.tok).unwrap();
                     match typ {
-                        // TODO: external element
                         SyntaxKind::DescriptionString
                         | SyntaxKind::AnnotationClause
                         | SyntaxKind::ConstrainingClause
@@ -467,7 +466,7 @@ impl<'a> Formatter<'a> {
                         SyntaxKind::Primary => {
                             // Handle matrix or array
                             if [TokenKind::LBracket, TokenKind::LCurly].contains(&first.typ) {
-                                self.exit_group(p_start, p_end);
+                                self.exit_group(p_start);
                             }
                         }
                         SyntaxKind::FunctionCallArgs
@@ -475,21 +474,26 @@ impl<'a> Formatter<'a> {
                         | SyntaxKind::ClassModification
                         | SyntaxKind::ArraySubscripts
                         | SyntaxKind::ExpressionList
-                        | SyntaxKind::OutputExpressionList => self.exit_group(p_start, p_end),
+                        | SyntaxKind::OutputExpressionList => self.exit_group(p_start),
                         SyntaxKind::Expression => {
                             // Handle conditional expression
                             if first.typ == TokenKind::If {
-                                self.exit_group(p_start, p_end);
+                                self.exit_group(p_start);
                             // Handle conditional part of the expression
                             } else if [TokenKind::Then, TokenKind::Else]
                                 .contains(&self.tokens.get_token(p_start.tok - 1).unwrap().typ)
-                                && *self.rules.last().unwrap() == SyntaxKind::Expression
+                                && *self
+                                    .rules
+                                    .last()
+                                    .unwrap_or_else(|| &SyntaxKind::StoredDefinition)
+                                    == SyntaxKind::Expression
                             {
                                 self.markers.push(Marker::Dedent);
                             }
-                            let wrapped = self.wraps.pop().unwrap();
-                            if wrapped {
-                                self.markers.push(Marker::Dedent);
+                            if let Some(wrapped) = self.wraps.pop() {
+                                if wrapped {
+                                    self.markers.push(Marker::Dedent);
+                                }
                             }
                         }
                         _ => (),

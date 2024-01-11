@@ -51,22 +51,22 @@ impl MarkerCollector {
         self.markers.push(m);
     }
 
-    pub fn cache_tail(&mut self) -> Vec<Marker> {
+    pub fn cache_tail(&mut self) -> Option<Vec<Marker>> {
         let mut tail = Vec::new();
-        loop {
-            let last = self.markers.last();
-            if last.is_none() {
+        while let Some(last) = self.markers.last() {
+            if *last < Marker::Indent {
                 break;
             }
-            if *last.unwrap() < Marker::Indent {
-                break;
-            }
-            if *last.unwrap() != Marker::Space {
+            if *last != Marker::Space {
                 tail.push(self.markers.pop().unwrap());
             }
         }
-        tail.reverse();
-        tail
+        if tail.len() == 0 {
+            None
+        } else {
+            tail.reverse();
+            Some(tail)
+        }
     }
 
     pub fn append(&mut self, markers: &mut Vec<Marker>) {

@@ -8,7 +8,7 @@ fn format_file(path: &str) -> String {
     let tokens = moparse::lex(&input);
     let events = moparse::parse(&tokens, moparse::SyntaxKind::StoredDefinition);
     let markers = mofmt::format(&tokens, &events);
-    mofmt::pretty_print(&tokens, &markers)
+    mofmt::pretty_print(&tokens, markers)
 }
 
 #[test]

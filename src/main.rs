@@ -26,7 +26,7 @@ fn format_files(args: &[String]) {
         let tokens = lex(&contents);
         let events = parse(&tokens, SyntaxKind::StoredDefinition);
         let markers = format(&tokens, &events);
-        let output = pretty_print(&tokens, &markers);
+        let output = pretty_print(&tokens, markers);
         write_file(p, output);
     });
 }
