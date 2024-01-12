@@ -1,7 +1,7 @@
 use mofmt::{format, pretty_print};
 use moparse::{lex, parse, SyntaxKind};
-use std::{env, fs};
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -24,8 +24,30 @@ fn format_files(args: &[String]) {
     files.iter().for_each(|p| {
         let contents = read_file(p);
         let tokens = lex(&contents);
+        if tokens.error_count() > 0 {
+            let messages: Vec<String> = tokens
+                .errors()
+                .map(|e| {
+                    format!(
+                        "{}:{}:{}: {}",
+                        p.display(),
+                        e.start.line,
+                        e.start.col,
+                        e.text
+                    )
+                })
+                .collect();
+            panic!("Lexical errors detected:\n{}", messages.join("\n"));
+        }
         let events = parse(&tokens, SyntaxKind::StoredDefinition);
-        let markers = format(&tokens, &events);
+        let (markers, errors) = format(&tokens, &events);
+        if errors.len() > 0 {
+            let messages: Vec<String> = errors
+                .iter()
+                .map(|e| format!("{}:{}", p.display(), e))
+                .collect();
+            panic!("Syntax errors detected:\n{}", messages.join("\n"));
+        }
         let output = pretty_print(&tokens, markers);
         write_file(p, output);
     });

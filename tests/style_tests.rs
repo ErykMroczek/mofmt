@@ -7,7 +7,7 @@ fn format_file(path: &str) -> String {
     let input = fs::read_to_string(path).expect("error");
     let tokens = moparse::lex(&input);
     let events = moparse::parse(&tokens, moparse::SyntaxKind::StoredDefinition);
-    let markers = mofmt::format(&tokens, &events);
+    let (markers, _) = mofmt::format(&tokens, &events);
     mofmt::pretty_print(&tokens, markers)
 }
 

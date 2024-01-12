@@ -1,16 +1,17 @@
 use crate::markers::{Marker, MarkerCollector};
 use moparse::*;
 
-pub fn format(tokens: &TokenCollection, events: &Vec<SyntaxEvent>) -> Vec<Marker> {
+pub fn format(tokens: &TokenCollection, events: &Vec<SyntaxEvent>) -> (Vec<Marker>, Vec<String>) {
     let mut fmt = Formatter::new(tokens, events);
     fmt.walk_events();
-    fmt.markers.markers
+    (fmt.markers.markers, fmt.errors)
 }
 
 struct Formatter<'a> {
     tokens: &'a TokenCollection,
     events: &'a Vec<SyntaxEvent>,
     markers: MarkerCollector,
+    errors: Vec<String>,
     prev_token: TokenKind,
     prev_line: usize,
     brackets: usize,
@@ -49,6 +50,7 @@ impl<'a> Formatter<'a> {
             tokens,
             events,
             markers: MarkerCollector::new(),
+            errors: Vec::new(),
             prev_token: TokenKind::EOF,
             prev_line: 1,
             brackets: 0,
@@ -350,7 +352,10 @@ impl<'a> Formatter<'a> {
             match event {
                 SyntaxEvent::Advance(t) => match t {
                     Terminal::Token(i) => self.handle_token(*i),
-                    _ => (),
+                    Terminal::Error { msg, tok } => {
+                        let bad_tok = self.tokens.get_token(*tok).unwrap();
+                        self.errors.push(format!("{}:{}: {}", bad_tok.start.line, bad_tok.start.col, msg));
+                    },
                 },
                 SyntaxEvent::Enter(p) => {
                     let first = self.tokens.get_token(p.tok).unwrap();
