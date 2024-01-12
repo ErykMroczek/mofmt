@@ -63,7 +63,11 @@ impl<'a> Formatter<'a> {
         let mut line = self.prev_line;
         let mut diff = comments[0].start.line - line;
         // Handle inline comments
-        let tail = if diff == 0 { None } else { self.markers.cache_tail() };
+        let tail = if diff == 0 {
+            None
+        } else {
+            self.markers.cache_tail()
+        };
         for comment in comments {
             diff = comment.start.line - line;
             if diff == 0 {
@@ -423,8 +427,8 @@ impl<'a> Formatter<'a> {
                             self.break_or_space();
                         }
                         SyntaxKind::Expression => {
-                            if [SyntaxKind::ExpressionList, SyntaxKind::OutputExpressionList]
-                                .contains(parent)
+                            if *parent == SyntaxKind::ExpressionList
+                                || *parent == SyntaxKind::OutputExpressionList
                             {
                                 self.break_or_space();
                             // Handle conditional expression

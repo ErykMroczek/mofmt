@@ -16,11 +16,16 @@ algorithm
   (F, G, (H,
   J)) := foo.bar.baz(c);
 
-foo:={
-    {bar[i] + j*(baz[i] - ber[i])/n for i in 1:n} for j in 1:m};
+foo:={{bar[i] + j*
+(baz[i] - ber[i])/n for i in 1:n} for j in 1:m};
 bar:={{foo[i] + j*(baz[i] - foo[i])/n
 for i in 1:n}
  for j in 1:m};
+
+baz := aaa
++ bbb * (ccc + ddd-
+ eee)
+ - fff * ggg;
 
 external"C" foo[1].bar [2] = baz(x,y,z)
 annotation (Library="doesn't matter");
@@ -51,4 +56,12 @@ u3 > 0
 Modelica.Utilities.Streams.print(
     "foo" + "bar"
         + "baz");
+
+    for i in 1:5 loop
+      foo[i] := bar[i] ^ 2
+        * (4 - bar[i] / (6 * bar[i] + 6)
+        + sum({(4 - 2 * bar[i] / ((bar[i] + 1) * (k + 3))
+          * ((bar[i] - 1) / bar[i]) ^ k) for k in 1:10}));
+    end for;
+
 end Bar;
