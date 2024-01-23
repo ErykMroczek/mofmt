@@ -5,10 +5,9 @@ pub enum Marker {
     Indent,
     Dedent,
     Space,
-    Ignore,
     Blank,
     Break,
-    Wrap,
+    Sequence(Vec<Marker>),
 }
 
 pub struct MarkerCollector {

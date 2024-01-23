@@ -24,7 +24,6 @@ impl Printer {
         const INDENT: &str = "  ";
         match m {
             Marker::Space => Some(String::from(" ")),
-            Marker::Ignore => None,
             Marker::Indent => {
                 self.indent += 1;
                 None
