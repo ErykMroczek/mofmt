@@ -4,6 +4,7 @@ pub fn build_tree(parsed: ParsedModelica) -> Tree {
     let mut stack = Vec::new();
     let mut tokens = parsed.tokens.into_iter();
     let mut events = parsed.events;
+    let mut comments = parsed.comments.into_iter().peekable();
 
     assert!(matches!(events.pop(), Some(SyntaxEvent::Exit)));
 
@@ -18,6 +19,14 @@ pub fn build_tree(parsed: ParsedModelica) -> Tree {
             }
             SyntaxEvent::Advance => {
                 let token = tokens.next().unwrap();
+                while let Some(comment) = comments.peek() {
+                    if comment.idx < token.idx {
+                        stack
+                            .last_mut()
+                            .unwrap()
+                            .push(Child::Token(comments.next().unwrap()));
+                    }
+                }
                 stack.last_mut().unwrap().push(Child::Token(token));
             }
         }
@@ -67,6 +76,12 @@ impl Tree {
             Child::Token(token) => token,
             Child::Tree(tree) => tree.end(),
         }
+    }
+
+    pub fn is_multiline(&self) -> bool {
+        let first = self.start();
+        let last = self.end();
+        first.start.line > last.end.line
     }
 }
 
