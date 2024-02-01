@@ -1,8 +1,6 @@
-use moparse::Token;
-
 #[derive(PartialEq)]
 pub enum Marker {
-    Token(Token),
+    Token(String),
     Indent,
     Dedent,
     Space,
