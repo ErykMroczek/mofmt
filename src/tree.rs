@@ -23,6 +23,9 @@ pub fn build_tree(parsed: ParsedModelica) -> Tree {
         }
     }
 
+    assert!(matches!(tokens.next(), None));
+    assert!(stack.len() == 1);
+
     stack.pop().unwrap()
 }
 
