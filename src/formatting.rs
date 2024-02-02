@@ -1,4 +1,4 @@
-use std::{iter::Peekable, vec::IntoIter};
+use std::{collections::hash_map::RandomState, iter::Peekable, vec::IntoIter};
 
 use crate::{markers::Marker, tree::Child, tree::Tree};
 use moparse::*;
@@ -6,6 +6,20 @@ use moparse::*;
 pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     let mut f = Formatter::new(comments);
     match tree.kind {
+        SyntaxKind::EquationSection => equation_section(&mut f, tree),
+        SyntaxKind::AlgorithmSection => algorithm_section(&mut f, tree),
+        SyntaxKind::Equation => equation(&mut f, tree),
+        SyntaxKind::Statement => statement(&mut f, tree),
+        SyntaxKind::IfEquation => if_equation(&mut f, tree),
+        SyntaxKind::IfStatement => if_statement(&mut f, tree),
+        SyntaxKind::ForEquation => for_equation(&mut f, tree),
+        SyntaxKind::ForStatement => for_statement(&mut f, tree),
+        SyntaxKind::ForIndices => for_indices(&mut f, tree),
+        SyntaxKind::ForIndex => for_index(&mut f, tree),
+        SyntaxKind::WhileStatement => while_statement(&mut f, tree),
+        SyntaxKind::WhenEquation => when_equation(&mut f, tree),
+        SyntaxKind::WhenStatement => when_statement(&mut f, tree),
+        SyntaxKind::ConnectEquation => connect_equation(&mut f, tree),
         SyntaxKind::Expression => expression(&mut f, tree),
         _ => (),
     }
@@ -38,25 +52,34 @@ impl Formatter {
     }
 
     fn handle_break(&mut self, tok: &Token, allow_blanks: bool) {
+        let section_opening =
+            [ModelicaToken::Equation, ModelicaToken::Algorithm].contains(&self.prev_tok);
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
             self.markers.push(Marker::Space);
             self.markers.push(Marker::Token(comment.text));
         }
+        if section_opening {
+            self.markers.push(Marker::Blank);
+        }
         let mut line = self.prev_line;
         for comment in comments {
-            if comment.start.line - line > 1 {
-                self.markers.push(Marker::Blank);
-            } else {
-                self.markers.push(Marker::Break);
+            if !section_opening && line != self.prev_line {
+                if comment.start.line - line > 1 {
+                    self.markers.push(Marker::Blank);
+                } else {
+                    self.markers.push(Marker::Break);
+                }
             }
             self.markers.push(Marker::Token(comment.text));
             line = comment.end.line;
         }
-        if tok.start.line - line > 1 && allow_blanks {
-            self.markers.push(Marker::Blank);
-        } else {
-            self.markers.push(Marker::Break);
+        if !(section_opening && line == self.prev_line) {
+            if tok.start.line - line > 1 && allow_blanks {
+                self.markers.push(Marker::Blank);
+            } else {
+                self.markers.push(Marker::Break);
+            }
         }
     }
 
@@ -86,7 +109,391 @@ impl Formatter {
 
 fn class_modification(f: &mut Formatter, tree: Tree) {}
 
-fn for_indices(f: &mut Formatter, tree: Tree) {}
+fn equation_section(f: &mut Formatter, tree: Tree) {
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => {
+                f.handle_break(tree.start(), true);
+                equation(f, tree);
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::Initial {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn algorithm_section(f: &mut Formatter, tree: Tree) {
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => {
+                f.handle_break(tree.start(), true);
+                statement(f, tree);
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::Initial {
+                    f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::Algorithm {
+                    f.markers.push(Marker::Blank);
+                }
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn equation(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::SimpleExpression => simple_expression(f, tree),
+                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::IfEquation => if_equation(f, tree),
+                SyntaxKind::ForEquation => for_equation(f, tree),
+                SyntaxKind::ConnectEquation => connect_equation(f, tree),
+                SyntaxKind::WhenEquation => when_equation(f, tree),
+                SyntaxKind::ComponentReference => component_reference(f, tree),
+                SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn statement(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ComponentReference => component_reference(f, tree),
+                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
+                SyntaxKind::OutputExpressionList => {
+                    let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
+                    if is_multiline {
+                        f.markers.push(Marker::Indent);
+                        f.handle_break(tree.start(), false);
+                    }
+                    output_expression_list(f, tree, is_multiline);
+                    if is_multiline {
+                        f.markers.push(Marker::Dedent);
+                    }
+                }
+                SyntaxKind::IfStatement => if_statement(f, tree),
+                SyntaxKind::ForStatement => for_statement(f, tree),
+                SyntaxKind::WhileStatement => while_statement(f, tree),
+                SyntaxKind::WhenStatement => when_statement(f, tree),
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Assign {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Assign {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn if_equation(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.markers.push(Marker::Space);
+                    expression(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Equation => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    equation(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::If && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if [
+                    ModelicaToken::ElseIf,
+                    ModelicaToken::Else,
+                    ModelicaToken::End,
+                ]
+                .contains(&tok.kind)
+                {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn if_statement(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.markers.push(Marker::Space);
+                    expression(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Statement => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    statement(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::If && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if [
+                    ModelicaToken::ElseIf,
+                    ModelicaToken::Else,
+                    ModelicaToken::End,
+                ]
+                .contains(&tok.kind)
+                {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn for_equation(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ForIndices => {
+                    f.markers.push(Marker::Space);
+                    for_indices(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Equation => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    equation(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if tok.kind == ModelicaToken::End {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn for_statement(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ForIndices => {
+                    f.markers.push(Marker::Space);
+                    for_indices(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Statement => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    statement(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if tok.kind == ModelicaToken::End {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn for_indices(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => for_index(f, tree),
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn for_index(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => expression(f, tree),
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::In {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::In {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn while_statement(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.markers.push(Marker::Space);
+                    expression(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Statement => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    statement(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::While && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if tok.kind == ModelicaToken::End {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn when_equation(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.markers.push(Marker::Space);
+                    expression(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Equation => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    equation(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn when_statement(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.markers.push(Marker::Space);
+                    expression(f, tree);
+                    f.markers.push(Marker::Space);
+                }
+                SyntaxKind::Statement => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    statement(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
+                    f.markers.push(Marker::Space);
+                } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
+                    f.handle_break(&tok, false);
+                }
+                f.handle_token(tok);
+            }
+        }
+    }
+}
+
+fn connect_equation(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for (idx, child) in tree.children.into_iter().enumerate() {
+        match child {
+            Child::Tree(tree) => {
+                if idx == 2 {
+                    if is_multiline {
+                        f.handle_break(tree.start(), false);
+                    }
+                } else {
+                    f.break_or_space(is_multiline, tree.start());
+                }
+                component_reference(f, tree);
+            }
+            Child::Token(tok) => f.handle_token(tok),
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
 
 fn expression(f: &mut Formatter, tree: Tree) {
     let is_multiline = tree.is_multiline();
@@ -603,8 +1010,11 @@ fn output_expression_list(f: &mut Formatter, tree: Tree, is_multiline: bool) {
         match child {
             Child::Tree(t) => expression(f, t),
             Child::Token(tok) => {
+                if f.prev_tok == ModelicaToken::Comma {
+                    f.break_or_space(is_multiline, &tok);
+                }
                 f.handle_token(tok);
-                if let Child::Tree(next_tree) = children.peek().unwrap() {
+                if let Some(Child::Tree(next_tree)) = children.peek() {
                     f.break_or_space(is_multiline, next_tree.start());
                 }
             }
