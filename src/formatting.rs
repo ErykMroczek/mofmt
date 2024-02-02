@@ -71,7 +71,250 @@ fn class_modification(f: &mut Formatter, tree: Tree) {}
 
 fn for_indices(f: &mut Formatter, tree: Tree) {}
 
-fn expression(f: &mut Formatter, tree: Tree) {}
+fn expression(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    let mut conditional = false;
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Expression => {
+                    f.break_or_space(is_multiline, tree.start());
+                    expression(f, tree);
+                    if conditional {
+                        f.markers.push(Marker::Dedent);
+                        if let Some(next_child) = children.peek() {
+                            if let Child::Token(next_tok) = next_child {
+                                f.break_or_space(is_multiline, next_tok);
+                            }
+                        }
+                    }
+                    conditional = false;
+                }
+                SyntaxKind::SimpleExpression => simple_expression(f, tree),
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::Then || kind == ModelicaToken::Else {
+                    conditional = true;
+                    f.markers.push(Marker::Indent);
+                } else {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn simple_expression(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => logical_expression(f, tree),
+            Child::Token(tok) => {
+                f.break_or_space(is_multiline, &tok);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn logical_expression(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => logical_term(f, tree),
+            Child::Token(tok) => {
+                f.break_or_space(is_multiline, &tok);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn logical_term(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => logical_factor(f, tree),
+            Child::Token(tok) => {
+                f.break_or_space(is_multiline, &tok);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn logical_factor(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => relation(f, tree),
+            Child::Token(tok) => {
+                f.markers.push(Marker::Space);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn relation(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            if tree.kind == SyntaxKind::RelationalOperator {
+                f.break_or_space(is_multiline, tree.start());
+                relational_operator(f, tree);
+                f.markers.push(Marker::Space);
+            } else {
+                arithmetic_expression(f, tree);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn relational_operator(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Token(tok) = child {
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn arithmetic_expression(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for (idx, child) in tree.children.into_iter().enumerate() {
+        if let Child::Tree(tree) = child {
+            if tree.kind == SyntaxKind::AddOperator {
+                if idx > 0 {
+                    f.break_or_space(is_multiline, tree.start());
+                }
+                add_operator(f, tree);
+                if idx > 0 {
+                    f.markers.push(Marker::Space);
+                }
+            } else {
+                term(f, tree);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn add_operator(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Token(tok) = child {
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn term(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            if tree.kind == SyntaxKind::MulOperator {
+                f.break_or_space(is_multiline, tree.start());
+                mul_operator(f, tree);
+                f.markers.push(Marker::Space);
+            } else {
+                factor(f, tree);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn mul_operator(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Token(tok) = child {
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn factor(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => primary(f, tree),
+            Child::Token(tok) => {
+                f.break_or_space(is_multiline, &tok);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn primary(f: &mut Formatter, tree: Tree) {
+    let is_multiline = tree.is_multiline();
+    let children_count = tree.children.len();
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Token(tok) => match tok.kind {
+                ModelicaToken::UInt
+                | ModelicaToken::UReal
+                | ModelicaToken::String
+                | ModelicaToken::Bool
+                | ModelicaToken::Der
+                | ModelicaToken::Initial
+                | ModelicaToken::Pure
+                | ModelicaToken::End => f.handle_token(tok),
+                ModelicaToken::Semicolon => {
+                    f.handle_token(tok);
+                    if let Child::Tree(next_tree) = children.peek().unwrap() {
+                        f.break_or_space(is_multiline, next_tree.start());
+                    }
+                }
+                // Arrays etc.
+                ModelicaToken::LCurly | ModelicaToken::LBracket | ModelicaToken::LParen => {
+                    f.handle_token(tok);
+                    f.markers.push(Marker::Indent);
+                    if is_multiline {
+                        if let Child::Tree(next_tree) = children.peek().unwrap() {
+                            f.handle_break(next_tree.start(), false);
+                        }
+                    }
+                }
+                ModelicaToken::RCurly | ModelicaToken::RBracket | ModelicaToken::RParen => {
+                    f.markers.push(Marker::Dedent);
+                    f.handle_token(tok);
+                }
+                _ => unreachable!(),
+            },
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ComponentReference => component_reference(f, tree),
+                SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
+                SyntaxKind::ArraySubscripts => array_subscripts(f, tree),
+                SyntaxKind::ArrayArguments => array_arguments(f, tree, is_multiline),
+                SyntaxKind::ExpressionList => {
+                    expression_list(f, tree, is_multiline && children_count == 3)
+                }
+                SyntaxKind::OutputExpressionList => output_expression_list(f, tree, is_multiline),
+                _ => unreachable!(),
+            },
+        }
+    }
+}
 
 fn type_specifier(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
@@ -287,7 +530,7 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
             Child::Token(tok) => {
                 let kind = tok.kind;
                 f.handle_token(tok);
-                if kind == ModelicaToken::LParen {
+                if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
                         f.handle_break(next_tree.start(), false);
                     }
