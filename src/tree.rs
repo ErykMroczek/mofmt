@@ -1,10 +1,9 @@
-use moparse::{ParsedModelica, SyntaxEvent, SyntaxKind, Token};
+use moparse::{SyntaxEvent, SyntaxKind, Token};
 
-pub fn build_tree(parsed: ParsedModelica) -> Tree {
+pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
     let mut stack = Vec::new();
-    let mut tokens = parsed.tokens.into_iter();
-    let mut events = parsed.events;
-    let mut comments = parsed.comments.into_iter().peekable();
+    let mut tokens = tokens.into_iter();
+    let mut events = events;
 
     assert!(matches!(events.pop(), Some(SyntaxEvent::Exit)));
 
@@ -19,14 +18,6 @@ pub fn build_tree(parsed: ParsedModelica) -> Tree {
             }
             SyntaxEvent::Advance => {
                 let token = tokens.next().unwrap();
-                while let Some(comment) = comments.peek() {
-                    if comment.idx < token.idx {
-                        stack
-                            .last_mut()
-                            .unwrap()
-                            .push(Child::Token(comments.next().unwrap()));
-                    }
-                }
                 stack.last_mut().unwrap().push(Child::Token(token));
             }
         }
@@ -93,7 +84,7 @@ mod tests {
 
     fn tree(source: &str, start: SyntaxKind) -> Tree {
         let parsed = parse(source, start);
-        build_tree(parsed)
+        build_tree(parsed.tokens, parsed.events)
     }
 
     #[test]
