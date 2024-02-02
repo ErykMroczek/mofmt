@@ -1,5 +1,5 @@
-use mofmt::{format, pretty_print};
-use moparse::{lex, parse, SyntaxKind};
+use mofmt::pretty_print;
+use moparse::{parse, SyntaxKind};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
@@ -23,32 +23,15 @@ fn format_files(args: &[String]) {
         .for_each(|mut v| files.append(&mut v));
     files.iter().for_each(|p| {
         let contents = read_file(p);
-        let tokens = lex(&contents);
-        if tokens.error_count() > 0 {
-            let messages: Vec<String> = tokens
-                .errors()
-                .map(|e| {
-                    format!(
-                        "{}:{}:{}: {}",
-                        p.display(),
-                        e.start.line,
-                        e.start.col,
-                        e.text
-                    )
-                })
-                .collect();
-            panic!("Lexical errors detected:\n{}", messages.join("\n"));
-        }
-        let events = parse(&tokens, SyntaxKind::StoredDefinition);
-        let (markers, errors) = format(&tokens, &events);
-        if errors.len() > 0 {
-            let messages: Vec<String> = errors
+        let parsed = parse(&contents, SyntaxKind::Expression);
+        if parsed.errors.len() > 0 {
+            let messages: Vec<String> = parsed.errors
                 .iter()
                 .map(|e| format!("{}:{}", p.display(), e))
                 .collect();
             panic!("Syntax errors detected:\n{}", messages.join("\n"));
         }
-        let output = pretty_print(&tokens, markers);
+        let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
         write_file(p, output);
     });
 }

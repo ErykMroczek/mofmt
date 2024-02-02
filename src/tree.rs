@@ -72,7 +72,7 @@ impl Tree {
     pub fn is_multiline(&self) -> bool {
         let first = self.start();
         let last = self.end();
-        first.start.line > last.end.line
+        first.start.line < last.end.line
     }
 }
 

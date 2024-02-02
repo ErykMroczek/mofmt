@@ -1,12 +1,10 @@
-use moparse::TokenCollection;
-
 use crate::markers::Marker;
 
-pub fn pretty_print(tokens: &TokenCollection, markers: Vec<Marker>) -> String {
+pub fn print(markers: Vec<Marker>) -> String {
     let mut printer = Printer::new();
     let formatted: Vec<String> = markers
         .into_iter()
-        .filter_map(|m| printer.print_marker(m, tokens))
+        .filter_map(|m| printer.print_marker(m))
         .collect();
     formatted.join("")
 }
@@ -20,7 +18,7 @@ impl Printer {
         Printer { indent: 0 }
     }
 
-    fn print_marker(&mut self, m: Marker, tokens: &TokenCollection) -> Option<String> {
+    fn print_marker(&mut self, m: Marker) -> Option<String> {
         const INDENT: &str = "  ";
         match m {
             Marker::Space => Some(String::from(" ")),
@@ -32,7 +30,7 @@ impl Printer {
                 self.indent -= 1;
                 None
             }
-            Marker::Token(i) | Marker::Comment(i) => Some(tokens.get_item(i).unwrap().text.clone()),
+            Marker::Token(txt) => Some(txt),
             _ => {
                 let mut out = String::from("\n");
                 if m == Marker::Blank {
