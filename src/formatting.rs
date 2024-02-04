@@ -1,19 +1,36 @@
 use std::{iter::Peekable, vec::IntoIter};
 
-use crate::{
-    markers::Marker,
-    tree::Tree,
-    tree::Child,
-};
+use crate::{markers::Marker, tree::Child, tree::Tree};
 use moparse::*;
 
 pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     let mut f = Formatter::new(comments);
     match tree.kind {
+        SyntaxKind::StoredDefinition => stored_definition(&mut f, tree),
+        SyntaxKind::ClassDefinition => class_definition(&mut f, tree),
+        SyntaxKind::ClassPrefixes => class_prefixes(&mut f, tree),
+        SyntaxKind::ClassSpecifier => class_specifier(&mut f, tree),
+        SyntaxKind::LongClassSpecifier => long_class_specifier(&mut f, tree),
+        SyntaxKind::ShortClassSpecifier => short_class_specifier(&mut f, tree),
+        SyntaxKind::DerClassSpecifier => der_class_specifier(&mut f, tree),
+        SyntaxKind::BasePrefix => base_prefix(&mut f, tree),
+        SyntaxKind::EnumList => enum_list(&mut f, tree, false),
+        SyntaxKind::EnumerationLiteral => enumeration_literal(&mut f, tree),
+        SyntaxKind::Composition => composition(&mut f, tree),
+        SyntaxKind::LanguageSpecification => language_specification(&mut f, tree),
+        SyntaxKind::ExternalFunctionCall => external_function_call(&mut f, tree),
+        SyntaxKind::ElementList => element_list(&mut f, tree),
+        SyntaxKind::Element => element(&mut f, tree),
+        SyntaxKind::ImportClause => import_clause(&mut f, tree),
+        SyntaxKind::ImportList => import_list(&mut f, tree, false),
         SyntaxKind::ExtendsClause => extends_clause(&mut f, tree),
         SyntaxKind::ConstrainingClause => constraining_clause(&mut f, tree),
-        SyntaxKind::ClassOrInheritanceModification => class_or_inheritance_modification(&mut f, tree),
-        SyntaxKind::ArgumentOrInheritanceModificationList => argument_or_inheritance_modification_list(&mut f, tree, false),
+        SyntaxKind::ClassOrInheritanceModification => {
+            class_or_inheritance_modification(&mut f, tree)
+        }
+        SyntaxKind::ArgumentOrInheritanceModificationList => {
+            argument_or_inheritance_modification_list(&mut f, tree, false)
+        }
         SyntaxKind::InheritanceModification => inheritance_modification(&mut f, tree),
         SyntaxKind::ComponentClause => component_clause(&mut f, tree),
         SyntaxKind::TypePrefix => type_prefix(&mut f, tree),
@@ -81,14 +98,22 @@ impl Formatter {
     }
 
     fn handle_break(&mut self, tok: &Token, allow_blanks: bool) {
-        let section_opening =
-            [ModelicaToken::Equation, ModelicaToken::Algorithm].contains(&self.prev_tok);
+        let section_opening = [
+            ModelicaToken::Equation,
+            ModelicaToken::Algorithm,
+            ModelicaToken::Protected,
+            ModelicaToken::Public,
+        ]
+        .contains(&self.prev_tok);
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
             self.markers.push(Marker::Space);
             self.markers.push(Marker::Token(comment.text));
         }
-        if section_opening {
+        if section_opening
+            || (self.prev_tok == ModelicaToken::Semicolon && tok.kind == ModelicaToken::Annotation)
+            || (self.prev_tok == ModelicaToken::Semicolon && tok.kind == ModelicaToken::End)
+        {
             self.markers.push(Marker::Blank);
         }
         let mut line = self.prev_line;
@@ -136,16 +161,448 @@ impl Formatter {
     }
 }
 
-fn class_prefixes(f: &mut Formatter, tree: Tree) {}
+fn stored_definition(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Name => name(f, tree),
+                SyntaxKind::ClassDefinition => {
+                    f.handle_break(tree.start(), true);
+                    class_definition(f, tree);
+                }
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::Final || kind == ModelicaToken::Within {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
 
-fn short_class_specifier(f: &mut Formatter, tree: Tree) {}
+fn class_definition(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ClassSpecifier => {
+                    f.markers.push(Marker::Space);
+                    class_specifier(f, tree);
+                }
+                SyntaxKind::ClassPrefixes => class_prefixes(f, tree),
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn class_prefixes(f: &mut Formatter, tree: Tree) {
+    for (idx, child) in tree.children.into_iter().enumerate() {
+        if let Child::Token(tok) = child {
+            if idx > 0 {
+                f.markers.push(Marker::Space);
+            }
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn class_specifier(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::LongClassSpecifier => long_class_specifier(f, tree),
+                SyntaxKind::ShortClassSpecifier => short_class_specifier(f, tree),
+                SyntaxKind::DerClassSpecifier => der_class_specifier(f, tree),
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+fn long_class_specifier(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::DescriptionString => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                SyntaxKind::ClassModification => class_modification(f, tree),
+                SyntaxKind::Composition => {
+                    f.markers.push(Marker::Blank);
+                    composition(f, tree);
+                }
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::End {
+                    f.handle_break(&tok, true);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::End || kind == ModelicaToken::Extends {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn short_class_specifier(f: &mut Formatter, tree: Tree) {
+    let mut is_multiline = false;
+    let mut children = tree.children.iter();
+    while let Some(child) = children.next() {
+        if let Child::Token(token) = child {
+            if token.kind == ModelicaToken::LParen {
+                while let Some(child) = children.next() {
+                    if let Child::Token(tok) = child {
+                        if tok.kind == ModelicaToken::RParen {
+                            is_multiline = tok.start.line > token.start.line;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::BasePrefix => {
+                    let is_empty = tree.len() == 0;
+                    base_prefix(f, tree);
+                    if !is_empty {
+                        f.markers.push(Marker::Space);
+                    }
+                }
+                SyntaxKind::TypeSpecifier => type_specifier(f, tree),
+                SyntaxKind::ArraySubscripts => array_subscripts(f, tree),
+                SyntaxKind::ClassModification => class_modification(f, tree),
+                SyntaxKind::EnumList => {
+                    if is_multiline {
+                        f.markers.push(Marker::Indent);
+                        f.handle_break(tree.start(), false);
+                    }
+                    enum_list(f, tree, is_multiline);
+                    if is_multiline {
+                        f.markers.push(Marker::Dedent);
+                    }
+                }
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn der_class_specifier(f: &mut Formatter, tree: Tree) {
+    let mut is_multiline = false;
+    f.markers.push(Marker::Indent);
+    let mut children = tree.children.iter();
+    while let Some(child) = children.next() {
+        if let Child::Token(token) = child {
+            if token.kind == ModelicaToken::LParen {
+                while let Some(child) = children.next() {
+                    if let Child::Token(tok) = child {
+                        if tok.kind == ModelicaToken::RParen {
+                            is_multiline = tok.start.line > token.start.line;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::TypeSpecifier => {
+                    if is_multiline {
+                        f.handle_break(tree.start(), false);
+                    }
+                    type_specifier(f, tree);
+                }
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::Identifier && f.prev_tok == ModelicaToken::Comma {
+                    f.break_or_space(is_multiline, &tok)
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn base_prefix(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Token(tok) = child {
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn enum_list(f: &mut Formatter, tree: Tree, mut is_multiline: bool) {
+    if !is_multiline {
+        is_multiline = tree.is_multiline();
+    }
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(t) => enumeration_literal(f, t),
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                if let Child::Tree(next_tree) = children.peek().unwrap() {
+                    f.break_or_space(is_multiline, next_tree.start());
+                }
+            }
+        }
+    }
+}
+
+fn enumeration_literal(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => {
+                f.markers.push(Marker::Indent);
+                f.handle_break(tree.start(), false);
+                description(f, tree);
+                f.markers.push(Marker::Dedent);
+            }
+            Child::Token(tok) => f.handle_token(tok),
+        }
+    }
+}
+
+fn composition(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ElementList => element_list(f, tree),
+                SyntaxKind::EquationSection => equation_section(f, tree),
+                SyntaxKind::AlgorithmSection => algorithm_section(f, tree),
+                SyntaxKind::LanguageSpecification => language_specification(f, tree),
+                SyntaxKind::ExternalFunctionCall => external_function_call(f, tree),
+                SyntaxKind::AnnotationClause => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), f.prev_tok == ModelicaToken::Semicolon);
+                    annotation_clause(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::External {
+                    f.markers.push(Marker::Space);
+                }
+            }
+        }
+    }
+}
+
+fn language_specification(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Token(tok) = child {
+            f.handle_token(tok);
+        }
+    }
+}
+
+fn external_function_call(f: &mut Formatter, tree: Tree) {
+    let mut is_multiline = false;
+    f.markers.push(Marker::Indent);
+    let mut children = tree.children.iter();
+    while let Some(child) = children.next() {
+        if let Child::Token(token) = child {
+            if token.kind == ModelicaToken::LParen {
+                while let Some(child) = children.next() {
+                    if let Child::Token(tok) = child {
+                        if tok.kind == ModelicaToken::RParen {
+                            is_multiline = tok.start.line > token.start.line;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ComponentReference => component_reference(f, tree),
+                SyntaxKind::ExpressionList => expression_list(f, tree, is_multiline),
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::LParen && is_multiline {
+                    if let Child::Tree(next_tree) = children.peek().unwrap() {
+                        f.handle_break(next_tree.start(), false);
+                    }
+                }
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn element_list(f: &mut Formatter, tree: Tree) {
+    f.markers.push(Marker::Indent);
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => {
+                f.handle_break(tree.start(), true);
+                element(f, tree);
+            }
+            Child::Token(tok) => f.handle_token(tok),
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn element(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ImportClause => import_clause(f, tree),
+                SyntaxKind::ExtendsClause => extends_clause(f, tree),
+                SyntaxKind::ClassDefinition => class_definition(f, tree),
+                SyntaxKind::ComponentClause => component_clause(f, tree),
+                SyntaxKind::ConstrainingClause => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    constraining_clause(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn import_clause(f: &mut Formatter, tree: Tree) {
+    let mut is_multiline = false;
+    let mut children = tree.children.iter();
+    while let Some(child) = children.next() {
+        if let Child::Token(token) = child {
+            if token.kind == ModelicaToken::LCurly {
+                while let Some(child) = children.next() {
+                    if let Child::Token(tok) = child {
+                        if tok.kind == ModelicaToken::RCurly {
+                            is_multiline = tok.start.line > token.start.line;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::Name => name(f, tree),
+                SyntaxKind::ImportList => import_list(f, tree, is_multiline),
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                }
+                f.handle_token(tok);
+                if kind == ModelicaToken::Import || kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::LCurly && is_multiline {
+                    if let Child::Tree(next_tree) = children.peek().unwrap() {
+                        f.handle_break(next_tree.start(), false);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn import_list(f: &mut Formatter, tree: Tree, mut is_multiline: bool) {
+    if !is_multiline {
+        is_multiline = tree.is_multiline();
+    }
+    for (idx, child) in tree.children.into_iter().enumerate() {
+        if let Child::Token(tok) = child {
+            if tok.kind == ModelicaToken::Identifier && idx > 1 {
+                f.break_or_space(is_multiline, &tok);
+            }
+            f.handle_token(tok);
+        }
+    }
+}
 
 fn extends_clause(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::TypeSpecifier => type_specifier(f, tree),
-                SyntaxKind::ClassOrInheritanceModification => class_or_inheritance_modification(f, tree),
+                SyntaxKind::ClassOrInheritanceModification => {
+                    class_or_inheritance_modification(f, tree)
+                }
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
                     f.handle_break(tree.start(), false);
@@ -153,7 +610,7 @@ fn extends_clause(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Dedent);
                 }
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
@@ -169,7 +626,7 @@ fn constraining_clause(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::TypeSpecifier => type_specifier(f, tree),
                 SyntaxKind::ClassModification => class_modification(f, tree),
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
@@ -199,7 +656,11 @@ fn class_or_inheritance_modification(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Dedent);
 }
 
-fn argument_or_inheritance_modification_list(f: &mut Formatter, tree: Tree, mut is_multiline: bool) {
+fn argument_or_inheritance_modification_list(
+    f: &mut Formatter,
+    tree: Tree,
+    mut is_multiline: bool,
+) {
     if !is_multiline {
         is_multiline = tree.is_multiline();
     }
@@ -210,7 +671,7 @@ fn argument_or_inheritance_modification_list(f: &mut Formatter, tree: Tree, mut 
                 SyntaxKind::Argument => argument(f, tree),
                 SyntaxKind::InheritanceModification => inheritance_modification(f, tree),
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 f.handle_token(tok);
                 if let Child::Tree(next_tree) = children.peek().unwrap() {
@@ -566,8 +1027,6 @@ fn algorithm_section(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::Initial {
                     f.markers.push(Marker::Space);
-                } else if kind == ModelicaToken::Algorithm {
-                    f.markers.push(Marker::Blank);
                 }
             }
         }
