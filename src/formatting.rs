@@ -167,13 +167,18 @@ fn stored_definition(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Name => name(f, tree),
                 SyntaxKind::ClassDefinition => {
-                    f.handle_break(tree.start(), true);
+                    if f.prev_tok == ModelicaToken::Semicolon {
+                        f.handle_break(tree.start(), true);
+                    }
                     class_definition(f, tree);
                 }
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 let kind = tok.kind;
+                if kind == ModelicaToken::Final {
+                    f.handle_break(&tok, true);
+                }
                 f.handle_token(tok);
                 if kind == ModelicaToken::Final || kind == ModelicaToken::Within {
                     f.markers.push(Marker::Space);
@@ -193,7 +198,7 @@ fn class_definition(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::ClassPrefixes => class_prefixes(f, tree),
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
@@ -233,7 +238,7 @@ fn long_class_specifier(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::DescriptionString => {
                     f.markers.push(Marker::Indent);
                     f.handle_break(tree.start(), false);
-                    description(f, tree);
+                    description_string(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
                 SyntaxKind::ClassModification => class_modification(f, tree),
@@ -242,7 +247,7 @@ fn long_class_specifier(f: &mut Formatter, tree: Tree) {
                     composition(f, tree);
                 }
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if kind == ModelicaToken::End {
@@ -303,7 +308,7 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Dedent);
                 }
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Equal {
@@ -351,7 +356,7 @@ fn der_class_specifier(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Dedent);
                 }
                 _ => unreachable!(),
-            }
+            },
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Equal {

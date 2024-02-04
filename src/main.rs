@@ -23,7 +23,7 @@ fn format_files(args: &[String]) {
         .for_each(|mut v| files.append(&mut v));
     files.iter().for_each(|p| {
         let contents = read_file(p);
-        let parsed = parse(&contents, SyntaxKind::EquationSection);
+        let parsed = parse(&contents, SyntaxKind::StoredDefinition);
         if parsed.errors.len() > 0 {
             let messages: Vec<String> = parsed.errors
                 .iter()
