@@ -6,6 +6,16 @@ use moparse::*;
 pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     let mut f = Formatter::new(comments);
     match tree.kind {
+        SyntaxKind::Argument => argument(&mut f, tree),
+        SyntaxKind::ElementModificationOrReplaceable => {
+            element_modification_or_replaceable(&mut f, tree)
+        }
+        SyntaxKind::ElementModification => element_modification(&mut f, tree),
+        SyntaxKind::ElementRedeclaration => element_redeclaration(&mut f, tree),
+        SyntaxKind::ElementReplaceable => element_replaceable(&mut f, tree),
+        SyntaxKind::ComponentClause1 => component_clause1(&mut f, tree),
+        SyntaxKind::ComponentDeclaration1 => component_declaration1(&mut f, tree),
+        SyntaxKind::ShortClassDefinition => short_class_definition(&mut f, tree),
         SyntaxKind::EquationSection => equation_section(&mut f, tree),
         SyntaxKind::AlgorithmSection => algorithm_section(&mut f, tree),
         SyntaxKind::Equation => equation(&mut f, tree),
@@ -107,7 +117,218 @@ impl Formatter {
     }
 }
 
-fn class_modification(f: &mut Formatter, tree: Tree) {}
+fn class_prefixes(f: &mut Formatter, tree: Tree) {}
+
+fn short_class_specifier(f: &mut Formatter, tree: Tree) {}
+
+fn type_prefix(f: &mut Formatter, tree: Tree) {}
+
+fn declaration(f: &mut Formatter, tree: Tree) {}
+
+fn constraining_clause(f: &mut Formatter, tree: Tree) {}
+
+fn modification(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ClassModification => class_modification(f, tree),
+                SyntaxKind::ModificationExpression => modification_expression(f, tree),
+                _ => unreachable!(),
+            }
+            Child::Token(tok) => {
+                f.markers.push(Marker::Space);
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn modification_expression(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => expression(f, tree),
+            Child::Token(tok) => f.handle_token(tok),
+        }
+    }
+}
+
+fn class_modification(f: &mut Formatter, tree: Tree) {
+    f.markers.push(Marker::Indent);
+    let is_multiline = tree.is_multiline();
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(t) => argument_list(f, t, is_multiline),
+            Child::Token(tok) => {
+                let kind = tok.kind;
+                f.handle_token(tok);
+                if kind == ModelicaToken::LParen && is_multiline {
+                    if let Child::Tree(next_tree) = children.peek().unwrap() {
+                        f.handle_break(next_tree.start(), false);
+                    }
+                }
+            }
+        }
+    }
+    f.markers.push(Marker::Dedent);
+}
+
+fn argument_list(f: &mut Formatter, tree: Tree, is_multiline: bool) {
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
+        match child {
+            Child::Tree(t) => argument(f, t),
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                if let Child::Tree(next_tree) = children.peek().unwrap() {
+                    f.break_or_space(is_multiline, next_tree.start());
+                }
+            }
+        }
+    }
+}
+
+fn argument(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::ElementModificationOrReplaceable => {
+                    element_modification_or_replaceable(f, tree)
+                }
+                SyntaxKind::ElementRedeclaration => element_redeclaration(f, tree),
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+fn element_modification_or_replaceable(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ElementModification => element_modification(f, tree),
+                SyntaxKind::ElementReplaceable => element_replaceable(f, tree),
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn element_modification(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::Name => name(f, tree),
+                SyntaxKind::Modification => modification(f, tree),
+                SyntaxKind::DescriptionString => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description_string(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+fn element_redeclaration(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ShortClassDefinition => short_class_definition(f, tree),
+                SyntaxKind::ComponentClause1 => component_clause1(f, tree),
+                SyntaxKind::ConstrainingClause => element_replaceable(f, tree),
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn element_replaceable(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        match child {
+            Child::Tree(tree) => match tree.kind {
+                SyntaxKind::ShortClassDefinition => short_class_definition(f, tree),
+                SyntaxKind::ComponentClause1 => component_clause1(f, tree),
+                SyntaxKind::ConstrainingClause => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    constraining_clause(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            },
+            Child::Token(tok) => {
+                f.handle_token(tok);
+                f.markers.push(Marker::Space);
+            }
+        }
+    }
+}
+
+fn component_clause1(f: &mut Formatter, tree: Tree) {
+    let children_count = tree.len();
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::TypePrefix => type_prefix(f, tree),
+                SyntaxKind::TypeSpecifier => {
+                    if children_count > 2 {
+                        f.markers.push(Marker::Space);
+                    }
+                    type_specifier(f, tree);
+                }
+                SyntaxKind::ComponentDeclaration1 => {
+                    f.markers.push(Marker::Space);
+                    component_declaration1(f, tree);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+fn component_declaration1(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::Declaration => declaration(f, tree),
+                SyntaxKind::Description => {
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), false);
+                    description(f, tree);
+                    f.markers.push(Marker::Dedent);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+}
+
+fn short_class_definition(f: &mut Formatter, tree: Tree) {
+    for child in tree.children {
+        if let Child::Tree(tree) = child {
+            match tree.kind {
+                SyntaxKind::ClassPrefixes => class_prefixes(f, tree),
+                SyntaxKind::ShortClassSpecifier => {
+                    f.markers.push(Marker::Space);
+                    short_class_specifier(f, tree);
+                }
+                _ => unreachable!(),
+            }
+        }
+    }
+}
 
 fn equation_section(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Indent);
