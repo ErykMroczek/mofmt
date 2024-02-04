@@ -3,6 +3,12 @@ use std::{iter::Peekable, vec::IntoIter};
 use crate::{markers::Marker, tree::Child, tree::Tree};
 use moparse::*;
 
+enum Blank {
+    Required,
+    Legal,
+    Illegal,
+}
+
 pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     let mut f = Formatter::new(comments);
     match tree.kind {
@@ -91,34 +97,32 @@ impl Formatter {
 
     fn break_or_space(&mut self, is_multiline: bool, tok: &Token) {
         if is_multiline {
-            self.handle_break(tok, false);
+            self.handle_break(tok, Blank::Illegal);
         } else {
             self.markers.push(Marker::Space);
         }
     }
 
-    fn handle_break(&mut self, tok: &Token, allow_blanks: bool) {
-        let section_opening = [
-            ModelicaToken::Equation,
-            ModelicaToken::Algorithm,
-            ModelicaToken::Protected,
-            ModelicaToken::Public,
-        ]
-        .contains(&self.prev_tok);
+    fn handle_break(&mut self, tok: &Token, blanks: Blank) {
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
             self.markers.push(Marker::Space);
             self.markers.push(Marker::Token(comment.text));
         }
-        if section_opening
-            || (self.prev_tok == ModelicaToken::Semicolon && tok.kind == ModelicaToken::Annotation)
-            || (self.prev_tok == ModelicaToken::Semicolon && tok.kind == ModelicaToken::End)
-        {
+        if let Blank::Required = blanks {
             self.markers.push(Marker::Blank);
         }
         let mut line = self.prev_line;
         for comment in comments {
-            if !section_opening && line != self.prev_line {
+            if let Blank::Required = blanks {
+                if line > self.prev_line {
+                    if comment.start.line - line > 1 {
+                        self.markers.push(Marker::Blank);
+                    } else {
+                        self.markers.push(Marker::Break);
+                    }
+                }
+            } else {
                 if comment.start.line - line > 1 {
                     self.markers.push(Marker::Blank);
                 } else {
@@ -128,11 +132,21 @@ impl Formatter {
             self.markers.push(Marker::Token(comment.text));
             line = comment.end.line;
         }
-        if !(section_opening && line == self.prev_line) {
-            if tok.start.line - line > 1 && allow_blanks {
+        if let Blank::Legal = blanks {
+            if tok.start.line - line > 1 {
                 self.markers.push(Marker::Blank);
             } else {
                 self.markers.push(Marker::Break);
+            }
+        } else if let Blank::Illegal = blanks {
+            self.markers.push(Marker::Break);
+        } else {
+            if line > self.prev_line {
+                if tok.start.line - line > 1 {
+                    self.markers.push(Marker::Blank);
+                } else {
+                    self.markers.push(Marker::Break);
+                }
             }
         }
     }
@@ -168,7 +182,7 @@ fn stored_definition(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::Name => name(f, tree),
                 SyntaxKind::ClassDefinition => {
                     if f.prev_tok == ModelicaToken::Semicolon {
-                        f.handle_break(tree.start(), true);
+                        f.handle_break(tree.start(), Blank::Legal);
                     }
                     class_definition(f, tree);
                 }
@@ -177,7 +191,7 @@ fn stored_definition(f: &mut Formatter, tree: Tree) {
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Final {
-                    f.handle_break(&tok, true);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
                 if kind == ModelicaToken::Final || kind == ModelicaToken::Within {
@@ -237,7 +251,7 @@ fn long_class_specifier(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::DescriptionString => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description_string(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -245,14 +259,12 @@ fn long_class_specifier(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::Composition => {
                     f.markers.push(Marker::Blank);
                     composition(f, tree);
+                    f.markers.push(Marker::Blank);
                 }
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
                 let kind = tok.kind;
-                if kind == ModelicaToken::End {
-                    f.handle_break(&tok, true);
-                }
                 f.handle_token(tok);
                 if kind == ModelicaToken::End || kind == ModelicaToken::Extends {
                     f.markers.push(Marker::Space);
@@ -294,7 +306,7 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::EnumList => {
                     if is_multiline {
                         f.markers.push(Marker::Indent);
-                        f.handle_break(tree.start(), false);
+                        f.handle_break(tree.start(), Blank::Illegal);
                     }
                     enum_list(f, tree, is_multiline);
                     if is_multiline {
@@ -303,7 +315,7 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -345,13 +357,13 @@ fn der_class_specifier(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::TypeSpecifier => {
                     if is_multiline {
-                        f.handle_break(tree.start(), false);
+                        f.handle_break(tree.start(), Blank::Illegal);
                     }
                     type_specifier(f, tree);
                 }
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -405,7 +417,7 @@ fn enumeration_literal(f: &mut Formatter, tree: Tree) {
         match child {
             Child::Tree(tree) => {
                 f.markers.push(Marker::Indent);
-                f.handle_break(tree.start(), false);
+                f.handle_break(tree.start(), Blank::Illegal);
                 description(f, tree);
                 f.markers.push(Marker::Dedent);
             }
@@ -418,14 +430,23 @@ fn composition(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::ElementList => element_list(f, tree),
+                SyntaxKind::ElementList => {
+                    element_list(f, tree);
+                }
                 SyntaxKind::EquationSection => equation_section(f, tree),
                 SyntaxKind::AlgorithmSection => algorithm_section(f, tree),
                 SyntaxKind::LanguageSpecification => language_specification(f, tree),
                 SyntaxKind::ExternalFunctionCall => external_function_call(f, tree),
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), f.prev_tok == ModelicaToken::Semicolon);
+                    f.handle_break(
+                        tree.start(),
+                        if f.prev_tok == ModelicaToken::Semicolon {
+                            Blank::Required
+                        } else {
+                            Blank::Illegal
+                        },
+                    );
                     annotation_clause(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -433,6 +454,9 @@ fn composition(f: &mut Formatter, tree: Tree) {
             },
             Child::Token(tok) => {
                 let kind = tok.kind;
+                if kind == ModelicaToken::Protected || kind == ModelicaToken::Public {
+                    f.handle_break(&tok, Blank::Required);
+                }
                 f.handle_token(tok);
                 if kind == ModelicaToken::External {
                     f.markers.push(Marker::Space);
@@ -485,7 +509,7 @@ fn external_function_call(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Space);
                 } else if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -496,10 +520,17 @@ fn external_function_call(f: &mut Formatter, tree: Tree) {
 
 fn element_list(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Indent);
-    for child in tree.children {
+    for (idx, child) in tree.children.into_iter().enumerate() {
         match child {
             Child::Tree(tree) => {
-                f.handle_break(tree.start(), true);
+                f.handle_break(
+                    tree.start(),
+                    if idx > 1 {
+                        Blank::Legal
+                    } else {
+                        Blank::Illegal
+                    },
+                );
                 element(f, tree);
             }
             Child::Token(tok) => f.handle_token(tok),
@@ -518,13 +549,13 @@ fn element(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ComponentClause => component_clause(f, tree),
                 SyntaxKind::ConstrainingClause => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     constraining_clause(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -562,7 +593,7 @@ fn import_clause(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ImportList => import_list(f, tree, is_multiline),
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -578,7 +609,7 @@ fn import_clause(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Space);
                 } else if kind == ModelicaToken::LCurly && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -610,7 +641,7 @@ fn extends_clause(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     annotation_clause(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -652,7 +683,7 @@ fn class_or_inheritance_modification(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -758,7 +789,7 @@ fn component_declaration(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -831,7 +862,7 @@ fn class_modification(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -896,7 +927,7 @@ fn element_modification(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::Modification => modification(f, tree),
                 SyntaxKind::DescriptionString => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description_string(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -931,7 +962,7 @@ fn element_replaceable(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ComponentClause1 => component_clause1(f, tree),
                 SyntaxKind::ConstrainingClause => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     constraining_clause(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -974,7 +1005,7 @@ fn component_declaration1(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::Declaration => declaration(f, tree),
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1004,7 +1035,14 @@ fn equation_section(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => {
-                f.handle_break(tree.start(), true);
+                f.handle_break(
+                    tree.start(),
+                    if f.prev_tok == ModelicaToken::Equation {
+                        Blank::Required
+                    } else {
+                        Blank::Legal
+                    },
+                );
                 equation(f, tree);
             }
             Child::Token(tok) => {
@@ -1024,7 +1062,14 @@ fn algorithm_section(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => {
-                f.handle_break(tree.start(), true);
+                f.handle_break(
+                    tree.start(),
+                    if f.prev_tok == ModelicaToken::Algorithm {
+                        Blank::Required
+                    } else {
+                        Blank::Legal
+                    },
+                );
                 statement(f, tree);
             }
             Child::Token(tok) => {
@@ -1053,7 +1098,7 @@ fn equation(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1084,7 +1129,7 @@ fn statement(f: &mut Formatter, tree: Tree) {
                     let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
                     if is_multiline {
                         f.markers.push(Marker::Indent);
-                        f.handle_break(tree.start(), false);
+                        f.handle_break(tree.start(), Blank::Illegal);
                     }
                     output_expression_list(f, tree, is_multiline);
                     if is_multiline {
@@ -1097,7 +1142,7 @@ fn statement(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::WhenStatement => when_statement(f, tree),
                 SyntaxKind::Description => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     description(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1128,7 +1173,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1144,7 +1189,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
                 ]
                 .contains(&tok.kind)
                 {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1163,7 +1208,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1179,7 +1224,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
                 ]
                 .contains(&tok.kind)
                 {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1198,7 +1243,7 @@ fn for_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1208,7 +1253,7 @@ fn for_equation(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1227,7 +1272,7 @@ fn for_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1237,7 +1282,7 @@ fn for_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1286,7 +1331,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1296,7 +1341,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::While && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1315,7 +1360,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1325,7 +1370,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1344,7 +1389,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), false);
+                    f.handle_break(tree.start(), Blank::Illegal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1354,7 +1399,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, false);
+                    f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
             }
@@ -1370,7 +1415,7 @@ fn connect_equation(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => {
                 if idx == 2 {
                     if is_multiline {
-                        f.handle_break(tree.start(), false);
+                        f.handle_break(tree.start(), Blank::Illegal);
                     }
                 } else {
                     f.break_or_space(is_multiline, tree.start());
@@ -1641,7 +1686,7 @@ fn primary(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Indent);
                     if is_multiline {
                         if let Child::Tree(next_tree) = children.peek().unwrap() {
-                            f.handle_break(next_tree.start(), false);
+                            f.handle_break(next_tree.start(), Blank::Illegal);
                         }
                     }
                 }
@@ -1718,7 +1763,7 @@ fn function_call_args(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -1884,7 +1929,7 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 }
             }
@@ -1942,7 +1987,7 @@ fn array_subscripts(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::LBracket && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
-                        f.handle_break(next_tree.start(), false);
+                        f.handle_break(next_tree.start(), Blank::Illegal);
                     }
                 } else if kind == ModelicaToken::Comma {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
@@ -1971,7 +2016,7 @@ fn description(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::DescriptionString => description_string(f, t),
                 SyntaxKind::AnnotationClause => {
                     if idx > 0 {
-                        f.handle_break(t.start(), false);
+                        f.handle_break(t.start(), Blank::Illegal);
                     }
                     annotation_clause(f, t);
                 }
