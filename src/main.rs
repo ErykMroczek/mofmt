@@ -23,16 +23,26 @@ fn format_files(args: &[String]) {
         .for_each(|mut v| files.append(&mut v));
     files.iter().for_each(|p| {
         let contents = read_file(p);
-        let parsed = parse(&contents, SyntaxKind::StoredDefinition);
-        if !parsed.errors.is_empty() {
-            let messages: Vec<String> = parsed.errors
-                .iter()
-                .map(|e| format!("{}:{}", p.display(), e))
-                .collect();
-            panic!("Syntax errors detected:\n{}", messages.join("\n"));
+        match contents {
+            Ok(source) => {
+                let parsed = parse(&source, SyntaxKind::StoredDefinition);
+                if !parsed.errors.is_empty() {
+                    let messages: Vec<String> = parsed
+                        .errors
+                        .iter()
+                        .map(|e| format!("{}:{}", p.display(), e))
+                        .collect();
+                    println!(
+                        "Syntax errors detected (mofmt won't touch this file):\n{}",
+                        messages.join("\n")
+                    );
+                } else {
+                    let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
+                    write_file(p, output);
+                }
+            }
+            Err(e) => println!("{}: error: {}", p.display(), e),
         }
-        let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
-        write_file(p, output);
     });
 }
 
@@ -66,11 +76,14 @@ fn is_modelica(f: &Path) -> bool {
 }
 
 /// Return contents of the Modelica file
-fn read_file(from: &Path) -> String {
+fn read_file(from: &Path) -> Result<String, String> {
     if !is_modelica(from) {
-        panic!("{}: is not a Modelica file", from.display());
+        return Err(format!("{} is not a Modelica file", from.display()));
     }
-    fs::read_to_string(from).unwrap_or_else(|_| panic!("{}: error reading a file", from.display()))
+    match fs::read_to_string(from) {
+        Ok(s) => Ok(s),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 /// Write formatted code to a file
