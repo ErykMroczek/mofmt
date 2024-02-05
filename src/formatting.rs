@@ -447,8 +447,14 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     f.handle_break(tree.start(), Blank::Required);
                     algorithm_section(f, tree);
                 }
-                SyntaxKind::LanguageSpecification => language_specification(f, tree),
-                SyntaxKind::ExternalFunctionCall => external_function_call(f, tree),
+                SyntaxKind::LanguageSpecification => {
+                    f.markers.push(Marker::Space);
+                    language_specification(f, tree);
+                }
+                SyntaxKind::ExternalFunctionCall => {
+                    f.markers.push(Marker::Space);
+                    external_function_call(f, tree);
+                }
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
                     f.handle_break(
@@ -476,9 +482,6 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     f.handle_break(&tok, Blank::Required);
                 }
                 f.handle_token(tok);
-                if kind == ModelicaToken::External {
-                    f.markers.push(Marker::Space);
-                }
             }
         }
     }
