@@ -5,21 +5,13 @@ use std::fs;
 // Helper functions
 fn format_file(path: &str) -> String {
     let input = fs::read_to_string(path).expect("error");
-    let tokens = moparse::lex(&input);
-    let events = moparse::parse(&tokens, moparse::SyntaxKind::StoredDefinition);
-    let (markers, _) = mofmt::format(&tokens, &events);
-    mofmt::pretty_print(&tokens, markers)
+    let parsed = moparse::parse(&input, moparse::SyntaxKind::StoredDefinition);
+    mofmt::pretty_print(parsed.tokens, parsed.comments, parsed.events)
 }
 
 #[test]
-fn models_formatting() {
-    let formatted = format_file("tests/samples/models-input.mo");
-    let expected = fs::read_to_string("tests/samples/models-output.mo").expect("error");
-    assert_eq!(expected, formatted);
-}
-#[test]
-fn functions_formatting() {
-    let formatted = format_file("tests/samples/functions-input.mo");
-    let expected = fs::read_to_string("tests/samples/functions-output.mo").expect("error");
+fn test_formatting() {
+    let formatted = format_file("tests/samples/code-input.mo");
+    let expected = fs::read_to_string("tests/samples/code-output.mo").expect("error");
     assert_eq!(expected, formatted);
 }
