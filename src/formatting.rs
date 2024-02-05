@@ -75,6 +75,7 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::Expression => expression(&mut f, tree),
         _ => (),
     }
+    f.markers.push(Marker::Break);
     f.markers
 }
 
@@ -457,14 +458,20 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     language_specification(f, tree);
                 }
                 SyntaxKind::ExternalFunctionCall => {
-                    f.markers.push(Marker::Space);
+                    f.markers.push(Marker::Indent);
+                    f.handle_break(tree.start(), Blank::Required);
                     external_function_call(f, tree);
+                    f.markers.push(Marker::Dedent);
                 }
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
+                    let extern_element_annotation = f.prev_tok != ModelicaToken::Semicolon;
+                    if extern_element_annotation {
+                        f.markers.push(Marker::Indent);
+                    }
                     f.handle_break(
                         tree.start(),
-                        if f.prev_tok == ModelicaToken::Semicolon {
+                        if !extern_element_annotation {
                             Blank::Required
                         } else {
                             Blank::Illegal
@@ -472,6 +479,9 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     );
                     annotation_clause(f, tree);
                     f.markers.push(Marker::Dedent);
+                    if  extern_element_annotation {
+                        f.markers.push(Marker::Dedent);
+                    }
                 }
                 _ => unreachable!(),
             },
@@ -529,14 +539,17 @@ fn external_function_call(f: &mut Formatter, tree: Tree) {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Equal {
                     f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::Identifier {
+                    f.break_or_space(is_multiline, &tok);
                 }
                 f.handle_token(tok);
-                if kind == ModelicaToken::Equal {
-                    f.markers.push(Marker::Space);
-                } else if kind == ModelicaToken::LParen && is_multiline {
+                if kind == ModelicaToken::LParen && is_multiline {
+                    f.markers.push(Marker::Indent);
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
                         f.handle_break(next_tree.start(), Blank::Illegal);
                     }
+                } else if kind == ModelicaToken::RParen && is_multiline {
+                    f.markers.push(Marker::Dedent);
                 }
             }
         }
@@ -1160,10 +1173,23 @@ fn equation(f: &mut Formatter, tree: Tree) {
 }
 
 fn statement(f: &mut Formatter, tree: Tree) {
-    for child in tree.children {
+    let mut children = tree.children.into_iter().peekable();
+    let mut is_multiline_call = false;
+    while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::ComponentReference => component_reference(f, tree),
+                SyntaxKind::ComponentReference => {
+                    if f.prev_tok == ModelicaToken::Assign {
+                        if let Some(Child::Tree(next_tree)) = children.peek() {
+                            is_multiline_call = next_tree.is_multiline();
+                            if is_multiline_call {
+                                f.markers.push(Marker::Indent);
+                            }
+                            f.break_or_space(is_multiline_call, tree.start());
+                        }
+                    }
+                    component_reference(f, tree);
+                }
                 SyntaxKind::Expression => {
                     let is_multiline = tree.is_multiline();
                     if is_multiline {
@@ -1175,7 +1201,12 @@ fn statement(f: &mut Formatter, tree: Tree) {
                         f.markers.push(Marker::Dedent);
                     }
                 }
-                SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
+                SyntaxKind::FunctionCallArgs => {
+                    function_call_args(f, tree);
+                    if is_multiline_call {
+                        f.markers.push(Marker::Dedent);
+                    }
+                }
                 SyntaxKind::OutputExpressionList => {
                     let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
                     if is_multiline {
@@ -1205,9 +1236,6 @@ fn statement(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Space);
                 }
                 f.handle_token(tok);
-                if kind == ModelicaToken::Assign {
-                    f.markers.push(Marker::Space);
-                }
             }
         }
     }

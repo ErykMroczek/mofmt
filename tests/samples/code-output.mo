@@ -288,11 +288,14 @@ algorithm
             - eee)
       - fff * ggg;
 
-external "C" foo[1].bar[2] = baz(
-  x,
-  y,
-  z)
-  annotation (Library = "doesn't matter");
+external "C"
+
+  foo[1].bar[2] =
+    baz(
+      x,
+      y,
+      z)
+    annotation (Library = "doesn't matter");
 
   annotation (smoothOrder = 2);
 
@@ -302,7 +305,7 @@ partial function Bar
 
 initial algorithm
 
-  x :=  y;
+  x := y;
 
   /* If statement */
   foo :=
