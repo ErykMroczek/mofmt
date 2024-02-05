@@ -29,11 +29,13 @@ pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
     stack.pop().unwrap()
 }
 
+#[derive(Debug)]
 pub struct Tree {
     pub kind: SyntaxKind,
     pub children: Vec<Child>,
 }
 
+#[derive(Debug)]
 pub enum Child {
     Token(Token),
     Tree(Tree),
@@ -74,6 +76,23 @@ impl Tree {
         let last = self.end();
         first.start.line < last.end.line
     }
+
+    pub fn contains(&self, kind: SyntaxKind) -> bool {
+        let mut contains = false;
+        for child in self.children.iter() {
+            if let Child::Tree(tree) = child {
+                if tree.kind == kind {
+                    contains = true;
+                } else {
+                    contains = tree.contains(kind);
+                }
+            }
+            if contains {
+                return contains;
+            }
+        }
+        contains
+    }
 }
 
 #[cfg(test)]
@@ -89,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_empty_rules() {
-        const SOURCE: &str = "annotation ()";
+        const SOURCE: &str = r#"annotation (choices(choice = 0 "Foo", choice = 1 "Bar"))"#;
         let tree = tree(SOURCE, SyntaxKind::Description);
         assert_eq!(tree.len(), 1);
     }

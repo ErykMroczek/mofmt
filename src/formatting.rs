@@ -307,6 +307,11 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ArraySubscripts => array_subscripts(f, tree),
                 SyntaxKind::ClassModification => class_modification(f, tree),
                 SyntaxKind::EnumList => {
+                    if !is_multiline {
+                        // Enum list could be unwrapped, yet if it
+                        // contains any description it should be wrapped
+                        is_multiline = tree.contains(SyntaxKind::Description);
+                    }
                     if is_multiline {
                         f.markers.push(Marker::Indent);
                         f.handle_break(tree.start(), Blank::Illegal);
@@ -883,7 +888,7 @@ fn modification_expression(f: &mut Formatter, tree: Tree) {
 
 fn class_modification(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Indent);
-    let is_multiline = tree.is_multiline();
+    let is_multiline = tree.is_multiline() || tree.contains(SyntaxKind::DescriptionString) || tree.contains(SyntaxKind::Description);
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {

@@ -172,6 +172,7 @@ final pure function Foo "Return something"
 protected
 
   Real b "Bbb";
+  parameter Integer control = 0 annotation (choices(choice = 0 "Foo", choice = 1 "Bar"));
 
 algorithm
   (A,B,C):= foo.bar.baz
