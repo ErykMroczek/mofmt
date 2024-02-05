@@ -1,12 +1,10 @@
 # mofmt - Modelica code formatter
 
-*Mofmt* is a code formatter for [Modelica](https://modelica.org/)
+*mofmt* is a code formatter for [Modelica](https://modelica.org/)
 language. It aims to enhance readability and provide style constistency
 across different Modelica projects.
 
-Although functionality is basically finished, it can of course exhibit
-buggy behavior. *mofmt* doesn't modify files if it meets syntax errors.
-I advice to double-check changed files.
+*mofmt* doesn't modify files if it meets syntax errors.
 
 Code style applied by the *mofmt* is described in `code-style.md`.
 
@@ -14,11 +12,13 @@ Code style applied by the *mofmt* is described in `code-style.md`.
 
 ### Installation
 
-*Mofmt* can be installed from PYPI:
+*mofmt* can be installed with `cargo`:
 
 ```shell
-pip install mofmt
+cargo install mofmt
 ```
+
+or you can just grab one of the released libraries.
 
 On top of that, repo contains a necessary `pre-commit-hooks.yaml` file,
 so if you are using Git, you can delegate running *mofmt* to
@@ -34,74 +34,15 @@ accept multiple such arguments.
 mofmt PATH ...
 ```
 
-## Features and limitations
-
-### Vertical spacing and grouping
-
-*Mofmt* aims to ensure that Modelica code is vertically grouped and
-indented in a intuitive way that additionally allows you to fold/unfold
-specific sections in your text editor. Yet it will try to preserve
-single blank lines that you have placed manually, unless they were
-placed in places that *mofmt* considers prohibited.
-
-### Comments
-
-Modelica language specification allows you to place comments between any
-lexical units, but at least some software doesn't respect that and
-displace your comments if it feels like it. *Mofmt* tries to avoid that
-(but bugs may happen!). Both comments and whitespaces between them are
-preserved. Additionally, *mofmt* preceeds your inline comments with a
-single space to enhance readability.
-
-### Line wrapping
-
-*Mofmt* doesn't have a notion of maximum line length and doesn't wrap
-lines automatically. This is a deliberate choice, for many expressions
-in Modelica are written in a way that resembles textbook formulas. Such
-formulas contain terms that have a specific meaning and probably are
-kept on the same line by Modelica developers. Any (reasonably simple)
-algorithm would probably be too stupid for that, so there is no wrapping
-algorithm in *mofmt*. Instead, it will respect your wrapping inside
-expressions (provided you wrapped at some operator):
-
-```modelica
-Q_flow = alpha * surfaceArea *
-(T_a - T_b);
-```
-
-and only adjust it slightly:
-
-```modelica
-Q_flow = alpha * surfaceArea
-  * (T_a - T_b);
-```
-
-If wrap is placed inside function call, array etc.:
-
-```modelica
-cp = specificHeat_pT(p = p, T = temperature_ph(p = p,
-h = h));
-```
-
-*mofmt* will ensure that the whole argument list is formatted
-consistently, including nested calls:
-
-```modelica
-cp = specificHeat_pT(
-  p = p,
-  T = temperature_ph(
-    p = p,
-    h = h));
-```
-
 ## TODO
 
-* improve parsing performance
-* (maybe) include HTML pretty-printer
+* include HTML pretty-printer
+* include simple syntactical simplifications that don't affect the code
+  semantics (removing redundant parentheses etc.)
 
 ## License
 
-MIT
+MPL-2.0
 
 ## Authors
 
