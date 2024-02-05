@@ -224,7 +224,7 @@ fn stored_definition(f: &mut Formatter, tree: Tree) {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Final {
                     f.handle_break(&tok, Blank::Legal);
-                } else if kind == ModelicaToken::Within {
+                } else if kind == ModelicaToken::Within && tok.idx > 0 {
                     f.handle_break(&tok, Blank::Illegal);
                 }
                 f.handle_token(tok);
