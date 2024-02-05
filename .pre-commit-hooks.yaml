@@ -2,5 +2,5 @@
   name: mofmt
   description: Make your Modelica code pretty
   entry: mofmt
-  language: python
+  language: rust
   files: '.*\.mo$'
