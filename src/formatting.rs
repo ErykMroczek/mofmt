@@ -346,7 +346,6 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
 
 fn der_class_specifier(f: &mut Formatter, tree: Tree) {
     let mut is_multiline = false;
-    f.markers.push(Marker::Indent);
     let mut children = tree.children.iter();
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
@@ -388,11 +387,14 @@ fn der_class_specifier(f: &mut Formatter, tree: Tree) {
                 f.handle_token(tok);
                 if kind == ModelicaToken::Equal {
                     f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::LParen {
+                    f.markers.push(Marker::Indent);
+                } else if kind == ModelicaToken::RParen {
+                    f.markers.push(Marker::Dedent);
                 }
             }
         }
     }
-    f.markers.push(Marker::Dedent);
 }
 
 fn base_prefix(f: &mut Formatter, tree: Tree) {
@@ -539,17 +541,14 @@ fn external_function_call(f: &mut Formatter, tree: Tree) {
                 let kind = tok.kind;
                 if kind == ModelicaToken::Equal {
                     f.markers.push(Marker::Space);
-                } else if kind == ModelicaToken::Identifier {
-                    f.break_or_space(is_multiline, &tok);
                 }
                 f.handle_token(tok);
-                if kind == ModelicaToken::LParen && is_multiline {
-                    f.markers.push(Marker::Indent);
+                if kind == ModelicaToken::Equal {
+                    f.markers.push(Marker::Space);
+                } else if kind == ModelicaToken::LParen && is_multiline {
                     if let Child::Tree(next_tree) = children.peek().unwrap() {
                         f.handle_break(next_tree.start(), Blank::Illegal);
                     }
-                } else if kind == ModelicaToken::RParen && is_multiline {
-                    f.markers.push(Marker::Dedent);
                 }
             }
         }
@@ -868,13 +867,13 @@ fn modification(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ClassModification => class_modification(f, tree),
                 SyntaxKind::ModificationExpression => {
-                    let is_multiline = tree.is_multiline();
-                    if is_multiline {
+                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline, tree.start());
+                    f.break_or_space(is_multiline_if, tree.start());
                     modification_expression(f, tree);
-                    if is_multiline {
+                    if is_multiline_if {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -1137,13 +1136,13 @@ fn equation(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::SimpleExpression => simple_expression(f, tree),
                 SyntaxKind::Expression => {
-                    let is_multiline = tree.is_multiline();
-                    if is_multiline {
+                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline, tree.start());
+                    f.break_or_space(is_multiline_if, tree.start());
                     expression(f, tree);
-                    if is_multiline {
+                    if is_multiline_if {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -1174,39 +1173,27 @@ fn equation(f: &mut Formatter, tree: Tree) {
 
 fn statement(f: &mut Formatter, tree: Tree) {
     let mut children = tree.children.into_iter().peekable();
-    let mut is_multiline_call = false;
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ComponentReference => {
                     if f.prev_tok == ModelicaToken::Assign {
-                        if let Some(Child::Tree(next_tree)) = children.peek() {
-                            is_multiline_call = next_tree.is_multiline();
-                            if is_multiline_call {
-                                f.markers.push(Marker::Indent);
-                            }
-                            f.break_or_space(is_multiline_call, tree.start());
-                        }
+                        f.markers.push(Marker::Space);
                     }
                     component_reference(f, tree);
                 }
                 SyntaxKind::Expression => {
-                    let is_multiline = tree.is_multiline();
-                    if is_multiline {
+                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline, tree.start());
+                    f.break_or_space(is_multiline_if, tree.start());
                     expression(f, tree);
-                    if is_multiline {
+                    if is_multiline_if {
                         f.markers.push(Marker::Dedent);
                     }
                 }
-                SyntaxKind::FunctionCallArgs => {
-                    function_call_args(f, tree);
-                    if is_multiline_call {
-                        f.markers.push(Marker::Dedent);
-                    }
-                }
+                SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
                 SyntaxKind::OutputExpressionList => {
                     let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
                     if is_multiline {
@@ -1956,13 +1943,13 @@ fn named_arguments(f: &mut Formatter, tree: Tree, is_multiline: bool) {
 fn named_argument(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         if let Child::Tree(tree) = child {
-            let is_multiline = tree.is_multiline();
-            if is_multiline {
+            let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+            if is_multiline_if {
                 f.markers.push(Marker::Indent);
             }
-            f.break_or_space(is_multiline, tree.start());
+            f.break_or_space(is_multiline_if, tree.start());
             function_argument(f, tree);
-            if is_multiline {
+            if is_multiline_if {
                 f.markers.push(Marker::Dedent);
             }
         } else if let Child::Token(tok) = child {

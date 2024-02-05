@@ -24,7 +24,7 @@ final encapsulated partial operator record 'Quoted record "whatever"'
   // Now some other class specifiers!
 
   inner outer record Inner = der(.Foo.Baz, Foo, bar)
-      "Der?";
+    "Der?";
 
   redeclare final inner package Foo = input Foo.Bar[1, 2](x = 2 + 3)
     "Foo";
@@ -38,7 +38,7 @@ protected // Now protected section
 
   annotation (Icon());
 
-end 'Quoted record';
+end 'Quoted record "whatever"';
 
 // Now some model!
 
@@ -107,14 +107,12 @@ equation
     else
       3;
 
-  foo =
-    bar(
-      x,
-      y = y,
-      z =
-        baz(
-          a,
-          b));
+  foo = bar(
+    x,
+    y = y,
+    z = baz(
+      a,
+      b));
 
   /* If-else blocks */
 
@@ -150,83 +148,72 @@ equation
 
   /* Wrapped equations */
 
-  foo =
-    foo
-      * pi
-      * bar ^ 2
-      / 4;
-  foo =
-    bar
-      * baz
-      * (
-        bark
-          - bam);
+  foo = foo
+    * pi
+    * bar ^ 2
+    / 4;
+  foo = bar
+    * baz
+    * (
+      bark
+        - bam);
 
   /* Nested wrapping */
 
-  a_nominal =
-    Z_factor
-      * func_a(foo = b_nominal, bar = c)
-      * Av
-      * Y
-      * func_b(
-        x_nominal * p_nominal * d_nominal,
-        x_small =
-          d_limit
-            * d_small)
+  a_nominal = Z_factor
+    * func_a(foo = b_nominal, bar = c)
+    * Av
+    * Y
+    * func_b(
+      x_nominal * p_nominal * d_nominal,
+      x_small = d_limit
+        * d_small)
     "Description";
 
   /* Arrays */
 
-  volumes =
+  volumes = {
+    diameter[i]
+      * diameter[i]
+      * 0.25
+      * length[i]
+    for i in 1 : n};
+  foo = sum(
+    bar[i] - baz[i]
+    for i in 1 : 10);
+  points = {
+    {-98, -60},
     {
-      diameter[i]
-        * diameter[i]
-        * 0.25
-        * length[i]
-      for i in 1 : n};
-  foo =
-    sum(
-      bar[i] - baz[i]
-      for i in 1 : 10);
-  points =
-    {
-      {-98, -60},
-      {
-        -64,
-        -60},
-      {-64, -63.4667},
-      {-27.1111, -63.4667}};
-  foo =
-    (bar - 1) ^ 3
-      * (
-        1
-          - (baz + 12) / (10 * (baz + 1))
-          + sum(
-            (1 - 2 * (foo - k) / ((foo + 1) * k * (k + 1))) * 1 / (k - 1) * ((bar - 1) / r) ^ (k - 3)
-            for k in 1 : 42));
+      -64,
+      -60},
+    {-64, -63.4667},
+    {-27.1111, -63.4667}};
+  foo = (bar - 1) ^ 3
+    * (
+      1
+        - (baz + 12) / (10 * (baz + 1))
+        + sum(
+          (1 - 2 * (foo - k) / ((foo + 1) * k * (k + 1))) * 1 / (k - 1) * ((bar - 1) / r) ^ (k - 3)
+          for k in 1 : 42));
   /* Matrices */
 
   extent = [-10, 110; 10, 90];
-  extent =
+  extent = [
+    -10, 110;
+    10, 90];
+  a[:, :] = [
+    1, 1, 1, 1, 1;
+    2,
+    2,
+    2,
+    2,
+    2];
+  m[:, :] = Math.Matrices.sort(
     [
-      -10, 110;
-      10, 90];
-  a[:, :] =
-    [
-      1, 1, 1, 1, 1;
-      2,
-      2,
-      2,
-      2,
-      2];
-  m[:, :] =
-    Math.Matrices.sort(
-      [
-        Math.Vectors.length(v1),
-        Math.Vectors.length(v2);
-        Math.Vectors.length(v1 + v2),
-        Math.Vectors.length(v2 - v1)]);
+      Math.Vectors.length(v1),
+      Math.Vectors.length(v2);
+      Math.Vectors.length(v1 + v2),
+      Math.Vectors.length(v2 - v1)]);
 
 end FooModel;
 // And now functions!
@@ -263,38 +250,34 @@ algorithm
       H,
       J)) := foo.bar.baz(c);
 
-  foo :=
+  foo := {
     {
-      {
-        bar[i]
-          + j
-            * (baz[i] - ber[i])
-            / n
-        for i in 1 : n}
-      for j in 1 : m};
-  bar :=
+      bar[i]
+        + j
+          * (baz[i] - ber[i])
+          / n
+      for i in 1 : n}
+    for j in 1 : m};
+  bar := {
     {
-      {
-        foo[i] + j * (baz[i] - foo[i]) / n
-        for i in 1 : n}
-      for j in 1 : m};
+      foo[i] + j * (baz[i] - foo[i]) / n
+      for i in 1 : n}
+    for j in 1 : m};
 
-  baz :=
-    aaa
-      + bbb
-        * (
-          ccc
-            + ddd
-            - eee)
-      - fff * ggg;
+  baz := aaa
+    + bbb
+      * (
+        ccc
+          + ddd
+          - eee)
+    - fff * ggg;
 
 external "C"
 
-  foo[1].bar[2] =
-    baz(
-      x,
-      y,
-      z)
+  foo[1].bar[2] = baz(
+    x,
+    y,
+    z)
     annotation (Library = "doesn't matter");
 
   annotation (smoothOrder = 2);
@@ -316,17 +299,15 @@ initial algorithm
     "What is this about?";
 
   /* Multiline statements */
-  y :=
-    u1 > 0
-      and u2 > 0
-      and u3 > 0
-      and u4 > 0;
+  y := u1 > 0
+    and u2 > 0
+    and u3 > 0
+    and u4 > 0;
 
-  y :=
-    u1 > 0
-      or u2 > 0
-      or u3 > 0
-      or u4 > 0;
+  y := u1 > 0
+    or u2 > 0
+    or u3 > 0
+    or u4 > 0;
 
   Modelica.Utilities.Streams.print(
     "foo"
