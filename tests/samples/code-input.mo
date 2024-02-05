@@ -34,7 +34,7 @@ protected    // Now protected section
 flow constant Foo.Baz Bar=2, Baar; parameter Real Foo(start=2, fixed=false),
 Bar if false;
 annotation(Icon());
-end 'Quoted record';
+end 'Quoted record "whatever"';
 
 // Now some model!
 
