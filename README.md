@@ -4,8 +4,6 @@
 language. It aims to enhance readability and provide style constistency
 across different Modelica projects.
 
-*mofmt* doesn't modify files if it meets syntax errors.
-
 Code style applied by the *mofmt* is described in `code-style.md`.
 
 ## Installation and usage
