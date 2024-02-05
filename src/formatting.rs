@@ -200,6 +200,7 @@ impl Formatter {
     }
 
     fn handle_token(&mut self, tok: Token) {
+        let _ = self.comments_before(&tok);
         self.prev_line = tok.end.line;
         self.prev_tok = tok.kind;
         self.markers.push(Marker::Token(tok.text));
