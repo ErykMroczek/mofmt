@@ -3,6 +3,12 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.4.1] - 2024-02-05
+
+### Fixed
+
+- *mofmt* no longer inserts a blank line before the `within`
+
 ## [0.4.0] - 2024-02-05
 
 This release marks an important milestone. From now on `mofmt` will be

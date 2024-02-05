@@ -3,7 +3,7 @@ use moparse::{parse, SyntaxKind};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-const VERSION: &str = "0.4.0";
+const VERSION: &str = "0.4.1";
 
 const HELP: &str = r#"
 mofmt: Modelica code formatter
