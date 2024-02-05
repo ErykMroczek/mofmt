@@ -855,15 +855,13 @@ fn modification(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ClassModification => class_modification(f, tree),
                 SyntaxKind::ModificationExpression => {
-                    let is_multiline_if = tree.start().kind == ModelicaToken::If && tree.is_multiline();
-                    if is_multiline_if {
+                    let is_multiline = tree.is_multiline();
+                    if is_multiline {
                         f.markers.push(Marker::Indent);
-                        f.break_or_space(true, tree.start());
-                    } else {
-                        f.markers.push(Marker::Space);
                     }
+                    f.break_or_space(is_multiline, tree.start());
                     modification_expression(f, tree);
-                    if is_multiline_if {
+                    if is_multiline {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -1125,7 +1123,17 @@ fn equation(f: &mut Formatter, tree: Tree) {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::SimpleExpression => simple_expression(f, tree),
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => {
+                    let is_multiline = tree.is_multiline();
+                    if is_multiline {
+                        f.markers.push(Marker::Indent);
+                    }
+                    f.break_or_space(is_multiline, tree.start());
+                    expression(f, tree);
+                    if is_multiline {
+                        f.markers.push(Marker::Dedent);
+                    }
+                }
                 SyntaxKind::IfEquation => if_equation(f, tree),
                 SyntaxKind::ForEquation => for_equation(f, tree),
                 SyntaxKind::ConnectEquation => connect_equation(f, tree),
@@ -1146,9 +1154,6 @@ fn equation(f: &mut Formatter, tree: Tree) {
                     f.markers.push(Marker::Space);
                 }
                 f.handle_token(tok);
-                if kind == ModelicaToken::Equal {
-                    f.markers.push(Marker::Space);
-                }
             }
         }
     }
@@ -1159,7 +1164,17 @@ fn statement(f: &mut Formatter, tree: Tree) {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ComponentReference => component_reference(f, tree),
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => {
+                    let is_multiline = tree.is_multiline();
+                    if is_multiline {
+                        f.markers.push(Marker::Indent);
+                    }
+                    f.break_or_space(is_multiline, tree.start());
+                    expression(f, tree);
+                    if is_multiline {
+                        f.markers.push(Marker::Dedent);
+                    }
+                }
                 SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
                 SyntaxKind::OutputExpressionList => {
                     let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
@@ -1913,10 +1928,20 @@ fn named_arguments(f: &mut Formatter, tree: Tree, is_multiline: bool) {
 fn named_argument(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         if let Child::Tree(tree) = child {
+            let is_multiline = tree.is_multiline();
+            if is_multiline {
+                f.markers.push(Marker::Indent);
+            }
+            f.break_or_space(is_multiline, tree.start());
             function_argument(f, tree);
+            if is_multiline {
+                f.markers.push(Marker::Dedent);
+            }
         } else if let Child::Token(tok) = child {
+            if tok.kind == ModelicaToken::Equal {
+                f.markers.push(Marker::Space);
+            }
             f.handle_token(tok);
-            f.markers.push(Marker::Space);
         }
     }
 }
