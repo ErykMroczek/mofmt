@@ -3,8 +3,30 @@ use moparse::{parse, SyntaxKind};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
+const VERSION: &str = "0.4.0";
+
+const HELP: &str = r#"
+mofmt: Modelica code formatter
+
+Usage: mofmt SRC ...
+
+Options:
+-h, --help: display this message and exit
+-v, --version: display a version number and exit
+"#;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("{}", HELP);
+        std::process::exit(1);
+    } else if ["-h", "--help"].contains(&args[1].as_str()) {
+        println!("{}", HELP);
+        std::process::exit(0);
+    } else if ["-v", "--version"].contains(&args[1].as_str()) {
+        println!("mofmt, {}", VERSION);
+        std::process::exit(0);
+    }
     format_files(&args[1..]);
 }
 
