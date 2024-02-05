@@ -49,11 +49,24 @@ Integer[1, 3, 4] bar =if true then
 1 elseif baz<2 then 3 else 2;
 
 protected
+  // Here we have to comments
 
+  /*
+  And they are separated
+  with a single blank line
+  */
 String A = toString([2.12,-4.34;-2.56,    -    1.67] );
+SI.Length[3] 'length of "whatever"'(start = 0,
+    min = -1, max = 1, nominal=0) = {  1* 0.25 for i in 1  :  3};
 public
 
-redeclare Foo x(y=z) = Bar;
+redeclare Foo x(y=z) = Bar
+annotation (Placement(
+    transformation(
+    extent={{-20,-10},{20,10}},rotation=90,
+    origin={-98,4}), iconTransformation(extent={{-40,-10},{40,10}},
+    rotation=90,
+    origin={-68,0})));
 
 initial equation
   if foo == Types.Dynamics.FixedInitial then
@@ -105,4 +118,113 @@ connect(a[i], b[i, k]);
 
 end for;
 end for;
+
+/* Wrapped equations */
+
+foo =foo*pi
+    * bar^2/4;
+foo = bar * baz*(bark
+  - bam);
+
+/* Nested wrapping */
+
+a_nominal = Z_factor * func_a(foo = b_nominal, bar = c)
+* Av * Y * func_b(
+x_nominal * p_nominal * d_nominal,
+x_small = d_limit * d_small)
+"Description";
+
+/* Arrays */
+
+volumes = {diameter[i] * diameter[i]
+* 0.25 * length[i] for i in 1:n};
+foo = sum(bar[i] - baz[i]
+for i in 1:10);
+    points={{-98,-60},{-64,
+          -60},{-64,-63.4667},{-27.1111,-63.4667}};
+    foo = (bar - 1) ^ 3
+*(1-(baz + 12) / (10 * (baz + 1)) + sum(
+          (1 - 2 * (foo - k) / ((foo + 1) * k * (k + 1))) * 1 / (k - 1) * ((bar - 1) / r) ^ (k - 3)
+        for k in 1:42));
+/* Matrices */
+
+extent = [-10, 110; 10, 90];
+extent = [
+    -10, 110; 10, 90];
+ a[:,:]=[1,1,1,1,1; 2,2,2,
+  2,2];
+m[:,:] = Math.Matrices.sort(
+    [
+      Math.Vectors.length(v1),
+      Math.Vectors.length(v2);
+      Math.Vectors.length(v1 + v2),
+      Math.Vectors.length(v2 - v1)
+    ]);
 end FooModel;
+// And now functions!
+final pure function Foo "Return something"
+  extends .Modelica.Icons.Function
+  ;
+
+  input Integer a "Aaa";
+  output Real result "Length";
+
+protected
+
+  Real b "Bbb";
+
+algorithm
+  (A,B,C):= foo.bar.baz
+  (a);
+  (D,,E) := foo.bar .baz(b);
+  (F, G,(H,
+  J)) := foo.bar.baz(c);
+
+foo:={{bar[i] + j*
+(baz[i] - ber[i])/n for i in 1:n} for j in 1:m};
+bar:={{foo[i] + j*(baz[i] - foo[i])/n
+for i in 1:n}
+ for j in 1:m};
+
+baz := aaa
++ bbb * (ccc + ddd-
+ eee)
+ - fff * ggg;
+
+external"C" foo[1].bar [2] = baz(x
+,y,z)
+annotation (Library="doesn't matter");
+annotation (smoothOrder = 2);
+end Foo;
+partial function Bar "Just in case"
+  initial algorithm
+
+  x := y;
+
+        /* If statement */
+foo := if a == 1 then bar
+else baz
+"What is this about?";
+
+/* Multiline statements */
+y := u1 > 0
+and u2 > 0 and
+u3 > 0
+        and u4 > 0;
+
+y := u1 > 0
+or u2 > 0 or
+u3 > 0
+    or u4 > 0;
+
+Modelica.Utilities.Streams.print(
+    "foo" + "bar"
+        + "baz");
+end Bar;
+
+// And some enums
+
+type Foo=enumeration(Foo1, foo2) "foo enum";
+type Foo=enumeration(Foo1,
+      foo2) "foo enum";
+      type Foo=enumeration(Foo1 "foo1", foo2) "foo enum with description of one element";
