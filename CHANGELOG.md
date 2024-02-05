@@ -3,7 +3,7 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
-## [0.4.0] - 2024-02-XX
+## [0.4.0] - 2024-02-05
 
 This release marks an important milestone. From now on `mofmt` will be
 implemented in Rust. The migration was motivated by very poor
@@ -18,7 +18,7 @@ savings that can be spent in the future on more advanced features like
 HTML formatting, and opens possibilities of performance gains through
 multithreading etc.
 
-Few long exisisting bugs were fixed along the way. There are some minor
+Few long existing bugs were fixed along the way. There are some minor
 changes in the style applied by `mofmt`. Refer to the `code-style.md`.
 
 ### Added
