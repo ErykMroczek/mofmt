@@ -23,7 +23,7 @@ pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
         }
     }
 
-    assert!(matches!(tokens.next(), None));
+    assert!(tokens.next().is_none());
     assert!(stack.len() == 1);
 
     stack.pop().unwrap()

@@ -107,7 +107,7 @@ impl Formatter {
     fn handle_break(&mut self, tok: &Token, blanks: Blank) {
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
-            if self.markers.len() > 0 {
+            if !self.markers.is_empty() {
                 self.markers.push(Marker::Space);
             }
             self.markers.push(Marker::Token(comment.text));
@@ -125,12 +125,10 @@ impl Formatter {
                         self.markers.push(Marker::Break);
                     }
                 }
+            } else if comment.start.line - line > 1 {
+                self.markers.push(Marker::Blank);
             } else {
-                if comment.start.line - line > 1 {
-                    self.markers.push(Marker::Blank);
-                } else {
-                    self.markers.push(Marker::Break);
-                }
+                self.markers.push(Marker::Break);
             }
             self.markers.push(Marker::Token(comment.text));
             line = comment.end.line;
@@ -143,13 +141,11 @@ impl Formatter {
             }
         } else if let Blank::Illegal = blanks {
             self.markers.push(Marker::Break);
-        } else {
-            if line > self.prev_line {
-                if tok.start.line - line > 1 {
-                    self.markers.push(Marker::Blank);
-                } else {
-                    self.markers.push(Marker::Break);
-                }
+        } else if line > self.prev_line {
+            if tok.start.line - line > 1 {
+                self.markers.push(Marker::Blank);
+            } else {
+                self.markers.push(Marker::Break);
             }
         }
     }
@@ -284,7 +280,7 @@ fn short_class_specifier(f: &mut Formatter, tree: Tree) {
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
             if token.kind == ModelicaToken::LParen {
-                while let Some(child) = children.next() {
+                for child in children.by_ref() {
                     if let Child::Token(tok) = child {
                         if tok.kind == ModelicaToken::RParen {
                             is_multiline = tok.start.line > token.start.line;
@@ -350,7 +346,7 @@ fn der_class_specifier(f: &mut Formatter, tree: Tree) {
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
             if token.kind == ModelicaToken::LParen {
-                while let Some(child) = children.next() {
+                for child in children.by_ref() {
                     if let Child::Token(tok) = child {
                         if tok.kind == ModelicaToken::RParen {
                             is_multiline = tok.start.line > token.start.line;
@@ -481,7 +477,7 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     );
                     annotation_clause(f, tree);
                     f.markers.push(Marker::Dedent);
-                    if  extern_element_annotation {
+                    if extern_element_annotation {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -519,7 +515,7 @@ fn external_function_call(f: &mut Formatter, tree: Tree) {
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
             if token.kind == ModelicaToken::LParen {
-                while let Some(child) = children.next() {
+                for child in children.by_ref() {
                     if let Child::Token(tok) = child {
                         if tok.kind == ModelicaToken::RParen {
                             is_multiline = tok.start.line > token.start.line;
@@ -606,7 +602,7 @@ fn import_clause(f: &mut Formatter, tree: Tree) {
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
             if token.kind == ModelicaToken::LCurly {
-                while let Some(child) = children.next() {
+                for child in children.by_ref() {
                     if let Child::Token(tok) = child {
                         if tok.kind == ModelicaToken::RCurly {
                             is_multiline = tok.start.line > token.start.line;
@@ -867,7 +863,8 @@ fn modification(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ClassModification => class_modification(f, tree),
                 SyntaxKind::ModificationExpression => {
-                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    let is_multiline_if =
+                        tree.is_multiline() && tree.start().kind == ModelicaToken::If;
                     if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
@@ -898,7 +895,9 @@ fn modification_expression(f: &mut Formatter, tree: Tree) {
 
 fn class_modification(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Indent);
-    let is_multiline = tree.is_multiline() || tree.contains(SyntaxKind::DescriptionString) || tree.contains(SyntaxKind::Description);
+    let is_multiline = tree.is_multiline()
+        || tree.contains(SyntaxKind::DescriptionString)
+        || tree.contains(SyntaxKind::Description);
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
@@ -1136,7 +1135,8 @@ fn equation(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::SimpleExpression => simple_expression(f, tree),
                 SyntaxKind::Expression => {
-                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    let is_multiline_if =
+                        tree.is_multiline() && tree.start().kind == ModelicaToken::If;
                     if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
@@ -1172,8 +1172,7 @@ fn equation(f: &mut Formatter, tree: Tree) {
 }
 
 fn statement(f: &mut Formatter, tree: Tree) {
-    let mut children = tree.children.into_iter().peekable();
-    while let Some(child) = children.next() {
+    for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ComponentReference => {
@@ -1183,7 +1182,8 @@ fn statement(f: &mut Formatter, tree: Tree) {
                     component_reference(f, tree);
                 }
                 SyntaxKind::Expression => {
-                    let is_multiline_if = tree.is_multiline() && tree.start().kind == ModelicaToken::If;
+                    let is_multiline_if =
+                        tree.is_multiline() && tree.start().kind == ModelicaToken::If;
                     if is_multiline_if {
                         f.markers.push(Marker::Indent);
                     }
@@ -1510,10 +1510,8 @@ fn expression(f: &mut Formatter, tree: Tree) {
                     expression(f, tree);
                     if conditional {
                         f.markers.push(Marker::Dedent);
-                        if let Some(next_child) = children.peek() {
-                            if let Child::Token(next_tok) = next_child {
-                                f.break_or_space(is_multiline, next_tok);
-                            }
+                        if let Some(Child::Token(next_tok)) = children.peek() {
+                            f.break_or_space(is_multiline, next_tok);
                         }
                     } else {
                         f.markers.push(Marker::Space);
@@ -1979,7 +1977,7 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
     while let Some(child) = children.next() {
         if let Child::Token(token) = child {
             if token.kind == ModelicaToken::LParen {
-                while let Some(child) = children.next() {
+                for child in children.by_ref() {
                     if let Child::Token(tok) = child {
                         if tok.kind == ModelicaToken::RParen {
                             is_multiline = tok.start.line > token.start.line;

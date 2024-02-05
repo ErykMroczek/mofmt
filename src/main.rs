@@ -11,8 +11,8 @@ fn main() {
 /// Format files specified in the argument list
 fn format_files(args: &[String]) {
     let mut files = Vec::new();
-    args.into_iter()
-        .map(|s| PathBuf::from(s))
+    args.iter()
+        .map(PathBuf::from)
         .map(|p| {
             if p.is_dir() {
                 get_files_from_dir(p)
@@ -24,7 +24,7 @@ fn format_files(args: &[String]) {
     files.iter().for_each(|p| {
         let contents = read_file(p);
         let parsed = parse(&contents, SyntaxKind::StoredDefinition);
-        if parsed.errors.len() > 0 {
+        if !parsed.errors.is_empty() {
             let messages: Vec<String> = parsed.errors
                 .iter()
                 .map(|e| format!("{}:{}", p.display(), e))
@@ -40,7 +40,7 @@ fn format_files(args: &[String]) {
 fn get_files_from_dir(dir: PathBuf) -> Vec<PathBuf> {
     let mut files = Vec::new();
     let paths = fs::read_dir(&dir)
-        .expect(format!("{}: error reading from a directory", dir.display()).as_str());
+        .unwrap_or_else(|_| panic!("{}: error reading from a directory", dir.display()));
     paths
         .map(|e| e.unwrap().path())
         .map(|p| {
@@ -70,10 +70,10 @@ fn read_file(from: &Path) -> String {
     if !is_modelica(from) {
         panic!("{}: is not a Modelica file", from.display());
     }
-    fs::read_to_string(from).expect(format!("{}: error reading a file", from.display()).as_str())
+    fs::read_to_string(from).unwrap_or_else(|_| panic!("{}: error reading a file", from.display()))
 }
 
 /// Write formatted code to a file
 fn write_file(to: &Path, code: String) {
-    fs::write(to, code).expect(format!("{}: error writing a file", to.display()).as_str());
+    fs::write(to, code).unwrap_or_else(|_| panic!("{}: error writing a file", to.display()));
 }
