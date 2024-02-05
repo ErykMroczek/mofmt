@@ -59,6 +59,8 @@ final partial model FooModel
     else
       2;
 
+  Real smallest = (Modelica.Math.Vectors.sort({4, 2, 5, 1}))[1];
+
 protected
 
   // Here we have to comments

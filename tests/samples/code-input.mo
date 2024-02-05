@@ -48,6 +48,8 @@ parameter Real[1] foo = if bar then 2 elseif baz then 3 else 4;
 Integer[1, 3, 4] bar =if true then
 1 elseif baz<2 then 3 else 2;
 
+Real smallest=(Modelica.Math.Vectors.sort({4,2,5,1}))[1];
+
 protected
   // Here we have to comments
 
