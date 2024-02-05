@@ -40,7 +40,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-        run: cargo test --all-targets
+      - run: cargo test --all-targets
 
   build_and_test_win:
     name: Build and Test (Windows)
@@ -54,4 +54,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-        run: cargo test --all-targets
+      - run: cargo test --all-targets
