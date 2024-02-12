@@ -1021,7 +1021,7 @@ fn element_redeclaration(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ShortClassDefinition => short_class_definition(f, tree),
                 SyntaxKind::ComponentClause1 => component_clause1(f, tree),
-                SyntaxKind::ConstrainingClause => element_replaceable(f, tree),
+                SyntaxKind::ElementReplaceable => element_replaceable(f, tree),
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
