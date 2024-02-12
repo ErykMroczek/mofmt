@@ -34,9 +34,7 @@ mofmt PATH ...
 
 ## TODO
 
-* include HTML pretty-printer
-* include simple syntactical simplifications that don't affect the code
-  semantics (removing redundant parentheses etc.)
+[ ] include HTML pretty-printer
 
 ## License
 
