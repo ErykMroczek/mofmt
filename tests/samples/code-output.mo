@@ -63,7 +63,7 @@ final partial model FooModel
 
 protected
 
-  // Here we have to comments
+  // Here we have two comments
 
   /*
   And they are separated
