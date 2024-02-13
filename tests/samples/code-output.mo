@@ -285,6 +285,14 @@ external "C"
   annotation (smoothOrder = 2);
 
 end Foo;
+impure function Baz
+  "To check annotations after empty sections"
+
+algorithm
+
+  annotation ();
+
+end Baz;
 partial function Bar
   "Just in case"
 
