@@ -3,6 +3,16 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.4.2] - 2024-02-XX
+
+### Fixed
+
+- fix incorrect indent of "class" annotations that follow section
+  keywords like `algorithm`
+- fix the bug that caused mofmt to panic in element redeclared as
+  `replaceable`
+- fix the issue of changed line endings when mofmt was used on Windows
+
 ## [0.4.1] - 2024-02-05
 
 ### Fixed
