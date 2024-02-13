@@ -496,7 +496,12 @@ fn composition(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::AnnotationClause => {
                     f.markers.push(Marker::Indent);
-                    let extern_element_annotation = f.prev_tok != ModelicaToken::Semicolon;
+                    let extern_element_annotation = [
+                        ModelicaToken::RParen,
+                        ModelicaToken::External,
+                        ModelicaToken::String,
+                    ]
+                    .contains(&f.prev_tok);
                     if extern_element_annotation {
                         f.markers.push(Marker::Indent);
                     }

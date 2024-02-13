@@ -200,6 +200,10 @@ external"C" foo[1].bar [2] = baz(x
 annotation (Library="doesn't matter");
 annotation (smoothOrder = 2);
 end Foo;
+impure function Baz "To check annotations after empty sections"
+algorithm
+annotation ();
+end Baz;
 partial function Bar "Just in case"
   initial algorithm
 
