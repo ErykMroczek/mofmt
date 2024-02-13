@@ -31,7 +31,7 @@ including element-wise, are not.
 
 ```modelica
 -4
-.-(2 + 3)
+.-(A .+ B)
 not isOff
 ```
 
@@ -67,7 +67,7 @@ space. This includes discarded slots in *output-expression-list*.
 ```modelica
 {1.0, 2.0, 3.0} // Array
 enthalpy_pT(p, T) // Function call
-(foo, ,bar, baz) // Output expression list with a discared second element
+(foo, , bar, baz) // Output expression list with a discared second element
 [x, y; a, b] // Matrix
 ```
 
