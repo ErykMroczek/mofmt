@@ -51,7 +51,7 @@ Integer[1, 3, 4] bar =if true then
 Real smallest=(Modelica.Math.Vectors.sort({4,2,5,1}))[1];
 
 protected
-  // Here we have to comments
+  // Here we have two comments
 
   /*
   And they are separated

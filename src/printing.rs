@@ -20,6 +20,7 @@ impl Printer {
 
     fn print_marker(&mut self, m: Marker) -> Option<String> {
         const INDENT: &str = "  ";
+        const EOL: &str = if cfg!(windows) { "\r\n" } else { "\n" };
         match m {
             Marker::Space => Some(String::from(" ")),
             Marker::Indent => {
@@ -32,9 +33,9 @@ impl Printer {
             }
             Marker::Token(txt) => Some(txt),
             _ => {
-                let mut out = String::from("\n");
+                let mut out = String::from(EOL);
                 if m == Marker::Blank {
-                    out += "\n";
+                    out += EOL;
                 }
                 (0..self.indent).for_each(|_| out += INDENT);
                 Some(out)
