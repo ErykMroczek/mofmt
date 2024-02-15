@@ -4,7 +4,7 @@
 language. It aims to enhance readability and provide style consistency across
 different Modelica projects.
 
-mofmt is fairly opinionated, but it doesn't have, nor it will have, any option
+**mofmt** is fairly opinionated, but it doesn't have, nor it will have, any option
 to define a maximum line length. Instead, it detects legal line wraps in the
 original files, and preserves them, adding additional wraps to achieve visual
 consistency.
