@@ -8,3 +8,4 @@
 
 - [Style](./style/style.md)
     - [Horizontal spacing](./style/horizontal.md)
+    - [Vertical spacing](./style/vertical.md)
