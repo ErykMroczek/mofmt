@@ -4,4 +4,6 @@
 
 # User Guide
 
+- [Installation](./install.md)
+
 # Style
