@@ -1,0 +1,6 @@
+[book]
+authors = ["Eryk Mroczek"]
+language = "en"
+multilingual = false
+src = "src"
+title = "mofmt Documentation"
