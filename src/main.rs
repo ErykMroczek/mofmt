@@ -14,7 +14,7 @@ Usage: mofmt [OPTIONS] <PATHS>
 Options:
 -h, --help: display this message and exit
 -v, --version: display a version number and exit
---check: run mofmt in check mode
+--check: run mofmt in check mode (without modifying the file)
 "#;
 
 fn main() {
@@ -29,6 +29,10 @@ fn main() {
         println!("mofmt, {}", VERSION);
         std::process::exit(0);
     } else if args[1].as_str() == "--check" {
+        if args.len() < 3 {
+            eprintln!("Missing PATHS arguments.\n{}", HELP);
+            std::process::exit(1);
+        }
         format_files(&args[2..], true);
     } else {
         format_files(&args[1..], false);
@@ -69,6 +73,8 @@ fn format_files(args: &[String], check: bool) {
                         if output != source {
                             code = 1;
                             writeln!(lock, "{}: check failed", p.display()).unwrap();
+                        } else {
+                            writeln!(lock, "{}: check passed", p.display()).unwrap();
                         }
                     } else {
                         write_file(p, output);
@@ -81,6 +87,7 @@ fn format_files(args: &[String], check: bool) {
             }
         }
     });
+    std::process::exit(code);
 }
 
 /// Return all Modelica files from the given directory
