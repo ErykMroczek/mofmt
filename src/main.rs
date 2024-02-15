@@ -34,6 +34,9 @@ fn main() {
             std::process::exit(1);
         }
         format_files(&args[2..], true);
+    } else if args[1].starts_with("-") {
+        eprintln!("Unrecognized option: '{}'.\n{}", args[1], HELP);
+        std::process::exit(1);
     } else {
         format_files(&args[1..], false);
     }
