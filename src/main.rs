@@ -1,5 +1,6 @@
 use mofmt::pretty_print;
 use moparse::{parse, SyntaxKind};
+use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
@@ -36,7 +37,9 @@ fn main() {
 
 /// Format files specified in the argument list
 fn format_files(args: &[String], check: bool) {
+    let mut code = 0;
     let mut files = Vec::new();
+    let mut lock = stdout().lock();
     args.iter()
         .map(PathBuf::from)
         .map(|p| {
@@ -58,16 +61,24 @@ fn format_files(args: &[String], check: bool) {
                         .iter()
                         .map(|e| format!("{}:{}", p.display(), e))
                         .collect();
-                    println!(
-                        "Syntax errors detected (mofmt won't touch this file):\n{}",
-                        messages.join("\n")
-                    );
+                    writeln!(lock, "Syntax errors detected:\n{}", messages.join("\n")).unwrap();
+                    code = 1;
                 } else {
                     let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
-                    write_file(p, output);
+                    if check {
+                        if output != source {
+                            code = 1;
+                            writeln!(lock, "{}: check failed", p.display()).unwrap();
+                        }
+                    } else {
+                        write_file(p, output);
+                    }
                 }
             }
-            Err(e) => println!("{}: error: {}", p.display(), e),
+            Err(e) => {
+                eprintln!("{}: error: {}", p.display(), e);
+                code = 1;
+            }
         }
     });
 }
