@@ -3,16 +3,17 @@ use moparse::{parse, SyntaxKind};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-const VERSION: &str = "0.4.2";
+const VERSION: &str = "0.5.0";
 
 const HELP: &str = r#"
 mofmt: Modelica code formatter
 
-Usage: mofmt SRC ...
+Usage: mofmt [OPTIONS] <PATHS>
 
 Options:
 -h, --help: display this message and exit
 -v, --version: display a version number and exit
+--check: run mofmt in check mode
 "#;
 
 fn main() {
