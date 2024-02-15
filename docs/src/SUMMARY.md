@@ -4,7 +4,7 @@
 
 # User Guide
 
-- [Installation](./install.md)
-- [Usage](./usage.md)
+- [Installation](./guide/install.md)
+- [Usage](./guide/usage.md)
 
 # Style
