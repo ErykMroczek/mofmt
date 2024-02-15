@@ -27,12 +27,15 @@ fn main() {
     } else if ["-v", "--version"].contains(&args[1].as_str()) {
         println!("mofmt, {}", VERSION);
         std::process::exit(0);
+    } else if args[1].as_str() == "--check" {
+        format_files(&args[2..], true);
+    } else {
+        format_files(&args[1..], false);
     }
-    format_files(&args[1..]);
 }
 
 /// Format files specified in the argument list
-fn format_files(args: &[String]) {
+fn format_files(args: &[String], check: bool) {
     let mut files = Vec::new();
     args.iter()
         .map(PathBuf::from)
