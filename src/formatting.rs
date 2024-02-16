@@ -1572,23 +1572,15 @@ fn expression(f: &mut Formatter, tree: Tree) {
 }
 
 fn simple_expression(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
     for child in tree.children {
         match child {
             Child::Tree(tree) => logical_expression(f, tree),
             Child::Token(tok) => {
-                f.break_or_space(is_multiline, &tok);
+                f.markers.push(Marker::Space);
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
-    }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
     }
 }
 
