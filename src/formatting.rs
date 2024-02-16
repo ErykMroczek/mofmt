@@ -98,7 +98,7 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::NamedArgument => named_argument(&mut f, tree),
         SyntaxKind::FunctionArgument => function_argument(&mut f, tree),
         SyntaxKind::FunctionPartialApplication => function_partial_application(&mut f, tree),
-        SyntaxKind::OutputExpressionList => output_expression_list(&mut f, tree, false),
+        SyntaxKind::OutputExpressionList => output_expression_list(&mut f, tree),
         SyntaxKind::ExpressionList => expression_list(&mut f, tree, false),
         SyntaxKind::ArraySubscripts => array_subscripts(&mut f, tree),
         SyntaxKind::Subscript => subscript(&mut f, tree),
@@ -1232,17 +1232,7 @@ fn statement(f: &mut Formatter, tree: Tree) {
                     }
                 }
                 SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
-                SyntaxKind::OutputExpressionList => {
-                    let is_multiline = f.prev_line < tree.start().start.line || tree.is_multiline();
-                    if is_multiline {
-                        f.markers.push(Marker::Indent);
-                        f.handle_break(tree.start(), Blank::Illegal);
-                    }
-                    output_expression_list(f, tree, is_multiline);
-                    if is_multiline {
-                        f.markers.push(Marker::Dedent);
-                    }
-                }
+                SyntaxKind::OutputExpressionList => output_expression_list(f, tree),
                 SyntaxKind::IfStatement => if_statement(f, tree),
                 SyntaxKind::ForStatement => for_statement(f, tree),
                 SyntaxKind::WhileStatement => while_statement(f, tree),
@@ -1797,7 +1787,7 @@ fn primary(f: &mut Formatter, tree: Tree) {
                     }
                 }
                 // Arrays etc.
-                ModelicaToken::LCurly | ModelicaToken::LBracket | ModelicaToken::LParen => {
+                ModelicaToken::LCurly | ModelicaToken::LBracket => {
                     f.handle_token(tok);
                     f.markers.push(Marker::Indent);
                     if is_multiline {
@@ -1806,10 +1796,11 @@ fn primary(f: &mut Formatter, tree: Tree) {
                         }
                     }
                 }
-                ModelicaToken::RCurly | ModelicaToken::RBracket | ModelicaToken::RParen => {
+                ModelicaToken::RCurly | ModelicaToken::RBracket => {
                     f.markers.push(Marker::Dedent);
                     f.handle_token(tok);
                 }
+                ModelicaToken::LParen | ModelicaToken::RParen => f.handle_token(tok),
                 _ => unreachable!(),
             },
             Child::Tree(tree) => match tree.kind {
@@ -1820,7 +1811,7 @@ fn primary(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ExpressionList => {
                     expression_list(f, tree, is_multiline && children_count == 3)
                 }
-                SyntaxKind::OutputExpressionList => output_expression_list(f, tree, is_multiline),
+                SyntaxKind::OutputExpressionList => output_expression_list(f, tree),
                 _ => unreachable!(),
             },
         }
@@ -2063,19 +2054,14 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
     }
 }
 
-fn output_expression_list(f: &mut Formatter, tree: Tree, is_multiline: bool) {
+fn output_expression_list(f: &mut Formatter, tree: Tree) {
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => expression(f, t),
             Child::Token(tok) => {
-                if f.prev_tok == ModelicaToken::Comma {
-                    f.break_or_space(is_multiline, &tok);
-                }
                 f.handle_token(tok);
-                if let Some(Child::Tree(next_tree)) = children.peek() {
-                    f.break_or_space(is_multiline, next_tree.start());
-                }
+                f.markers.push(Marker::Space);
             }
         }
     }
