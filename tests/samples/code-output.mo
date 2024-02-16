@@ -150,23 +150,15 @@ equation
 
   /* Wrapped equations */
 
-  foo = foo
-    * pi
-    * bar ^ 2
-    / 4;
-  foo = bar
-    * baz
-    * (
-      bark
-        - bam);
+  foo = foo * pi
+    * bar ^ 2 / 4;
+  foo = bar * baz * (bark
+    - bam);
 
   /* Nested wrapping */
 
-  a_nominal = Z_factor
-    * func_a(foo = b_nominal, bar = c)
-    * Av
-    * Y
-    * func_b(
+  a_nominal = Z_factor * func_a(foo = b_nominal, bar = c)
+    * Av * Y * func_b(
       x_nominal * p_nominal * d_nominal,
       x_small = d_limit
         * d_small)
@@ -175,10 +167,8 @@ equation
   /* Arrays */
 
   volumes = {
-    diameter[i]
-      * diameter[i]
-      * 0.25
-      * length[i]
+    diameter[i] * diameter[i]
+      * 0.25 * length[i]
     for i in 1 : n};
   foo = sum(
     bar[i] - baz[i]
@@ -191,12 +181,9 @@ equation
     {-64, -63.4667},
     {-27.1111, -63.4667}};
   foo = (bar - 1) ^ 3
-    * (
-      1
-        - (baz + 12) / (10 * (baz + 1))
-        + sum(
-          (1 - 2 * (foo - k) / ((foo + 1) * k * (k + 1))) * 1 / (k - 1) * ((bar - 1) / r) ^ (k - 3)
-          for k in 1 : 42));
+    * (1 - (baz + 12) / (10 * (baz + 1)) + sum(
+      (1 - 2 * (foo - k) / ((foo + 1) * k * (k + 1))) * 1 / (k - 1) * ((bar - 1) / r) ^ (k - 3)
+      for k in 1 : 42));
   /* Matrices */
 
   extent = [-10, 110; 10, 90];
@@ -245,19 +232,12 @@ algorithm
 
   (A, B, C) := foo.bar.baz(a);
   (D, , E) := foo.bar.baz(b);
-  (
-    F,
-    G,
-    (
-      H,
-      J)) := foo.bar.baz(c);
+  (F, G, (H, J)) := foo.bar.baz(c);
 
   foo := {
     {
-      bar[i]
-        + j
-          * (baz[i] - ber[i])
-          / n
+      bar[i] + j
+        * (baz[i] - ber[i]) / n
       for i in 1 : n}
     for j in 1 : m};
   bar := {
@@ -267,11 +247,8 @@ algorithm
     for j in 1 : m};
 
   baz := aaa
-    + bbb
-      * (
-        ccc
-          + ddd
-          - eee)
+    + bbb * (ccc + ddd
+    - eee)
     - fff * ggg;
 
 external "C"
@@ -320,8 +297,7 @@ initial algorithm
     or u4 > 0;
 
   Modelica.Utilities.Streams.print(
-    "foo"
-      + "bar"
+    "foo" + "bar"
       + "baz");
 
 end Bar;
