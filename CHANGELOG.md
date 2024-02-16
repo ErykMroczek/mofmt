@@ -3,7 +3,7 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
-## [0.4.2] - 2024-02-XX
+## [0.4.2] - 2024-02-16
 
 ### Fixed
 
