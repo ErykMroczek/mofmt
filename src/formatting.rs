@@ -1813,7 +1813,9 @@ fn primary(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
                 SyntaxKind::ExpressionList => {
                     expression_list(f, tree, is_multiline && children_count == 3)
                 }
-                SyntaxKind::OutputExpressionList => wrapped = output_expression_list(f, tree, wrapped),
+                SyntaxKind::OutputExpressionList => {
+                    wrapped = output_expression_list(f, tree, wrapped)
+                }
                 _ => unreachable!(),
             },
         }
