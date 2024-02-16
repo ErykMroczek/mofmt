@@ -75,15 +75,15 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::Expression => expression(&mut f, tree),
         SyntaxKind::SimpleExpression => simple_expression(&mut f, tree),
         SyntaxKind::LogicalExpression => logical_expression(&mut f, tree),
-        SyntaxKind::LogicalTerm => logical_term(&mut f, tree),
-        SyntaxKind::LogicalFactor => logical_factor(&mut f, tree),
-        SyntaxKind::Relation => relation(&mut f, tree),
+        SyntaxKind::LogicalTerm => _ = logical_term(&mut f, tree, false),
+        SyntaxKind::LogicalFactor => _ = logical_factor(&mut f, tree, false),
+        SyntaxKind::Relation => _ = relation(&mut f, tree, false),
         SyntaxKind::RelationalOperator => relational_operator(&mut f, tree),
-        SyntaxKind::ArithmeticExpression => arithmetic_expression(&mut f, tree),
+        SyntaxKind::ArithmeticExpression => _ = arithmetic_expression(&mut f, tree, false),
         SyntaxKind::AddOperator => add_operator(&mut f, tree),
-        SyntaxKind::Term => term(&mut f, tree),
+        SyntaxKind::Term => _ = term(&mut f, tree, false),
         SyntaxKind::MulOperator => mul_operator(&mut f, tree),
-        SyntaxKind::Factor => factor(&mut f, tree),
+        SyntaxKind::Factor => _ = factor(&mut f, tree, false),
         SyntaxKind::Primary => primary(&mut f, tree),
         SyntaxKind::TypeSpecifier => type_specifier(&mut f, tree),
         SyntaxKind::Name => name(&mut f, tree),
@@ -1585,79 +1585,92 @@ fn simple_expression(f: &mut Formatter, tree: Tree) {
 }
 
 fn logical_expression(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for child in tree.children {
+    let mut wrapped = false;
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
         match child {
-            Child::Tree(tree) => logical_term(f, tree),
+            Child::Tree(tree) => wrapped = logical_term(f, tree, wrapped),
             Child::Token(tok) => {
-                f.break_or_space(is_multiline, &tok);
+                if let Some(Child::Tree(next_tree)) = children.peek() {
+                    let is_multiline = next_tree.start().start.line > f.prev_line;
+                    if is_multiline && !wrapped {
+                        f.markers.push(Marker::Indent);
+                    }
+                    if !wrapped {
+                        wrapped = is_multiline;
+                    }
+                    f.break_or_space(is_multiline, &tok);
+                }
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
     }
-    if is_multiline && length > 1 {
+    if wrapped {
         f.markers.push(Marker::Dedent);
     }
 }
 
-fn logical_term(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for child in tree.children {
+fn logical_term(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
         match child {
-            Child::Tree(tree) => logical_factor(f, tree),
+            Child::Tree(tree) => wrapped = logical_factor(f, tree, wrapped),
             Child::Token(tok) => {
-                f.break_or_space(is_multiline, &tok);
+                if let Some(Child::Tree(next_tree)) = children.peek() {
+                    let is_multiline = next_tree.start().start.line > f.prev_line;
+                    if is_multiline && !wrapped {
+                        f.markers.push(Marker::Indent);
+                    }
+                    if !wrapped {
+                        wrapped = is_multiline;
+                    }
+                    f.break_or_space(is_multiline, &tok);
+                }
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
     }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
-fn logical_factor(f: &mut Formatter, tree: Tree) {
+fn logical_factor(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     for child in tree.children {
         match child {
-            Child::Tree(tree) => relation(f, tree),
+            Child::Tree(tree) => wrapped = relation(f, tree, wrapped),
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
     }
+    wrapped
 }
 
-fn relation(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for child in tree.children {
+fn relation(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
         if let Child::Tree(tree) = child {
             if tree.kind == SyntaxKind::RelationalOperator {
-                f.break_or_space(is_multiline, tree.start());
+                if let Some(Child::Tree(next_tree)) = children.peek() {
+                    let is_multiline = next_tree.start().start.line > f.prev_line;
+                    if is_multiline && !wrapped {
+                        f.markers.push(Marker::Indent);
+                    }
+                    if !wrapped {
+                        wrapped = is_multiline;
+                    }
+                    f.break_or_space(is_multiline, tree.start());
+                }
                 relational_operator(f, tree);
                 f.markers.push(Marker::Space);
             } else {
-                arithmetic_expression(f, tree);
+                wrapped = arithmetic_expression(f, tree, wrapped);
             }
         }
     }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
 fn relational_operator(f: &mut Formatter, tree: Tree) {
@@ -1668,30 +1681,33 @@ fn relational_operator(f: &mut Formatter, tree: Tree) {
     }
 }
 
-fn arithmetic_expression(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for (idx, child) in tree.children.into_iter().enumerate() {
+fn arithmetic_expression(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let mut children = tree.children.into_iter().enumerate().peekable();
+    while let Some((idx, child)) = children.next() {
         if let Child::Tree(tree) = child {
             if tree.kind == SyntaxKind::AddOperator {
                 if idx > 0 {
-                    f.break_or_space(is_multiline, tree.start());
+                    if let Some((_, Child::Tree(next_tree))) = children.peek() {
+                        let is_multiline = next_tree.start().start.line > f.prev_line;
+                        if is_multiline && !wrapped {
+                            f.markers.push(Marker::Indent);
+                        }
+                        if !wrapped {
+                            wrapped = is_multiline;
+                        }
+                        f.break_or_space(is_multiline, tree.start());
+                    }
                 }
                 add_operator(f, tree);
                 if idx > 0 {
                     f.markers.push(Marker::Space);
                 }
             } else {
-                term(f, tree);
+                wrapped = term(f, tree, wrapped);
             }
         }
     }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
 fn add_operator(f: &mut Formatter, tree: Tree) {
@@ -1702,26 +1718,29 @@ fn add_operator(f: &mut Formatter, tree: Tree) {
     }
 }
 
-fn term(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for child in tree.children {
+fn term(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
         if let Child::Tree(tree) = child {
             if tree.kind == SyntaxKind::MulOperator {
-                f.break_or_space(is_multiline, tree.start());
+                if let Some(Child::Tree(next_tree)) = children.peek() {
+                    let is_multiline = next_tree.start().start.line > f.prev_line;
+                    if is_multiline && !wrapped {
+                        f.markers.push(Marker::Indent);
+                    }
+                    if !wrapped {
+                        wrapped = is_multiline;
+                    }
+                    f.break_or_space(is_multiline, tree.start());
+                }
                 mul_operator(f, tree);
                 f.markers.push(Marker::Space);
             } else {
-                factor(f, tree);
+                wrapped = factor(f, tree, wrapped);
             }
         }
     }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
 fn mul_operator(f: &mut Formatter, tree: Tree) {
@@ -1732,25 +1751,28 @@ fn mul_operator(f: &mut Formatter, tree: Tree) {
     }
 }
 
-fn factor(f: &mut Formatter, tree: Tree) {
-    let is_multiline = tree.is_multiline();
-    let length = tree.len();
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Indent);
-    }
-    for child in tree.children {
+fn factor(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let mut children = tree.children.into_iter().peekable();
+    while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => primary(f, tree),
             Child::Token(tok) => {
-                f.break_or_space(is_multiline, &tok);
+                if let Some(Child::Tree(next_tree)) = children.peek() {
+                    let is_multiline = next_tree.start().start.line > f.prev_line;
+                    if is_multiline && !wrapped {
+                        f.markers.push(Marker::Indent);
+                    }
+                    if !wrapped {
+                        wrapped = is_multiline;
+                    }
+                    f.break_or_space(is_multiline, &tok);
+                }
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
     }
-    if is_multiline && length > 1 {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
 fn primary(f: &mut Formatter, tree: Tree) {
