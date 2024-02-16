@@ -72,9 +72,9 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::WhenEquation => when_equation(&mut f, tree),
         SyntaxKind::WhenStatement => when_statement(&mut f, tree),
         SyntaxKind::ConnectEquation => connect_equation(&mut f, tree),
-        SyntaxKind::Expression => expression(&mut f, tree),
-        SyntaxKind::SimpleExpression => simple_expression(&mut f, tree),
-        SyntaxKind::LogicalExpression => logical_expression(&mut f, tree),
+        SyntaxKind::Expression => _ = expression(&mut f, tree, false),
+        SyntaxKind::SimpleExpression => _ = simple_expression(&mut f, tree, false),
+        SyntaxKind::LogicalExpression => _ = logical_expression(&mut f, tree, false),
         SyntaxKind::LogicalTerm => _ = logical_term(&mut f, tree, false),
         SyntaxKind::LogicalFactor => _ = logical_factor(&mut f, tree, false),
         SyntaxKind::Relation => _ = relation(&mut f, tree, false),
@@ -84,7 +84,7 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::Term => _ = term(&mut f, tree, false),
         SyntaxKind::MulOperator => mul_operator(&mut f, tree),
         SyntaxKind::Factor => _ = factor(&mut f, tree, false),
-        SyntaxKind::Primary => primary(&mut f, tree),
+        SyntaxKind::Primary => _ = primary(&mut f, tree, false),
         SyntaxKind::TypeSpecifier => type_specifier(&mut f, tree),
         SyntaxKind::Name => name(&mut f, tree),
         SyntaxKind::ComponentReference => component_reference(&mut f, tree),
@@ -98,7 +98,7 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::NamedArgument => named_argument(&mut f, tree),
         SyntaxKind::FunctionArgument => function_argument(&mut f, tree),
         SyntaxKind::FunctionPartialApplication => function_partial_application(&mut f, tree),
-        SyntaxKind::OutputExpressionList => output_expression_list(&mut f, tree),
+        SyntaxKind::OutputExpressionList => _ = output_expression_list(&mut f, tree, false),
         SyntaxKind::ExpressionList => expression_list(&mut f, tree, false),
         SyntaxKind::ArraySubscripts => array_subscripts(&mut f, tree),
         SyntaxKind::Subscript => subscript(&mut f, tree),
@@ -873,7 +873,7 @@ fn component_declaration(f: &mut Formatter, tree: Tree) {
 fn condition_attribute(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
-            Child::Tree(tree) => expression(f, tree),
+            Child::Tree(tree) => _ = expression(f, tree, false),
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
@@ -925,7 +925,7 @@ fn modification(f: &mut Formatter, tree: Tree) {
 fn modification_expression(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
-            Child::Tree(tree) => expression(f, tree),
+            Child::Tree(tree) => _ = expression(f, tree, false),
             Child::Token(tok) => f.handle_token(tok),
         }
     }
@@ -1171,7 +1171,7 @@ fn equation(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::SimpleExpression => simple_expression(f, tree),
+                SyntaxKind::SimpleExpression => _ = simple_expression(f, tree, false),
                 SyntaxKind::Expression => {
                     let is_multiline_if =
                         tree.is_multiline() && tree.start().kind == ModelicaToken::If;
@@ -1179,7 +1179,7 @@ fn equation(f: &mut Formatter, tree: Tree) {
                         f.markers.push(Marker::Indent);
                     }
                     f.break_or_space(is_multiline_if, tree.start());
-                    expression(f, tree);
+                    expression(f, tree, false);
                     if is_multiline_if {
                         f.markers.push(Marker::Dedent);
                     }
@@ -1226,13 +1226,13 @@ fn statement(f: &mut Formatter, tree: Tree) {
                         f.markers.push(Marker::Indent);
                     }
                     f.break_or_space(is_multiline_if, tree.start());
-                    expression(f, tree);
+                    expression(f, tree, false);
                     if is_multiline_if {
                         f.markers.push(Marker::Dedent);
                     }
                 }
                 SyntaxKind::FunctionCallArgs => function_call_args(f, tree),
-                SyntaxKind::OutputExpressionList => output_expression_list(f, tree),
+                SyntaxKind::OutputExpressionList => _ = output_expression_list(f, tree, false),
                 SyntaxKind::IfStatement => if_statement(f, tree),
                 SyntaxKind::ForStatement => for_statement(f, tree),
                 SyntaxKind::WhileStatement => while_statement(f, tree),
@@ -1262,7 +1262,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Expression => {
                     f.markers.push(Marker::Space);
-                    expression(f, tree);
+                    expression(f, tree, false);
                     f.markers.push(Marker::Space);
                 }
                 SyntaxKind::Equation => {
@@ -1297,7 +1297,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Expression => {
                     f.markers.push(Marker::Space);
-                    expression(f, tree);
+                    expression(f, tree, false);
                     f.markers.push(Marker::Space);
                 }
                 SyntaxKind::Statement => {
@@ -1399,7 +1399,7 @@ fn for_indices(f: &mut Formatter, tree: Tree) {
 fn for_index(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
-            Child::Tree(tree) => expression(f, tree),
+            Child::Tree(tree) => _ = expression(f, tree, false),
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if kind == ModelicaToken::In {
@@ -1420,7 +1420,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Expression => {
                     f.markers.push(Marker::Space);
-                    expression(f, tree);
+                    expression(f, tree, false);
                     f.markers.push(Marker::Space);
                 }
                 SyntaxKind::Statement => {
@@ -1449,7 +1449,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Expression => {
                     f.markers.push(Marker::Space);
-                    expression(f, tree);
+                    expression(f, tree, false);
                     f.markers.push(Marker::Space);
                 }
                 SyntaxKind::Equation => {
@@ -1478,7 +1478,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::Expression => {
                     f.markers.push(Marker::Space);
-                    expression(f, tree);
+                    expression(f, tree, false);
                     f.markers.push(Marker::Space);
                 }
                 SyntaxKind::Statement => {
@@ -1522,7 +1522,7 @@ fn connect_equation(f: &mut Formatter, tree: Tree) {
     f.markers.push(Marker::Dedent);
 }
 
-fn expression(f: &mut Formatter, tree: Tree) {
+fn expression(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     let is_multiline = tree.is_multiline();
     let mut conditional = false;
     let mut children = tree.children.into_iter().peekable();
@@ -1535,7 +1535,7 @@ fn expression(f: &mut Formatter, tree: Tree) {
                     } else {
                         f.markers.push(Marker::Space);
                     }
-                    expression(f, tree);
+                    expression(f, tree, false);
                     if conditional {
                         f.markers.push(Marker::Dedent);
                         if let Some(Child::Token(next_tok)) = children.peek() {
@@ -1546,7 +1546,7 @@ fn expression(f: &mut Formatter, tree: Tree) {
                     }
                     conditional = false;
                 }
-                SyntaxKind::SimpleExpression => simple_expression(f, tree),
+                SyntaxKind::SimpleExpression => wrapped = simple_expression(f, tree, wrapped),
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
@@ -1559,12 +1559,14 @@ fn expression(f: &mut Formatter, tree: Tree) {
             }
         }
     }
+    wrapped
 }
 
-fn simple_expression(f: &mut Formatter, tree: Tree) {
+fn simple_expression(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
+    let preceeded_by = f.prev_tok;
     for child in tree.children {
         match child {
-            Child::Tree(tree) => logical_expression(f, tree),
+            Child::Tree(tree) => wrapped = logical_expression(f, tree, wrapped),
             Child::Token(tok) => {
                 f.markers.push(Marker::Space);
                 f.handle_token(tok);
@@ -1572,10 +1574,13 @@ fn simple_expression(f: &mut Formatter, tree: Tree) {
             }
         }
     }
+    if wrapped && preceeded_by != ModelicaToken::LParen {
+        f.markers.push(Marker::Dedent);
+    }
+    wrapped
 }
 
-fn logical_expression(f: &mut Formatter, tree: Tree) {
-    let mut wrapped = false;
+fn logical_expression(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
@@ -1596,9 +1601,7 @@ fn logical_expression(f: &mut Formatter, tree: Tree) {
             }
         }
     }
-    if wrapped {
-        f.markers.push(Marker::Dedent);
-    }
+    wrapped
 }
 
 fn logical_term(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
@@ -1745,7 +1748,7 @@ fn factor(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
-            Child::Tree(tree) => primary(f, tree),
+            Child::Tree(tree) => wrapped = primary(f, tree, wrapped),
             Child::Token(tok) => {
                 if let Some(Child::Tree(next_tree)) = children.peek() {
                     let is_multiline = next_tree.start().start.line > f.prev_line;
@@ -1765,7 +1768,7 @@ fn factor(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     wrapped
 }
 
-fn primary(f: &mut Formatter, tree: Tree) {
+fn primary(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     let is_multiline = tree.is_multiline();
     let children_count = tree.children.len();
     let mut children = tree.children.into_iter().peekable();
@@ -1811,11 +1814,12 @@ fn primary(f: &mut Formatter, tree: Tree) {
                 SyntaxKind::ExpressionList => {
                     expression_list(f, tree, is_multiline && children_count == 3)
                 }
-                SyntaxKind::OutputExpressionList => output_expression_list(f, tree),
+                SyntaxKind::OutputExpressionList => wrapped = output_expression_list(f, tree, wrapped),
                 _ => unreachable!(),
             },
         }
     }
+    wrapped
 }
 
 fn type_specifier(f: &mut Formatter, tree: Tree) {
@@ -1884,7 +1888,7 @@ fn function_arguments(f: &mut Formatter, tree: Tree, is_multiline: bool) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => _ = expression(f, tree, false),
                 SyntaxKind::FunctionPartialApplication => function_partial_application(f, tree),
                 SyntaxKind::ForIndices => for_indices(f, tree),
                 SyntaxKind::FunctionArgumentsNonFirst => {
@@ -1928,7 +1932,7 @@ fn array_arguments(f: &mut Formatter, tree: Tree, is_multiline: bool) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => _ = expression(f, tree, false),
                 SyntaxKind::ArrayArgumentsNonFirst => {
                     f.break_or_space(is_multiline, tree.start());
                     array_arguments_non_first(f, tree, is_multiline);
@@ -1953,7 +1957,7 @@ fn array_arguments_non_first(f: &mut Formatter, tree: Tree, is_multiline: bool) 
     for child in tree.children {
         match child {
             Child::Tree(tree) => match tree.kind {
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => _ = expression(f, tree, false),
                 SyntaxKind::ArrayArgumentsNonFirst => {
                     f.break_or_space(is_multiline, tree.start());
                     array_arguments_non_first(f, tree, is_multiline);
@@ -2007,7 +2011,7 @@ fn function_argument(f: &mut Formatter, tree: Tree) {
         if let Child::Tree(tree) = child {
             match tree.kind {
                 SyntaxKind::FunctionPartialApplication => function_partial_application(f, tree),
-                SyntaxKind::Expression => expression(f, tree),
+                SyntaxKind::Expression => _ = expression(f, tree, false),
                 _ => unreachable!(),
             }
         }
@@ -2054,17 +2058,18 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
     }
 }
 
-fn output_expression_list(f: &mut Formatter, tree: Tree) {
+fn output_expression_list(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
-            Child::Tree(t) => expression(f, t),
+            Child::Tree(t) => wrapped = expression(f, t, wrapped),
             Child::Token(tok) => {
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
         }
     }
+    wrapped
 }
 
 fn expression_list(f: &mut Formatter, tree: Tree, mut is_multiline: bool) {
@@ -2076,7 +2081,7 @@ fn expression_list(f: &mut Formatter, tree: Tree, mut is_multiline: bool) {
     let mut children = tree.children.into_iter().peekable();
     while let Some(child) = children.next() {
         match child {
-            Child::Tree(t) => expression(f, t),
+            Child::Tree(t) => _ = expression(f, t, false),
             Child::Token(tok) => {
                 f.handle_token(tok);
                 if let Child::Tree(next_tree) = children.peek().unwrap() {
@@ -2115,7 +2120,7 @@ fn array_subscripts(f: &mut Formatter, tree: Tree) {
 fn subscript(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
-            Child::Tree(t) => expression(f, t),
+            Child::Tree(t) => _ = expression(f, t, false),
             Child::Token(tok) => f.handle_token(tok),
         }
     }
