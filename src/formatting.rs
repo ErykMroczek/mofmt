@@ -2060,8 +2060,7 @@ fn function_partial_application(f: &mut Formatter, tree: Tree) {
 }
 
 fn output_expression_list(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> bool {
-    let mut children = tree.children.into_iter().peekable();
-    while let Some(child) = children.next() {
+    for child in tree.children {
         match child {
             Child::Tree(t) => wrapped = expression(f, t, wrapped, true),
             Child::Token(tok) => {
