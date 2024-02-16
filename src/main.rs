@@ -20,7 +20,7 @@ Options:
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        eprintln!("{}", HELP);
+        eprintln!("Missing PATHS arguments.\n{}", HELP);
         std::process::exit(1);
     } else if ["-h", "--help"].contains(&args[1].as_str()) {
         println!("{}", HELP);
