@@ -1,24 +1,26 @@
 use mofmt::pretty_print;
 use moparse::{parse, SyntaxKind};
+use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-const VERSION: &str = "0.4.2";
+const VERSION: &str = "0.5.0";
 
 const HELP: &str = r#"
 mofmt: Modelica code formatter
 
-Usage: mofmt SRC ...
+Usage: mofmt [OPTIONS] <PATHS>
 
 Options:
 -h, --help: display this message and exit
 -v, --version: display a version number and exit
+--check: run mofmt in check mode (without modifying the file)
 "#;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        eprintln!("{}", HELP);
+        eprintln!("Missing PATHS arguments.\n{}", HELP);
         std::process::exit(1);
     } else if ["-h", "--help"].contains(&args[1].as_str()) {
         println!("{}", HELP);
@@ -26,13 +28,25 @@ fn main() {
     } else if ["-v", "--version"].contains(&args[1].as_str()) {
         println!("mofmt, {}", VERSION);
         std::process::exit(0);
+    } else if args[1].as_str() == "--check" {
+        if args.len() < 3 {
+            eprintln!("Missing PATHS arguments.\n{}", HELP);
+            std::process::exit(1);
+        }
+        format_files(&args[2..], true);
+    } else if args[1].starts_with('-') {
+        eprintln!("Unrecognized option: '{}'.\n{}", args[1], HELP);
+        std::process::exit(1);
+    } else {
+        format_files(&args[1..], false);
     }
-    format_files(&args[1..]);
 }
 
 /// Format files specified in the argument list
-fn format_files(args: &[String]) {
+fn format_files(args: &[String], check: bool) {
+    let mut code = 0;
     let mut files = Vec::new();
+    let mut lock = stdout().lock();
     args.iter()
         .map(PathBuf::from)
         .map(|p| {
@@ -54,18 +68,29 @@ fn format_files(args: &[String]) {
                         .iter()
                         .map(|e| format!("{}:{}", p.display(), e))
                         .collect();
-                    println!(
-                        "Syntax errors detected (mofmt won't touch this file):\n{}",
-                        messages.join("\n")
-                    );
+                    writeln!(lock, "Syntax errors detected:\n{}", messages.join("\n")).unwrap();
+                    code = 1;
                 } else {
                     let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
-                    write_file(p, output);
+                    if check {
+                        if output != source {
+                            code = 1;
+                            writeln!(lock, "{}: check failed", p.display()).unwrap();
+                        } else {
+                            writeln!(lock, "{}: check passed", p.display()).unwrap();
+                        }
+                    } else {
+                        write_file(p, output);
+                    }
                 }
             }
-            Err(e) => println!("{}: error: {}", p.display(), e),
+            Err(e) => {
+                eprintln!("{}: error: {}", p.display(), e);
+                code = 1;
+            }
         }
     });
+    std::process::exit(code);
 }
 
 /// Return all Modelica files from the given directory
