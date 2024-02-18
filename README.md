@@ -24,12 +24,48 @@ so if you are using Git, you can delegate running *mofmt* to
 
 ### Usage
 
-*mofmt* takes one kind of argument - path that points to Modelica source
-file or directory that is supposed to contain such files. *mofmt* can
-accept multiple such arguments.
+**mofmt** expects one or more paths that point to either Modelica source files, or to directories with such files:
 
 ```shell
-mofmt PATH ...
+mofmt <PATHS>
+```
+
+So you can format a single file:
+
+```shell
+mofmt foo.mo
+```
+
+or multiple files:
+
+```shell
+mofmt foo.mo bar.mo baz.mo
+```
+
+or all files inside the directory (**mofmt** searches for files recursively):
+
+```shell
+mofmt ./foo-dir
+```
+
+or all files inside multiple directories
+
+```shell
+mofmt ./foo-dir ./bar-dir
+```
+
+or you can mix both files and directories:
+
+```shell
+mofmt ./foo-dir foo.mo bar.mo ./bar-dir baz.mo
+```
+
+**mofmt** can run in *check mode*. In this mode files are not modified, instead
+**mofmt** checks the formatting in the original file, and reports an error in
+case of a failure:
+
+```shell
+mofmt --check <PATHS>
 ```
 
 ## TODO
