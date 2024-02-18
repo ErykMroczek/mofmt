@@ -3,6 +3,36 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.5.0] - 2024-02-18
+
+This release is probably the last that introduces any significant changes to the
+produced output.
+
+It brings back the previous, better, approach to line wrapping inside
+expressions. From now on expressions like arithmetical, logical etc. can only be
+wrapped manually, and **mofmt** only ensures that the wrapped expression is
+nicely indented.
+
+Moreover, **mofmt** no longer allows wrapping of *output-expression-list* rule
+in the similar fashion as function args etc. It looked strange when they
+included discarded outputs.
+
+With this release **mofmt** supports the check mode option, so it can be used as
+a part of CI pipelines.
+
+### Added
+
+- check mode (`--check`)
+
+### Changed
+
+- expressions wrapped at binary operators are indented only once, and wrapping
+  is not applied automatically to remaining operators
+
+### Removed
+
+- line wrapping in *output-expression-list*
+
 ## [0.4.2] - 2024-02-16
 
 ### Fixed
