@@ -6,6 +6,9 @@ across different Modelica projects.
 
 Code style applied by the *mofmt* is described in `code-style.md`.
 
+**mofmt** assumes that files are encoded as UTF-8 (without BOM). Other encoding
+will cause it to panic.
+
 ## Installation and usage
 
 ### Installation
@@ -24,7 +27,8 @@ so if you are using Git, you can delegate running *mofmt* to
 
 ### Usage
 
-**mofmt** expects one or more paths that point to either Modelica source files, or to directories with such files:
+**mofmt** expects one or more paths that point to either Modelica source files,
+or to directories with such files:
 
 ```shell
 mofmt <PATHS>
