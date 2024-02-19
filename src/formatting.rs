@@ -2064,6 +2064,9 @@ fn output_expression_list(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> b
         match child {
             Child::Tree(t) => wrapped = expression(f, t, wrapped, true),
             Child::Token(tok) => {
+                if f.prev_tok == ModelicaToken::LParen {
+                    f.markers.push(Marker::Space);  
+                }
                 f.handle_token(tok);
                 f.markers.push(Marker::Space);
             }
