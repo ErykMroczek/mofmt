@@ -181,7 +181,7 @@ algorithm
   (A,B,C):= foo.bar.baz
   (a);
   (D,,E) := foo.bar .baz(b);
-  (F, G,(H,
+  (, G,(H,
   J)) := foo.bar.baz(c);
 
 foo:={{bar[i] + j*

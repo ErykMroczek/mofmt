@@ -232,7 +232,7 @@ algorithm
 
   (A, B, C) := foo.bar.baz(a);
   (D, , E) := foo.bar.baz(b);
-  (F, G, (H, J)) := foo.bar.baz(c);
+  ( , G, (H, J)) := foo.bar.baz(c);
 
   foo := {
     {
