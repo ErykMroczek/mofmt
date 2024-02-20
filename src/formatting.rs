@@ -467,60 +467,66 @@ fn enumeration_literal(f: &mut Formatter, tree: Tree) {
 }
 
 fn composition(f: &mut Formatter, tree: Tree) {
+    let mut prev_rule = SyntaxKind::Error;
     for child in tree.children {
         match child {
-            Child::Tree(tree) => match tree.kind {
-                SyntaxKind::ElementList => {
-                    f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Required);
-                    element_list(f, tree);
-                    f.markers.push(Marker::Dedent);
-                }
-                SyntaxKind::EquationSection => {
-                    f.handle_break(tree.start(), Blank::Required);
-                    equation_section(f, tree);
-                }
-                SyntaxKind::AlgorithmSection => {
-                    f.handle_break(tree.start(), Blank::Required);
-                    algorithm_section(f, tree);
-                }
-                SyntaxKind::LanguageSpecification => {
-                    f.markers.push(Marker::Space);
-                    language_specification(f, tree);
-                }
-                SyntaxKind::ExternalFunctionCall => {
-                    f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Required);
-                    external_function_call(f, tree);
-                    f.markers.push(Marker::Dedent);
-                }
-                SyntaxKind::AnnotationClause => {
-                    f.markers.push(Marker::Indent);
-                    let extern_element_annotation = [
-                        ModelicaToken::RParen,
-                        ModelicaToken::External,
-                        ModelicaToken::String,
-                    ]
-                    .contains(&f.prev_tok);
-                    if extern_element_annotation {
+            Child::Tree(tree) => {
+                let kind = tree.kind;
+                match tree.kind {
+                    SyntaxKind::ElementList => {
                         f.markers.push(Marker::Indent);
-                    }
-                    f.handle_break(
-                        tree.start(),
-                        if !extern_element_annotation {
-                            Blank::Required
-                        } else {
-                            Blank::Illegal
-                        },
-                    );
-                    annotation_clause(f, tree);
-                    f.markers.push(Marker::Dedent);
-                    if extern_element_annotation {
+                        f.handle_break(tree.start(), Blank::Required);
+                        element_list(f, tree);
                         f.markers.push(Marker::Dedent);
                     }
+                    SyntaxKind::EquationSection => {
+                        f.handle_break(tree.start(), Blank::Required);
+                        equation_section(f, tree);
+                    }
+                    SyntaxKind::AlgorithmSection => {
+                        f.handle_break(tree.start(), Blank::Required);
+                        algorithm_section(f, tree);
+                    }
+                    SyntaxKind::LanguageSpecification => {
+                        f.markers.push(Marker::Space);
+                        language_specification(f, tree);
+                    }
+                    SyntaxKind::ExternalFunctionCall => {
+                        f.markers.push(Marker::Indent);
+                        f.handle_break(tree.start(), Blank::Required);
+                        external_function_call(f, tree);
+                        f.markers.push(Marker::Dedent);
+                    }
+                    SyntaxKind::AnnotationClause => {
+                        f.markers.push(Marker::Indent);
+                        let extern_element_annotation = f.prev_tok == ModelicaToken::External
+                            || ([
+                                SyntaxKind::LanguageSpecification,
+                                SyntaxKind::ExternalFunctionCall,
+                            ]
+                            .contains(&prev_rule)
+                                && f.prev_tok != ModelicaToken::Semicolon);
+                        if extern_element_annotation {
+                            f.markers.push(Marker::Indent);
+                        }
+                        f.handle_break(
+                            tree.start(),
+                            if !extern_element_annotation {
+                                Blank::Required
+                            } else {
+                                Blank::Illegal
+                            },
+                        );
+                        annotation_clause(f, tree);
+                        f.markers.push(Marker::Dedent);
+                        if extern_element_annotation {
+                            f.markers.push(Marker::Dedent);
+                        }
+                    }
+                    _ => unreachable!(),
                 }
-                _ => unreachable!(),
-            },
+                prev_rule = kind;
+            }
             Child::Token(tok) => {
                 let kind = tok.kind;
                 if [

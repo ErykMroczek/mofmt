@@ -270,6 +270,21 @@ algorithm
   annotation ();
 
 end Baz;
+function Baz
+  "To check annotations after decriptions"
+
+  annotation ();
+
+end Baz;
+function Extern
+  "To check annotations to external functions"
+
+external
+    annotation ();
+
+  annotation ();
+
+end Extern;
 partial function Bar
   "Just in case"
 
