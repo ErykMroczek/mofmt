@@ -102,7 +102,7 @@ mod tests {
     use super::*;
 
     fn tree(source: &str, start: SyntaxKind) -> Tree {
-        let parsed = parse(source, start);
+        let parsed = parse("none", source, start);
         build_tree(parsed.tokens, parsed.events)
     }
 
