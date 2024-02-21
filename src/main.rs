@@ -59,25 +59,21 @@ fn format_files(args: &[String], check: bool) {
         .for_each(|mut v| files.append(&mut v));
     files.iter().for_each(|p| {
         let contents = read_file(p);
+        let name = p.display();
         match contents {
             Ok(source) => {
-                let parsed = parse(&source, SyntaxKind::StoredDefinition);
+                let parsed = parse(name.to_string().as_str(), &source, SyntaxKind::StoredDefinition);
                 if !parsed.errors.is_empty() {
-                    let messages: Vec<String> = parsed
-                        .errors
-                        .iter()
-                        .map(|e| format!("{}:{}", p.display(), e))
-                        .collect();
-                    writeln!(lock, "Syntax errors detected:\n{}", messages.join("\n")).unwrap();
+                    writeln!(lock, "Syntax errors detected:\n{}", parsed.errors.join("\n")).unwrap();
                     code = 1;
                 } else {
                     let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
                     if check {
                         if output != source {
                             code = 1;
-                            writeln!(lock, "{}: check failed", p.display()).unwrap();
+                            writeln!(lock, "{}: check failed", name).unwrap();
                         } else {
-                            writeln!(lock, "{}: check passed", p.display()).unwrap();
+                            writeln!(lock, "{}: check passed", name).unwrap();
                         }
                     } else {
                         write_file(p, output);
@@ -85,7 +81,7 @@ fn format_files(args: &[String], check: bool) {
                 }
             }
             Err(e) => {
-                eprintln!("{}: error: {}", p.display(), e);
+                eprintln!("{}: error: {}", name, e);
                 code = 1;
             }
         }
