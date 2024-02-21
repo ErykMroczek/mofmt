@@ -62,9 +62,18 @@ fn format_files(args: &[String], check: bool) {
         let name = p.display();
         match contents {
             Ok(source) => {
-                let parsed = parse(name.to_string().as_str(), &source, SyntaxKind::StoredDefinition);
+                let parsed = parse(
+                    name.to_string().as_str(),
+                    &source,
+                    SyntaxKind::StoredDefinition,
+                );
                 if !parsed.errors.is_empty() {
-                    writeln!(lock, "Syntax errors detected:\n{}", parsed.errors.join("\n")).unwrap();
+                    writeln!(
+                        lock,
+                        "Syntax errors detected:\n{}",
+                        parsed.errors.join("\n")
+                    )
+                    .unwrap();
                     code = 1;
                 } else {
                     let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
