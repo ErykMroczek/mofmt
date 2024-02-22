@@ -3,6 +3,13 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.5.1] - 2024-02-22
+
+### Fixed
+
+- remove error occuring when first function output is dropped
+- fix class annotation indentation in empty classes
+
 ## [0.5.0] - 2024-02-18
 
 This release is probably the last that introduces any significant changes to the
