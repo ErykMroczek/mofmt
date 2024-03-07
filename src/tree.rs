@@ -1,5 +1,6 @@
 use moparse::{SyntaxEvent, SyntaxKind, Token};
 
+/// Return the parse tree built from the collection returned from parser
 pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
     let mut stack = Vec::new();
     let mut tokens = tokens.into_iter();

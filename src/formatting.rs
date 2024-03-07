@@ -3,12 +3,14 @@ use std::{iter::Peekable, vec::IntoIter};
 use crate::{markers::Marker, tree::Child, tree::Tree};
 use moparse::*;
 
+/// Enum used for controling blank line insertion
 enum Blank {
     Required,
     Legal,
     Illegal,
 }
 
+/// Return collection of markers that should be consumed to generate pretty printed string
 pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     let mut f = Formatter::new(comments);
     match tree.kind {
@@ -111,6 +113,7 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
     f.markers
 }
 
+/// Helper structure that collects markers
 struct Formatter {
     comments: Peekable<IntoIter<Token>>,
     markers: Vec<Marker>,
@@ -128,6 +131,7 @@ impl Formatter {
         }
     }
 
+    /// Insert whitespace or linebreak marker
     fn break_or_space(&mut self, is_multiline: bool, tok: &Token) {
         if is_multiline {
             self.handle_break(tok, Blank::Illegal);
@@ -136,6 +140,7 @@ impl Formatter {
         }
     }
 
+    /// Find and insert comments, and check if blank line may be inserted
     fn handle_break(&mut self, tok: &Token, blanks: Blank) {
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
@@ -182,6 +187,8 @@ impl Formatter {
         }
     }
 
+    /// Return comments from before the specified token.
+    /// First vector contains inline comments.
     fn comments_before(&mut self, tok: &Token) -> (Vec<Token>, Vec<Token>) {
         let mut comments = Vec::new();
         let mut inlines = Vec::new();
@@ -199,7 +206,9 @@ impl Formatter {
         (inlines, comments)
     }
 
+    /// Collect token marker and update the last token data
     fn handle_token(&mut self, tok: Token) {
+        // Discard comments, as they are only allowed when line is wrapped
         let _ = self.comments_before(&tok);
         self.prev_line = tok.end.line;
         self.prev_tok = tok.kind;
