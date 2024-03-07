@@ -17,6 +17,8 @@ Options:
 --check: run mofmt in check mode (without modifying the file)
 "#;
 
+const EOL: &str = if cfg!(windows) { "\r\n" } else { "\n" };
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -76,7 +78,7 @@ fn format_files(args: &[String], check: bool) {
                     .unwrap();
                     code = 1;
                 } else {
-                    let output = pretty_print(parsed.tokens, parsed.comments, parsed.events);
+                    let output = pretty_print(parsed.tokens, parsed.comments, parsed.events) + EOL;
                     if check {
                         if output != source {
                             code = 1;

@@ -109,7 +109,6 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
         SyntaxKind::AnnotationClause => annotation_clause(&mut f, tree),
         SyntaxKind::Error => (),
     }
-    f.markers.push(Marker::Break);
     f.markers
 }
 
