@@ -47,6 +47,7 @@ final partial model FooModel
 
   extends .Bark.Bark(
     break connect(a.b, c),
+    break Baz,
     anotherUselessVar = break);
 
   // Some conditional expressions

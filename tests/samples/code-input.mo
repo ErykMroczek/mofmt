@@ -40,7 +40,7 @@ end 'Quoted record "whatever"';
 
 final partial model FooModel
       "Foo model"
-     extends .Bark.Bark(break connect(a.b  ,c),
+     extends .Bark.Bark(break connect(a.b  ,c),break Baz,
      anotherUselessVar = break);
 
 // Some conditional expressions
