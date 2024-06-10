@@ -17,8 +17,8 @@ mod tree;
 
 mod tests {
 
-    use moparse::{parse, ModelicaToken, SyntaxKind};
     use super::*;
+    use moparse::{parse, SyntaxKind};
 
     fn format_code(input: &str, entry: SyntaxKind) -> String {
         let parsed = parse("", input, entry);
@@ -31,7 +31,9 @@ mod tests {
         let source = "x+2   * (  - y)";
         let expected = "x + 2 * (-y)";
         let actual = format_code(source, SyntaxKind::SimpleExpression);
-        assert_eq!(expected, actual, "expected that operators are surrouned with spaces");
+        assert_eq!(
+            expected, actual,
+            "expected that operators are surrouned with spaces"
+        );
     }
-
 }

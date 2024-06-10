@@ -805,8 +805,11 @@ fn inheritance_modification(f: &mut Formatter, tree: Tree) {
         match child {
             Child::Tree(tree) => connect_equation(f, tree),
             Child::Token(tok) => {
+                let kind = tok.kind;
                 f.handle_token(tok);
-                f.markers.push(Marker::Space);
+                if kind == ModelicaToken::Break {
+                    f.markers.push(Marker::Space);
+                }
             }
         }
     }
