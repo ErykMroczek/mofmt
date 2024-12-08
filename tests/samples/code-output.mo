@@ -127,6 +127,7 @@ equation
   end if;
   if a < b then
     if x < 0 then
+
       m = n;
     elseif x < y then
       m = 2 * n;
@@ -145,7 +146,9 @@ equation
 
   for i in 1 : m loop
     for j in 1 : n loop
+
       connect(a[i], b[i, k]);
+
     end for;
   end for;
 
