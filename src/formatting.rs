@@ -1284,7 +1284,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1300,7 +1300,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
                 ]
                 .contains(&tok.kind)
                 {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1319,7 +1319,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1335,7 +1335,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
                 ]
                 .contains(&tok.kind)
                 {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1354,7 +1354,7 @@ fn for_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1364,7 +1364,7 @@ fn for_equation(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1383,7 +1383,7 @@ fn for_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1393,7 +1393,7 @@ fn for_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::For && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1442,7 +1442,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1452,7 +1452,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::While && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1471,7 +1471,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Equation => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     equation(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1481,7 +1481,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
@@ -1500,7 +1500,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
                 }
                 SyntaxKind::Statement => {
                     f.markers.push(Marker::Indent);
-                    f.handle_break(tree.start(), Blank::Illegal);
+                    f.handle_break(tree.start(), Blank::Legal);
                     statement(f, tree);
                     f.markers.push(Marker::Dedent);
                 }
@@ -1510,7 +1510,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
                 if tok.kind == ModelicaToken::When && f.prev_tok == ModelicaToken::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == ModelicaToken::ElseWhen || tok.kind == ModelicaToken::End {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(&tok, Blank::Legal);
                 }
                 f.handle_token(tok);
             }
