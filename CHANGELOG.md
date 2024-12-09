@@ -3,6 +3,26 @@
 All important changes will be described in this file. Or rather I will
 try to document them here.
 
+## [0.6.0] - 2024-12-09
+
+This release does not contain any significant changes in how formatter works,
+but it is important as a first step in refactoring and restructuring
+that should lead to a more sophisticated tool. Main change is that parser that
+previously was maintained as a separate crate `moparse` is now a module of
+`mofmt`.
+
+The release itself is created mainly because the previous one was 10 months ago,
+and some fixes were introduced in the meantime.
+
+### Added
+
+- add support for blank lines in block equations/statements (#48)
+
+### Fixed
+
+- fix error of inserting unnecessary spaces in inheritance modifiers (#46)
+- fix parser error when parsing block comments with additional '*'chars
+
 ## [0.5.1] - 2024-02-22
 
 ### Fixed
