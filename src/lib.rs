@@ -1,10 +1,8 @@
 // Re-exports
 
-pub use parser::{parse, SyntaxKind};
+pub use parser::{parse, SyntaxKind, build_tree};
 
-use self::formatting::format;
-use self::printing::print;
-use self::tree::build_tree;
+use self::formatter::{format, print};
 use self::parser::{SyntaxEvent, Token};
 
 /// Return string containing formatted Modelica code
@@ -14,11 +12,8 @@ pub fn pretty_print(tokens: Vec<Token>, comments: Vec<Token>, events: Vec<Syntax
     print(markers)
 }
 
-mod formatting;
-mod markers;
-mod printing;
-mod tree;
 mod parser;
+mod formatter;
 
 mod tests {
 

@@ -3,12 +3,14 @@ mod lexing;
 mod parsing;
 mod syntax;
 mod tokens;
+mod tree;
 
 // Re-exports
 
 pub use tokens::{ModelicaToken, Token};
 pub use syntax::SyntaxKind;
 pub use events::SyntaxEvent;
+pub use tree::{Child, Tree, build_tree};
 
 /// Output from the parser.
 /// Contains everything necesary to build a parse tree.

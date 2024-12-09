@@ -1,4 +1,4 @@
-use crate::markers::Marker;
+use super::markers::Marker;
 
 pub fn print(markers: Vec<Marker>) -> String {
     let mut printer = Printer::new();
