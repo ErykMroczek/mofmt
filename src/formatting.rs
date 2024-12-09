@@ -1,7 +1,7 @@
 use std::{iter::Peekable, vec::IntoIter};
 
 use crate::{markers::Marker, tree::Child, tree::Tree};
-use moparse::*;
+use super::parser::*;
 
 /// Enum used for controling blank line insertion
 enum Blank {

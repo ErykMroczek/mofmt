@@ -1,5 +1,4 @@
-use mofmt::pretty_print;
-use moparse::{parse, SyntaxKind};
+use mofmt::{parse, SyntaxKind, pretty_print};
 use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};

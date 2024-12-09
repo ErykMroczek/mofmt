@@ -1,4 +1,4 @@
-use moparse::{SyntaxEvent, SyntaxKind, Token};
+use super::parser::{SyntaxEvent, SyntaxKind, Token};
 
 /// Return the parse tree built from the collection returned from parser
 pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
@@ -98,7 +98,7 @@ impl Tree {
 
 #[cfg(test)]
 mod tests {
-    use moparse::{parse, ModelicaToken};
+    use super::super::parser::{parse, ModelicaToken};
 
     use super::*;
 

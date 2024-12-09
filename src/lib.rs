@@ -1,7 +1,11 @@
+// Re-exports
+
+pub use parser::{parse, SyntaxKind};
+
 use self::formatting::format;
 use self::printing::print;
 use self::tree::build_tree;
-use moparse::{SyntaxEvent, Token};
+use self::parser::{SyntaxEvent, Token};
 
 /// Return string containing formatted Modelica code
 pub fn pretty_print(tokens: Vec<Token>, comments: Vec<Token>, events: Vec<SyntaxEvent>) -> String {
@@ -14,11 +18,12 @@ mod formatting;
 mod markers;
 mod printing;
 mod tree;
+mod parser;
 
 mod tests {
 
     use super::*;
-    use moparse::{parse, SyntaxKind};
+    use crate::parser::{parse, SyntaxKind};
 
     fn format_code(input: &str, entry: SyntaxKind) -> String {
         let parsed = parse("", input, entry);
