@@ -9,10 +9,7 @@ readme = "README.md"
 repository = "https://github.com/ErykMroczek/mofmt"
 keywords = ["Modelica", "development", "formatter"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-moparse = "0.1.6"
 
 [profile.release]
 strip = true
