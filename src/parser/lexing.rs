@@ -274,7 +274,7 @@ impl<'a> Lexer<'a> {
                 _ => self.generate_token(ModelicaToken::Slash),
             }
         } else {
-            self.generate_token(ModelicaToken::Dot);
+            self.generate_token(ModelicaToken::Slash);
         }
     }
 
