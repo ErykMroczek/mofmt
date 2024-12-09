@@ -293,8 +293,9 @@ impl<'a> Lexer<'a> {
     fn lex_blockcomment(&mut self) {
         while let Some(c) = self.next() {
             if c == '*' {
-                if let Some(c) = self.next() {
+                if let Some(c) = self.peek() {
                     if c == '/' {
+                        self.next();
                         return self.generate_token(ModelicaToken::BlockComment);
                     }
                 } else {
@@ -457,5 +458,14 @@ mod tests {
         assert_eq!(errors.len(), 0);
         assert_eq!(tokens.len(), 5);
         assert_eq!(tokens[3].text, "\"stringą\"");
+    }
+
+    #[test]
+    fn lexing_block_comment() {
+        let source = "/** comment **/";
+        let (tokens, comments, errors) = lex("none", source);
+        assert_eq!(errors.len(), 0);
+        assert_eq!(tokens.len(), 0);
+        assert_eq!(comments.len(), 1);
     }
 }
