@@ -3,7 +3,7 @@ use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-const VERSION: &str = "0.5.1";
+const VERSION: &str = "0.6.0";
 
 const HELP: &str = r#"
 mofmt: Modelica code formatter
