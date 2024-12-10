@@ -138,8 +138,14 @@ impl<'a> Lexer<'a> {
     }
 
     /// Consume a sequence of valid characters from the input
-    fn accept_seq(&mut self, s: &str) {
-        while self.accept(s) {}
+    #[inline(always)]
+    fn accept_digits(&mut self) {
+        while let Some(c) = self.peek() {
+            if !c.is_ascii_digit() {
+                return;
+            }
+            self.next();
+        }
     }
 
     /// Top-level lexing procedure
@@ -167,9 +173,9 @@ impl<'a> Lexer<'a> {
                 '\'' => self.lex_qident(),
                 '/' => self.lex_slash(),
                 _ => {
-                    if c.is_whitespace() {
+                    if c.is_ascii_whitespace() {
                         return self.lex_space();
-                    } else if c.is_numeric() {
+                    } else if c.is_ascii_digit() {
                         return self.lex_numeral();
                     } else if c.is_ascii_alphabetic() || c == '_' {
                         return self.lex_nondigit();
@@ -309,7 +315,7 @@ impl<'a> Lexer<'a> {
     /// Scan the slice of whitespace chars and discard them
     fn lex_space(&mut self) {
         while let Some(c) = self.peek() {
-            if c.is_whitespace() {
+            if c.is_ascii_whitespace() {
                 self.next();
             } else {
                 break;
@@ -321,20 +327,19 @@ impl<'a> Lexer<'a> {
 
     /// Scan the slice that is supposed to be a numeral
     fn lex_numeral(&mut self) {
-        const DIGITS: &str = "0123456789";
-        self.accept_seq(DIGITS);
+        self.accept_digits();
         if !self.accept(".") {
             if !self.accept("eE") {
                 return self.generate_token(ModelicaToken::UInt);
             }
             self.accept("+-");
-            self.accept_seq(DIGITS);
+            self.accept_digits();
             return self.generate_token(ModelicaToken::UReal);
         }
-        self.accept_seq(DIGITS);
+        self.accept_digits();
         if self.accept("eE") {
             self.accept("+-");
-            self.accept_seq(DIGITS);
+            self.accept_digits();
         }
         self.generate_token(ModelicaToken::UReal)
     }
