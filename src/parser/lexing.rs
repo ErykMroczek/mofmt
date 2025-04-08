@@ -1,4 +1,7 @@
-use super::tokens::TokenKind;
+use super::{
+    tokens::{Position, TokenKind},
+    Token,
+};
 
 /// Return collections of Modelica tokens, comments and errors generated from the input.
 pub fn lex(name: String, source: String) -> Tokenized {
@@ -29,6 +32,36 @@ impl Tokenized {
             starts: Vec::new(),
             ends: Vec::new(),
         };
+    }
+    pub fn get(&self, i: usize) -> Option<Token> {
+        if let Some(kind) = self.kinds.get(i) {
+            let start = self.starts[i];
+            let end = self.ends[i];
+            let text = String::from(&self.source[start..end]);
+            let lines: Vec<&str> = text.split('\n').collect();
+            let pre = &self.source[..start];
+            let pre_lines: Vec<&str> = pre.split('\n').collect();
+            let start_pos = Position {
+                offset: start,
+                line: pre_lines.len(),
+                col: pre_lines.last().unwrap().chars().count(),
+            };
+            let end_pos = Position {
+                offset: end,
+                line: lines.len(),
+                col: lines.last().unwrap().chars().count(),
+            };
+            Some(Token {
+                kind: *kind,
+                text,
+                source: self.name.clone(),
+                idx: i,
+                start: start_pos,
+                end: end_pos,
+            })
+        } else {
+            None
+        }
     }
 }
 
@@ -401,19 +434,26 @@ mod tests {
         /* End there goes
         a block comment! */
         final constant Some.Type 'quoted'(min = 0, max = 1) = func.call(x);"#;
-        let (tokens, comments, errors) = lex("none", source);
-        assert_eq!(tokens.len(), 46);
+        let tokens = lex(String::from("none"), String::from(source));
+        let comments: Vec<Token> = tokens
+            .kinds
+            .iter()
+            .enumerate()
+            .filter(|(_, k)| **k == TokenKind::BlockComment || **k == TokenKind::LineComment)
+            .map(|(i, _)| tokens.get(i).unwrap())
+            .collect();
+        assert_eq!(tokens.kinds.len(), 48);
         assert_eq!(comments.len(), 2);
-        assert_eq!(tokens[0].text, "within");
-        assert_eq!(tokens[0].kind, TokenKind::Within);
-        assert_eq!(tokens[0].start.line, 1);
-        assert_eq!(tokens[1].kind, TokenKind::Identifier);
-        assert_eq!(tokens.last().unwrap().text, ";");
-        assert_eq!(tokens.last().unwrap().kind, TokenKind::Semicolon);
+        assert_eq!(tokens.get(0).unwrap().text, "within");
+        assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Within);
+        assert_eq!(tokens.get(0).unwrap().start.line, 1);
+        assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Identifier);
+        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().text, ";");
+        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().kind, TokenKind::Semicolon);
         assert_eq!(comments[0].kind, TokenKind::LineComment);
-        assert_eq!(tokens.last().unwrap().start.line, 7);
-        assert_eq!(tokens[0].start.col, 1);
-        assert_eq!(tokens[1].start.col, 8);
+        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().start.line, 7);
+        assert_eq!(tokens.get(0).unwrap().start.col, 1);
+        assert_eq!(tokens.get(1).unwrap().start.col, 8);
         assert_eq!(comments[0].start.col, 9);
         assert_eq!(errors.len(), 0);
     }

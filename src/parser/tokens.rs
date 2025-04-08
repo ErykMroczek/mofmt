@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Error, Formatter};
 
-#[derive(PartialEq, Copy, Clone)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd)]
+#[repr(u8)]
 /// Represents a type of a Modelica token. Defined based on Modelica
 /// Specification
 /// 3.7
@@ -12,6 +13,9 @@ pub enum TokenKind {
     ErrorUnclosedString,
     ErrorUnclosedBlockComment,
     ErrorUnclosedQIdent,
+
+    LineComment,
+    BlockComment,
 
     Comma,
     Dot,
@@ -98,8 +102,6 @@ pub enum TokenKind {
     End,
     Der,
     Connect,
-    LineComment,
-    BlockComment,
     Identifier,
     String,
     UInt,

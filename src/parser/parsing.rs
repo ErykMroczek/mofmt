@@ -1,30 +1,24 @@
 use std::cell::Cell;
 
 use super::events::SyntaxEvent;
+use super::lexing::Tokenized;
 use super::syntax::SyntaxKind;
-use super::tokens::{TokenKind, Token};
+use super::tokens::TokenKind;
 
-pub fn events(
-    name: &str,
-    tokens: &Vec<Token>,
-    start: SyntaxKind,
-) -> (Vec<SyntaxEvent>, Vec<String>) {
-    let mut parser = Parser::new(name, tokens);
+pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
+    let mut parser = Parser::new(tokens);
     parser.parse(start);
-    (parser.events, parser.errors)
+    parser.events
 }
 
 /// Represents a Modelica parser
 struct Parser<'a> {
-    /// Source name
-    name: &'a str,
     /// Scanned tokens
-    tokens: &'a Vec<Token>,
+    tokens: &'a Tokenized,
+    indices: Vec<usize>,
     /// Collected syntax events
     events: Vec<SyntaxEvent>,
-    /// Collection of errors
-    errors: Vec<String>,
-    /// Current position in the `TokenCollection`
+    /// Current position in the `indices`
     pos: usize,
     /// Parser lifes
     lifes: Cell<u32>,
@@ -129,13 +123,19 @@ impl<'a> Parser<'a> {
     }
 
     /// Return a new parser instance
-    fn new(name: &'a str, tokens: &'a Vec<Token>) -> Self {
-        let cap = tokens.len();
+    fn new(tokens: &'a Tokenized) -> Self {
+        let cap = tokens.kinds.len();
+        let indices = tokens
+            .kinds
+            .iter()
+            .enumerate()
+            .filter(|(_, k)| **k >= TokenKind::Comma)
+            .map(|(i, _)| i)
+            .collect();
         Parser {
-            name,
             tokens,
+            indices,
             events: Vec::with_capacity(cap),
-            errors: Vec::new(),
             pos: 0,
             lifes: Cell::new(100),
         }
@@ -163,36 +163,35 @@ impl<'a> Parser<'a> {
     /// Advance the parser, consume the token and push it into the events vector
     fn advance(&mut self) {
         assert!(!self.eof());
-        self.events.push(SyntaxEvent::Advance);
+        self.events.push(SyntaxEvent::Advance(self.indices.get(self.pos).unwrap().clone()));
         self.pos += 1;
         self.lifes.set(100);
     }
 
     /// Return `true` if parser reached the end of file
     fn eof(&self) -> bool {
-        self.pos == self.tokens.len()
+        self.pos == self.indices.len()
     }
-
     /// Return type of the n-th token counting from the current one.
     fn nth(&self, n: usize) -> TokenKind {
         if self.lifes.get() == 0 {
             self.blowup();
         }
         self.lifes.set(self.lifes.get() - 1);
-        self.tokens
+        self.indices
             .get(self.pos + n)
-            .map_or(TokenKind::EOF, |tok| tok.kind)
+            .map_or(TokenKind::EOF, |i| self.tokens.kinds[*i])
     }
 
     fn blowup(&self) {
         let tok = if !self.eof() {
             self.tokens.get(self.pos).unwrap()
         } else {
-            self.tokens.last().unwrap()
+            self.tokens.get(self.tokens.kinds.len()-1).unwrap()
         };
         panic!(
             "{}:{}:{}: Parser stuck",
-            self.name, tok.start.line, tok.start.col
+            tok.source, tok.start.line, tok.start.col
         );
     }
 
@@ -218,25 +217,12 @@ impl<'a> Parser<'a> {
 
     /// Mark currently parsed token as erroneus.
     fn error(&mut self, msg: String) {
-        if let Some(tok) = self.tokens.get(self.pos) {
-            self.errors.push(format!(
-                "{}:{}:{}: {}",
-                self.name, tok.start.line, tok.start.col, msg
-            ));
-        } else {
-            self.errors.push(format!(
-                "{}:{}:{}: {}",
-                self.name,
-                self.tokens.last().unwrap().start.line,
-                self.tokens.last().unwrap().start.col,
-                msg
-            ));
-        }
+        self.events.push(SyntaxEvent::Error(msg));
     }
 
     fn advance_with_error(&mut self, msg: String) {
-        self.error(msg);
         let mark = self.enter();
+        self.error(msg);
         self.advance();
         self.exit(mark, SyntaxKind::Error);
     }
@@ -450,12 +436,7 @@ fn enumeration_literal(p: &mut Parser) {
 fn composition(p: &mut Parser) {
     let mark = p.enter();
     element_list(p);
-    while !p.check_any(&[
-        TokenKind::External,
-        TokenKind::Annotation,
-        TokenKind::End,
-    ]) && !p.eof()
-    {
+    while !p.check_any(&[TokenKind::External, TokenKind::Annotation, TokenKind::End]) && !p.eof() {
         let k = p.nth(0);
         match k {
             TokenKind::Public | TokenKind::Protected => {
@@ -714,11 +695,7 @@ fn declaration(p: &mut Parser) {
     if p.check(TokenKind::LBracket) {
         array_subscripts(p);
     }
-    if p.check_any(&[
-        TokenKind::LParen,
-        TokenKind::Equal,
-        TokenKind::Assign,
-    ]) {
+    if p.check_any(&[TokenKind::LParen, TokenKind::Equal, TokenKind::Assign]) {
         modification(p);
     }
     p.exit(mark, SyntaxKind::Declaration);
@@ -792,11 +769,7 @@ fn element_modification_or_replaceable(p: &mut Parser) {
 fn element_modification(p: &mut Parser) {
     let mark = p.enter();
     name(p);
-    if p.check_any(&[
-        TokenKind::LParen,
-        TokenKind::Equal,
-        TokenKind::Assign,
-    ]) {
+    if p.check_any(&[TokenKind::LParen, TokenKind::Equal, TokenKind::Assign]) {
         modification(p);
     }
     description_string(p);
@@ -934,12 +907,7 @@ fn if_equation(p: &mut Parser) {
     p.expect(TokenKind::If);
     expression(p);
     p.expect(TokenKind::Then);
-    while !p.check_any(&[
-        TokenKind::ElseIf,
-        TokenKind::Else,
-        TokenKind::End,
-    ]) && !p.eof()
-    {
+    while !p.check_any(&[TokenKind::ElseIf, TokenKind::Else, TokenKind::End]) && !p.eof() {
         equation(p);
         p.expect(TokenKind::Semicolon);
     }
@@ -947,12 +915,7 @@ fn if_equation(p: &mut Parser) {
         p.expect(TokenKind::ElseIf);
         expression(p);
         p.expect(TokenKind::Then);
-        while !p.check_any(&[
-            TokenKind::ElseIf,
-            TokenKind::Else,
-            TokenKind::End,
-        ]) && !p.eof()
-        {
+        while !p.check_any(&[TokenKind::ElseIf, TokenKind::Else, TokenKind::End]) && !p.eof() {
             equation(p);
             p.expect(TokenKind::Semicolon);
         }
@@ -973,12 +936,7 @@ fn if_statement(p: &mut Parser) {
     p.expect(TokenKind::If);
     expression(p);
     p.expect(TokenKind::Then);
-    while !p.check_any(&[
-        TokenKind::ElseIf,
-        TokenKind::Else,
-        TokenKind::End,
-    ]) && !p.eof()
-    {
+    while !p.check_any(&[TokenKind::ElseIf, TokenKind::Else, TokenKind::End]) && !p.eof() {
         statement(p);
         p.expect(TokenKind::Semicolon);
     }
@@ -986,12 +944,7 @@ fn if_statement(p: &mut Parser) {
         p.expect(TokenKind::ElseIf);
         expression(p);
         p.expect(TokenKind::Then);
-        while !p.check_any(&[
-            TokenKind::ElseIf,
-            TokenKind::Else,
-            TokenKind::End,
-        ]) && !p.eof()
-        {
+        while !p.check_any(&[TokenKind::ElseIf, TokenKind::Else, TokenKind::End]) && !p.eof() {
             statement(p);
             p.expect(TokenKind::Semicolon);
         }
@@ -1548,8 +1501,8 @@ fn annotation_clause(p: &mut Parser) {
 #[cfg(test)]
 mod tests {
 
-    use super::*;
     use super::super::lexing::lex;
+    use super::*;
 
     fn get_events(source: &str, start: SyntaxKind) -> (Vec<SyntaxEvent>, Vec<String>) {
         let (tokens, _, mut errors) = lex("none", source);
