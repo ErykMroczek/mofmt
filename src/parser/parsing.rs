@@ -2,7 +2,7 @@ use std::cell::Cell;
 
 use super::events::SyntaxEvent;
 use super::syntax::SyntaxKind;
-use super::tokens::{ModelicaToken, Token};
+use super::tokens::{TokenKind, Token};
 
 pub fn events(
     name: &str,
@@ -174,14 +174,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Return type of the n-th token counting from the current one.
-    fn nth(&self, n: usize) -> ModelicaToken {
+    fn nth(&self, n: usize) -> TokenKind {
         if self.lifes.get() == 0 {
             self.blowup();
         }
         self.lifes.set(self.lifes.get() - 1);
         self.tokens
             .get(self.pos + n)
-            .map_or(ModelicaToken::EOF, |tok| tok.kind)
+            .map_or(TokenKind::EOF, |tok| tok.kind)
     }
 
     fn blowup(&self) {
@@ -197,18 +197,18 @@ impl<'a> Parser<'a> {
     }
 
     /// Return `true` if current token matches the specified type
-    fn check(&self, typ: ModelicaToken) -> bool {
+    fn check(&self, typ: TokenKind) -> bool {
         self.nth(0) == typ
     }
 
     /// Return `true` if current token matches any of the specified types
-    fn check_any(&self, typ: &[ModelicaToken]) -> bool {
+    fn check_any(&self, typ: &[TokenKind]) -> bool {
         typ.contains(&self.nth(0))
     }
 
     /// Return `true` if current token matches the specified type and
     /// advance the parser. Otherwise return `false` and do not advance.
-    fn consume(&mut self, typ: ModelicaToken) -> bool {
+    fn consume(&mut self, typ: TokenKind) -> bool {
         if self.check(typ) {
             self.advance();
             return true;
@@ -243,7 +243,7 @@ impl<'a> Parser<'a> {
 
     /// Advance the parser if current token is expected. Report error if
     /// current tokens doesn't match the specified type.
-    fn expect(&mut self, typ: ModelicaToken) {
+    fn expect(&mut self, typ: TokenKind) {
         if !self.consume(typ) {
             self.error(format!("expected {typ:?}, found {:?}", self.nth(0)));
         }
@@ -252,46 +252,46 @@ impl<'a> Parser<'a> {
 
 // Useful constants used in the parsing process
 
-const SECTION_BREAKERS: [ModelicaToken; 8] = [
-    ModelicaToken::Protected,
-    ModelicaToken::Public,
-    ModelicaToken::Initial,
-    ModelicaToken::Equation,
-    ModelicaToken::Algorithm,
-    ModelicaToken::End,
-    ModelicaToken::Annotation,
-    ModelicaToken::External,
+const SECTION_BREAKERS: [TokenKind; 8] = [
+    TokenKind::Protected,
+    TokenKind::Public,
+    TokenKind::Initial,
+    TokenKind::Equation,
+    TokenKind::Algorithm,
+    TokenKind::End,
+    TokenKind::Annotation,
+    TokenKind::External,
 ];
-const CLASS_PREFS: [ModelicaToken; 13] = [
-    ModelicaToken::Partial,
-    ModelicaToken::Class,
-    ModelicaToken::Model,
-    ModelicaToken::Record,
-    ModelicaToken::Function,
-    ModelicaToken::Block,
-    ModelicaToken::Type,
-    ModelicaToken::Operator,
-    ModelicaToken::Connector,
-    ModelicaToken::Package,
-    ModelicaToken::Pure,
-    ModelicaToken::Impure,
-    ModelicaToken::Expandable,
+const CLASS_PREFS: [TokenKind; 13] = [
+    TokenKind::Partial,
+    TokenKind::Class,
+    TokenKind::Model,
+    TokenKind::Record,
+    TokenKind::Function,
+    TokenKind::Block,
+    TokenKind::Type,
+    TokenKind::Operator,
+    TokenKind::Connector,
+    TokenKind::Package,
+    TokenKind::Pure,
+    TokenKind::Impure,
+    TokenKind::Expandable,
 ];
 
 // A.2.1 Stored Definition – Within
 
 fn stored_definition(p: &mut Parser) {
     let mark = p.enter();
-    if p.consume(ModelicaToken::Within) {
-        if !p.check(ModelicaToken::Semicolon) {
+    if p.consume(TokenKind::Within) {
+        if !p.check(TokenKind::Semicolon) {
             name(p);
         }
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     while !p.eof() {
-        p.consume(ModelicaToken::Final);
+        p.consume(TokenKind::Final);
         class_definition(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     p.exit(mark, SyntaxKind::StoredDefinition);
 }
@@ -300,7 +300,7 @@ fn stored_definition(p: &mut Parser) {
 
 fn class_definition(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Encapsulated);
+    p.consume(TokenKind::Encapsulated);
     class_prefixes(p);
     class_specifier(p);
     p.exit(mark, SyntaxKind::ClassDefinition);
@@ -308,33 +308,33 @@ fn class_definition(p: &mut Parser) {
 
 fn class_prefixes(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Partial);
+    p.consume(TokenKind::Partial);
     let pref = p.nth(0);
     match pref {
-        ModelicaToken::Class
-        | ModelicaToken::Model
-        | ModelicaToken::Block
-        | ModelicaToken::Type
-        | ModelicaToken::Package
-        | ModelicaToken::Record
-        | ModelicaToken::Connector
-        | ModelicaToken::Function => {
+        TokenKind::Class
+        | TokenKind::Model
+        | TokenKind::Block
+        | TokenKind::Type
+        | TokenKind::Package
+        | TokenKind::Record
+        | TokenKind::Connector
+        | TokenKind::Function => {
             p.advance();
         }
-        ModelicaToken::Expandable => {
+        TokenKind::Expandable => {
             p.advance();
-            p.expect(ModelicaToken::Connector);
+            p.expect(TokenKind::Connector);
         }
-        ModelicaToken::Operator => {
+        TokenKind::Operator => {
             p.advance();
-            if !p.consume(ModelicaToken::Record) {
-                p.consume(ModelicaToken::Function);
+            if !p.consume(TokenKind::Record) {
+                p.consume(TokenKind::Function);
             }
         }
-        ModelicaToken::Pure | ModelicaToken::Impure => {
+        TokenKind::Pure | TokenKind::Impure => {
             p.advance();
-            p.consume(ModelicaToken::Operator);
-            p.expect(ModelicaToken::Function);
+            p.consume(TokenKind::Operator);
+            p.expect(TokenKind::Function);
         }
         _ => p.advance_with_error(format!(
             "unexpected token '{:?}' used as a class prefix",
@@ -346,12 +346,12 @@ fn class_prefixes(p: &mut Parser) {
 
 fn class_specifier(p: &mut Parser) {
     let mark = p.enter();
-    if p.check(ModelicaToken::Extends) {
+    if p.check(TokenKind::Extends) {
         long_class_specifier(p);
-    } else if p.check(ModelicaToken::Identifier) {
-        if p.nth(1) != ModelicaToken::Equal {
+    } else if p.check(TokenKind::Identifier) {
+        if p.nth(1) != TokenKind::Equal {
             long_class_specifier(p);
-        } else if p.nth(2) == ModelicaToken::Der {
+        } else if p.nth(2) == TokenKind::Der {
             der_class_specifier(p);
         } else {
             short_class_specifier(p);
@@ -367,38 +367,38 @@ fn class_specifier(p: &mut Parser) {
 
 fn long_class_specifier(p: &mut Parser) {
     let mark = p.enter();
-    if p.consume(ModelicaToken::Extends) {
-        p.expect(ModelicaToken::Identifier);
-        if p.check(ModelicaToken::LParen) {
+    if p.consume(TokenKind::Extends) {
+        p.expect(TokenKind::Identifier);
+        if p.check(TokenKind::LParen) {
             class_modification(p);
         }
     } else {
-        p.expect(ModelicaToken::Identifier);
+        p.expect(TokenKind::Identifier);
     }
     description_string(p);
     composition(p);
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::Identifier);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::Identifier);
     p.exit(mark, SyntaxKind::LongClassSpecifier);
 }
 
 fn short_class_specifier(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    p.expect(ModelicaToken::Equal);
-    if p.consume(ModelicaToken::Enumeration) {
-        p.expect(ModelicaToken::LParen);
-        if !p.consume(ModelicaToken::Colon) && p.check(ModelicaToken::Identifier) {
+    p.expect(TokenKind::Identifier);
+    p.expect(TokenKind::Equal);
+    if p.consume(TokenKind::Enumeration) {
+        p.expect(TokenKind::LParen);
+        if !p.consume(TokenKind::Colon) && p.check(TokenKind::Identifier) {
             enum_list(p);
         }
-        p.expect(ModelicaToken::RParen);
+        p.expect(TokenKind::RParen);
     } else {
         base_prefix(p);
         type_specifier(p);
-        if p.check(ModelicaToken::LBracket) {
+        if p.check(TokenKind::LBracket) {
             array_subscripts(p);
         }
-        if p.check(ModelicaToken::LParen) {
+        if p.check(TokenKind::LParen) {
             class_modification(p);
         }
     }
@@ -408,25 +408,25 @@ fn short_class_specifier(p: &mut Parser) {
 
 fn der_class_specifier(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    p.expect(ModelicaToken::Equal);
-    p.expect(ModelicaToken::Der);
-    p.expect(ModelicaToken::LParen);
+    p.expect(TokenKind::Identifier);
+    p.expect(TokenKind::Equal);
+    p.expect(TokenKind::Der);
+    p.expect(TokenKind::LParen);
     type_specifier(p);
-    p.expect(ModelicaToken::Comma);
-    p.expect(ModelicaToken::Identifier);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
-        p.expect(ModelicaToken::Identifier);
+    p.expect(TokenKind::Comma);
+    p.expect(TokenKind::Identifier);
+    while p.consume(TokenKind::Comma) && !p.eof() {
+        p.expect(TokenKind::Identifier);
     }
-    p.expect(ModelicaToken::RParen);
+    p.expect(TokenKind::RParen);
     description(p);
     p.exit(mark, SyntaxKind::DerClassSpecifier);
 }
 
 fn base_prefix(p: &mut Parser) {
     let mark = p.enter();
-    if !p.consume(ModelicaToken::Input) {
-        p.consume(ModelicaToken::Output);
+    if !p.consume(TokenKind::Input) {
+        p.consume(TokenKind::Output);
     }
     p.exit(mark, SyntaxKind::BasePrefix);
 }
@@ -434,7 +434,7 @@ fn base_prefix(p: &mut Parser) {
 fn enum_list(p: &mut Parser) {
     let mark = p.enter();
     enumeration_literal(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         enumeration_literal(p);
     }
     p.exit(mark, SyntaxKind::EnumList);
@@ -442,7 +442,7 @@ fn enum_list(p: &mut Parser) {
 
 fn enumeration_literal(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
+    p.expect(TokenKind::Identifier);
     description(p);
     p.exit(mark, SyntaxKind::EnumerationLiteral);
 }
@@ -451,30 +451,30 @@ fn composition(p: &mut Parser) {
     let mark = p.enter();
     element_list(p);
     while !p.check_any(&[
-        ModelicaToken::External,
-        ModelicaToken::Annotation,
-        ModelicaToken::End,
+        TokenKind::External,
+        TokenKind::Annotation,
+        TokenKind::End,
     ]) && !p.eof()
     {
         let k = p.nth(0);
         match k {
-            ModelicaToken::Public | ModelicaToken::Protected => {
+            TokenKind::Public | TokenKind::Protected => {
                 p.advance();
                 element_list(p);
             }
-            ModelicaToken::Initial => match p.nth(1) {
-                ModelicaToken::Equation => {
+            TokenKind::Initial => match p.nth(1) {
+                TokenKind::Equation => {
                     equation_section(p);
                 }
-                ModelicaToken::Algorithm => {
+                TokenKind::Algorithm => {
                     algorithm_section(p);
                 }
                 _ => p.advance_with_error(format!("unexpected token '{:?}' following 'initial'. Expected 'equation' or 'algorithm'", p.nth(1))),
             },
-            ModelicaToken::Equation => {
+            TokenKind::Equation => {
                 equation_section(p);
             }
-            ModelicaToken::Algorithm => {
+            TokenKind::Algorithm => {
                 algorithm_section(p);
             }
             _ => p.advance_with_error(
@@ -485,43 +485,43 @@ fn composition(p: &mut Parser) {
             ),
         }
     }
-    if p.consume(ModelicaToken::External) {
-        if p.check(ModelicaToken::String) {
+    if p.consume(TokenKind::External) {
+        if p.check(TokenKind::String) {
             language_specification(p);
         }
-        if p.check_any(&[ModelicaToken::Dot, ModelicaToken::Identifier]) {
+        if p.check_any(&[TokenKind::Dot, TokenKind::Identifier]) {
             external_function_call(p);
         }
-        if p.check(ModelicaToken::Annotation) {
+        if p.check(TokenKind::Annotation) {
             annotation_clause(p);
         }
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    if p.check(ModelicaToken::Annotation) {
+    if p.check(TokenKind::Annotation) {
         annotation_clause(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     p.exit(mark, SyntaxKind::Composition);
 }
 
 fn language_specification(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::String);
+    p.expect(TokenKind::String);
     p.exit(mark, SyntaxKind::LanguageSpecification);
 }
 
 fn external_function_call(p: &mut Parser) {
     let mark = p.enter();
-    if p.nth(1) != ModelicaToken::LParen {
+    if p.nth(1) != TokenKind::LParen {
         component_reference(p);
-        p.expect(ModelicaToken::Equal);
+        p.expect(TokenKind::Equal);
     }
-    p.expect(ModelicaToken::Identifier);
-    p.expect(ModelicaToken::LParen);
-    if !p.check(ModelicaToken::RParen) {
+    p.expect(TokenKind::Identifier);
+    p.expect(TokenKind::LParen);
+    if !p.check(TokenKind::RParen) {
         expression_list(p);
     }
-    p.expect(ModelicaToken::RParen);
+    p.expect(TokenKind::RParen);
     p.exit(mark, SyntaxKind::ExternalFunctionCall);
 }
 
@@ -529,33 +529,33 @@ fn element_list(p: &mut Parser) {
     let mark = p.enter();
     while !p.check_any(&SECTION_BREAKERS) && !p.eof() {
         element(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     p.exit(mark, SyntaxKind::ElementList);
 }
 
 fn element(p: &mut Parser) {
     let mark = p.enter();
-    if p.check(ModelicaToken::Import) {
+    if p.check(TokenKind::Import) {
         import_clause(p);
-    } else if p.check(ModelicaToken::Extends) {
+    } else if p.check(TokenKind::Extends) {
         extends_clause(p);
     } else {
-        p.consume(ModelicaToken::Redeclare);
-        p.consume(ModelicaToken::Final);
-        p.consume(ModelicaToken::Inner);
-        p.consume(ModelicaToken::Outer);
-        if p.consume(ModelicaToken::Replaceable) {
-            if p.check_any(&CLASS_PREFS) || p.check(ModelicaToken::Encapsulated) {
+        p.consume(TokenKind::Redeclare);
+        p.consume(TokenKind::Final);
+        p.consume(TokenKind::Inner);
+        p.consume(TokenKind::Outer);
+        if p.consume(TokenKind::Replaceable) {
+            if p.check_any(&CLASS_PREFS) || p.check(TokenKind::Encapsulated) {
                 class_definition(p);
             } else {
                 component_clause(p);
             }
-            if p.check(ModelicaToken::Constrainedby) {
+            if p.check(TokenKind::Constrainedby) {
                 constraining_clause(p);
                 description(p);
             }
-        } else if p.check_any(&CLASS_PREFS) || p.check(ModelicaToken::Encapsulated) {
+        } else if p.check_any(&CLASS_PREFS) || p.check(TokenKind::Encapsulated) {
             class_definition(p);
         } else {
             component_clause(p);
@@ -566,17 +566,17 @@ fn element(p: &mut Parser) {
 
 fn import_clause(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Import);
-    if p.nth(1) == ModelicaToken::Equal {
-        p.expect(ModelicaToken::Identifier);
+    p.expect(TokenKind::Import);
+    if p.nth(1) == TokenKind::Equal {
+        p.expect(TokenKind::Identifier);
         p.advance();
         name(p);
     } else {
         name(p);
-        if !p.consume(ModelicaToken::DotStar) && p.consume(ModelicaToken::Dot) {
-            p.expect(ModelicaToken::LCurly);
+        if !p.consume(TokenKind::DotStar) && p.consume(TokenKind::Dot) {
+            p.expect(TokenKind::LCurly);
             import_list(p);
-            p.expect(ModelicaToken::RCurly);
+            p.expect(TokenKind::RCurly);
         }
     }
     description(p);
@@ -585,9 +585,9 @@ fn import_clause(p: &mut Parser) {
 
 fn import_list(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
-        p.expect(ModelicaToken::Identifier);
+    p.expect(TokenKind::Identifier);
+    while p.consume(TokenKind::Comma) && !p.eof() {
+        p.expect(TokenKind::Identifier);
     }
     p.exit(mark, SyntaxKind::ImportList);
 }
@@ -596,12 +596,12 @@ fn import_list(p: &mut Parser) {
 
 fn extends_clause(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Extends);
+    p.expect(TokenKind::Extends);
     type_specifier(p);
-    if p.check(ModelicaToken::LParen) {
+    if p.check(TokenKind::LParen) {
         class_or_inheritance_modification(p);
     }
-    if p.check(ModelicaToken::Annotation) {
+    if p.check(TokenKind::Annotation) {
         annotation_clause(p);
     }
     p.exit(mark, SyntaxKind::ExtendsClause);
@@ -609,9 +609,9 @@ fn extends_clause(p: &mut Parser) {
 
 fn constraining_clause(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Constrainedby);
+    p.expect(TokenKind::Constrainedby);
     type_specifier(p);
-    if p.check(ModelicaToken::LParen) {
+    if p.check(TokenKind::LParen) {
         class_modification(p);
     }
     p.exit(mark, SyntaxKind::ConstrainingClause);
@@ -619,23 +619,23 @@ fn constraining_clause(p: &mut Parser) {
 
 fn class_or_inheritance_modification(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::LParen);
-    if !p.consume(ModelicaToken::RParen) {
+    p.expect(TokenKind::LParen);
+    if !p.consume(TokenKind::RParen) {
         argument_or_inheritance_modification_list(p);
-        p.expect(ModelicaToken::RParen);
+        p.expect(TokenKind::RParen);
     }
     p.exit(mark, SyntaxKind::ClassOrInheritanceModification);
 }
 
 fn argument_or_inheritance_modification_list(p: &mut Parser) {
     let mark = p.enter();
-    if p.check(ModelicaToken::Break) {
+    if p.check(TokenKind::Break) {
         inheritance_modification(p);
     } else {
         argument(p);
     }
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
-        if p.check(ModelicaToken::Break) {
+    while p.consume(TokenKind::Comma) && !p.eof() {
+        if p.check(TokenKind::Break) {
             inheritance_modification(p);
         } else {
             argument(p);
@@ -646,11 +646,11 @@ fn argument_or_inheritance_modification_list(p: &mut Parser) {
 
 fn inheritance_modification(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Break);
-    if p.check(ModelicaToken::Connect) {
+    p.expect(TokenKind::Break);
+    if p.check(TokenKind::Connect) {
         connect_equation(p);
     } else {
-        p.expect(ModelicaToken::Identifier);
+        p.expect(TokenKind::Identifier);
     }
     p.exit(mark, SyntaxKind::InheritanceModification);
 }
@@ -661,7 +661,7 @@ fn component_clause(p: &mut Parser) {
     let mark = p.enter();
     type_prefix(p);
     type_specifier(p);
-    if p.check(ModelicaToken::LBracket) {
+    if p.check(TokenKind::LBracket) {
         array_subscripts(p);
     }
     component_list(p);
@@ -670,14 +670,14 @@ fn component_clause(p: &mut Parser) {
 
 fn type_prefix(p: &mut Parser) {
     let mark = p.enter();
-    if !p.consume(ModelicaToken::Flow) {
-        p.consume(ModelicaToken::Stream);
+    if !p.consume(TokenKind::Flow) {
+        p.consume(TokenKind::Stream);
     }
-    if !p.consume(ModelicaToken::Discrete) && !p.consume(ModelicaToken::Parameter) {
-        p.consume(ModelicaToken::Constant);
+    if !p.consume(TokenKind::Discrete) && !p.consume(TokenKind::Parameter) {
+        p.consume(TokenKind::Constant);
     }
-    if !p.consume(ModelicaToken::Input) {
-        p.consume(ModelicaToken::Output);
+    if !p.consume(TokenKind::Input) {
+        p.consume(TokenKind::Output);
     }
     p.exit(mark, SyntaxKind::TypePrefix);
 }
@@ -685,7 +685,7 @@ fn type_prefix(p: &mut Parser) {
 fn component_list(p: &mut Parser) {
     let mark = p.enter();
     component_declaration(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         component_declaration(p);
     }
     p.exit(mark, SyntaxKind::ComponentList);
@@ -694,7 +694,7 @@ fn component_list(p: &mut Parser) {
 fn component_declaration(p: &mut Parser) {
     let mark = p.enter();
     declaration(p);
-    if p.check(ModelicaToken::If) {
+    if p.check(TokenKind::If) {
         condition_attribute(p);
     }
     description(p);
@@ -703,21 +703,21 @@ fn component_declaration(p: &mut Parser) {
 
 fn condition_attribute(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::If);
+    p.expect(TokenKind::If);
     expression(p);
     p.exit(mark, SyntaxKind::ConditionAttribute);
 }
 
 fn declaration(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    if p.check(ModelicaToken::LBracket) {
+    p.expect(TokenKind::Identifier);
+    if p.check(TokenKind::LBracket) {
         array_subscripts(p);
     }
     if p.check_any(&[
-        ModelicaToken::LParen,
-        ModelicaToken::Equal,
-        ModelicaToken::Assign,
+        TokenKind::LParen,
+        TokenKind::Equal,
+        TokenKind::Assign,
     ]) {
         modification(p);
     }
@@ -728,12 +728,12 @@ fn declaration(p: &mut Parser) {
 
 fn modification(p: &mut Parser) {
     let mark = p.enter();
-    if p.check_any(&[ModelicaToken::Equal, ModelicaToken::Assign]) {
+    if p.check_any(&[TokenKind::Equal, TokenKind::Assign]) {
         p.advance();
         modification_expression(p);
     } else {
         class_modification(p);
-        if p.consume(ModelicaToken::Equal) {
+        if p.consume(TokenKind::Equal) {
             modification_expression(p);
         }
     }
@@ -742,7 +742,7 @@ fn modification(p: &mut Parser) {
 
 fn modification_expression(p: &mut Parser) {
     let mark = p.enter();
-    if !p.consume(ModelicaToken::Break) {
+    if !p.consume(TokenKind::Break) {
         expression(p);
     }
     p.exit(mark, SyntaxKind::ModificationExpression);
@@ -750,10 +750,10 @@ fn modification_expression(p: &mut Parser) {
 
 fn class_modification(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::LParen);
-    if !p.consume(ModelicaToken::RParen) {
+    p.expect(TokenKind::LParen);
+    if !p.consume(TokenKind::RParen) {
         argument_list(p);
-        p.expect(ModelicaToken::RParen);
+        p.expect(TokenKind::RParen);
     }
     p.exit(mark, SyntaxKind::ClassModification);
 }
@@ -761,7 +761,7 @@ fn class_modification(p: &mut Parser) {
 fn argument_list(p: &mut Parser) {
     let mark = p.enter();
     argument(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         argument(p);
     }
     p.exit(mark, SyntaxKind::ArgumentList);
@@ -769,7 +769,7 @@ fn argument_list(p: &mut Parser) {
 
 fn argument(p: &mut Parser) {
     let mark = p.enter();
-    if p.check(ModelicaToken::Redeclare) {
+    if p.check(TokenKind::Redeclare) {
         element_redeclaration(p);
     } else {
         element_modification_or_replaceable(p);
@@ -779,9 +779,9 @@ fn argument(p: &mut Parser) {
 
 fn element_modification_or_replaceable(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Each);
-    p.consume(ModelicaToken::Final);
-    if p.check(ModelicaToken::Replaceable) {
+    p.consume(TokenKind::Each);
+    p.consume(TokenKind::Final);
+    if p.check(TokenKind::Replaceable) {
         element_replaceable(p);
     } else {
         element_modification(p);
@@ -793,9 +793,9 @@ fn element_modification(p: &mut Parser) {
     let mark = p.enter();
     name(p);
     if p.check_any(&[
-        ModelicaToken::LParen,
-        ModelicaToken::Equal,
-        ModelicaToken::Assign,
+        TokenKind::LParen,
+        TokenKind::Equal,
+        TokenKind::Assign,
     ]) {
         modification(p);
     }
@@ -805,12 +805,12 @@ fn element_modification(p: &mut Parser) {
 
 fn element_redeclaration(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Redeclare);
-    p.consume(ModelicaToken::Each);
-    p.consume(ModelicaToken::Final);
+    p.expect(TokenKind::Redeclare);
+    p.consume(TokenKind::Each);
+    p.consume(TokenKind::Final);
     if p.check_any(&CLASS_PREFS) {
         short_class_definition(p);
-    } else if p.check(ModelicaToken::Replaceable) {
+    } else if p.check(TokenKind::Replaceable) {
         element_replaceable(p);
     } else {
         component_clause1(p);
@@ -820,13 +820,13 @@ fn element_redeclaration(p: &mut Parser) {
 
 fn element_replaceable(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Replaceable);
+    p.expect(TokenKind::Replaceable);
     if p.check_any(&CLASS_PREFS) {
         short_class_definition(p);
     } else {
         component_clause1(p);
     }
-    if p.check(ModelicaToken::Constrainedby) {
+    if p.check(TokenKind::Constrainedby) {
         constraining_clause(p);
     }
     p.exit(mark, SyntaxKind::ElementReplaceable);
@@ -858,22 +858,22 @@ fn short_class_definition(p: &mut Parser) {
 
 fn equation_section(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Initial);
-    p.expect(ModelicaToken::Equation);
+    p.consume(TokenKind::Initial);
+    p.expect(TokenKind::Equation);
     while !p.check_any(&SECTION_BREAKERS) && !p.eof() {
         equation(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     p.exit(mark, SyntaxKind::EquationSection);
 }
 
 fn algorithm_section(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Initial);
-    p.expect(ModelicaToken::Algorithm);
+    p.consume(TokenKind::Initial);
+    p.expect(TokenKind::Algorithm);
     while !p.check_any(&SECTION_BREAKERS) && !p.eof() {
         statement(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
     p.exit(mark, SyntaxKind::AlgorithmSection);
 }
@@ -881,17 +881,17 @@ fn algorithm_section(p: &mut Parser) {
 fn equation(p: &mut Parser) {
     let mark = p.enter();
     match p.nth(0) {
-        ModelicaToken::If => if_equation(p),
-        ModelicaToken::For => for_equation(p),
-        ModelicaToken::When => when_equation(p),
-        ModelicaToken::Connect => connect_equation(p),
+        TokenKind::If => if_equation(p),
+        TokenKind::For => for_equation(p),
+        TokenKind::When => when_equation(p),
+        TokenKind::Connect => connect_equation(p),
         _ => {
             // FIXME: It is somewhat simplified for now. Specification
             // allows only `component-reference func-call-args`, so not
             // every `simple-expression` that is not followed by the `=`
             // can be accepted
             simple_expression(p);
-            if p.consume(ModelicaToken::Equal) {
+            if p.consume(TokenKind::Equal) {
                 expression(p);
             }
         }
@@ -903,22 +903,22 @@ fn equation(p: &mut Parser) {
 fn statement(p: &mut Parser) {
     let mark = p.enter();
     match p.nth(0) {
-        ModelicaToken::If => if_statement(p),
-        ModelicaToken::For => for_statement(p),
-        ModelicaToken::While => while_statement(p),
-        ModelicaToken::When => when_statement(p),
-        ModelicaToken::Break | ModelicaToken::Return => p.advance(),
-        ModelicaToken::LParen => {
+        TokenKind::If => if_statement(p),
+        TokenKind::For => for_statement(p),
+        TokenKind::While => while_statement(p),
+        TokenKind::When => when_statement(p),
+        TokenKind::Break | TokenKind::Return => p.advance(),
+        TokenKind::LParen => {
             p.advance();
             output_expression_list(p);
-            p.expect(ModelicaToken::RParen);
-            p.expect(ModelicaToken::Assign);
+            p.expect(TokenKind::RParen);
+            p.expect(TokenKind::Assign);
             component_reference(p);
             function_call_args(p);
         }
         _ => {
             component_reference(p);
-            if p.consume(ModelicaToken::Assign) {
+            if p.consume(TokenKind::Assign) {
                 expression(p);
             } else {
                 function_call_args(p);
@@ -931,114 +931,114 @@ fn statement(p: &mut Parser) {
 
 fn if_equation(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::If);
+    p.expect(TokenKind::If);
     expression(p);
-    p.expect(ModelicaToken::Then);
+    p.expect(TokenKind::Then);
     while !p.check_any(&[
-        ModelicaToken::ElseIf,
-        ModelicaToken::Else,
-        ModelicaToken::End,
+        TokenKind::ElseIf,
+        TokenKind::Else,
+        TokenKind::End,
     ]) && !p.eof()
     {
         equation(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    while !p.check_any(&[ModelicaToken::Else, ModelicaToken::End]) & !p.eof() {
-        p.expect(ModelicaToken::ElseIf);
+    while !p.check_any(&[TokenKind::Else, TokenKind::End]) & !p.eof() {
+        p.expect(TokenKind::ElseIf);
         expression(p);
-        p.expect(ModelicaToken::Then);
+        p.expect(TokenKind::Then);
         while !p.check_any(&[
-            ModelicaToken::ElseIf,
-            ModelicaToken::Else,
-            ModelicaToken::End,
+            TokenKind::ElseIf,
+            TokenKind::Else,
+            TokenKind::End,
         ]) && !p.eof()
         {
             equation(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    if p.consume(ModelicaToken::Else) {
-        while !p.check(ModelicaToken::End) && !p.eof() {
+    if p.consume(TokenKind::Else) {
+        while !p.check(TokenKind::End) && !p.eof() {
             equation(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::If);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::If);
     p.exit(mark, SyntaxKind::IfEquation);
 }
 
 fn if_statement(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::If);
+    p.expect(TokenKind::If);
     expression(p);
-    p.expect(ModelicaToken::Then);
+    p.expect(TokenKind::Then);
     while !p.check_any(&[
-        ModelicaToken::ElseIf,
-        ModelicaToken::Else,
-        ModelicaToken::End,
+        TokenKind::ElseIf,
+        TokenKind::Else,
+        TokenKind::End,
     ]) && !p.eof()
     {
         statement(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    while !p.check_any(&[ModelicaToken::Else, ModelicaToken::End]) & !p.eof() {
-        p.expect(ModelicaToken::ElseIf);
+    while !p.check_any(&[TokenKind::Else, TokenKind::End]) & !p.eof() {
+        p.expect(TokenKind::ElseIf);
         expression(p);
-        p.expect(ModelicaToken::Then);
+        p.expect(TokenKind::Then);
         while !p.check_any(&[
-            ModelicaToken::ElseIf,
-            ModelicaToken::Else,
-            ModelicaToken::End,
+            TokenKind::ElseIf,
+            TokenKind::Else,
+            TokenKind::End,
         ]) && !p.eof()
         {
             statement(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    if p.consume(ModelicaToken::Else) {
-        while !p.check(ModelicaToken::End) && !p.eof() {
+    if p.consume(TokenKind::Else) {
+        while !p.check(TokenKind::End) && !p.eof() {
             statement(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::If);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::If);
     p.exit(mark, SyntaxKind::IfStatement);
 }
 
 fn for_equation(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::For);
+    p.expect(TokenKind::For);
     for_indices(p);
-    p.expect(ModelicaToken::Loop);
-    while !p.check(ModelicaToken::End) && !p.eof() {
+    p.expect(TokenKind::Loop);
+    while !p.check(TokenKind::End) && !p.eof() {
         equation(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::For);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::For);
     p.exit(mark, SyntaxKind::ForEquation);
 }
 
 fn for_statement(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::For);
+    p.expect(TokenKind::For);
     for_indices(p);
-    p.expect(ModelicaToken::Loop);
-    while !p.check(ModelicaToken::End) && !p.eof() {
+    p.expect(TokenKind::Loop);
+    while !p.check(TokenKind::End) && !p.eof() {
         statement(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::For);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::For);
     p.exit(mark, SyntaxKind::ForStatement);
 }
 
 fn for_indices(p: &mut Parser) {
     let mark = p.enter();
     for_index(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         for_index(p);
     }
     p.exit(mark, SyntaxKind::ForIndices);
@@ -1046,8 +1046,8 @@ fn for_indices(p: &mut Parser) {
 
 fn for_index(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    if p.consume(ModelicaToken::In) {
+    p.expect(TokenKind::Identifier);
+    if p.consume(TokenKind::In) {
         expression(p);
     }
     p.exit(mark, SyntaxKind::ForIndex);
@@ -1055,72 +1055,72 @@ fn for_index(p: &mut Parser) {
 
 fn while_statement(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::While);
+    p.expect(TokenKind::While);
     expression(p);
-    p.expect(ModelicaToken::Loop);
-    while !p.check(ModelicaToken::End) && !p.eof() {
+    p.expect(TokenKind::Loop);
+    while !p.check(TokenKind::End) && !p.eof() {
         statement(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::While);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::While);
     p.exit(mark, SyntaxKind::WhileStatement);
 }
 
 fn when_equation(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::When);
+    p.expect(TokenKind::When);
     expression(p);
-    p.expect(ModelicaToken::Then);
-    while !p.check_any(&[ModelicaToken::ElseWhen, ModelicaToken::End]) && !p.eof() {
+    p.expect(TokenKind::Then);
+    while !p.check_any(&[TokenKind::ElseWhen, TokenKind::End]) && !p.eof() {
         equation(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    while !p.check(ModelicaToken::End) & !p.eof() {
-        p.expect(ModelicaToken::ElseWhen);
+    while !p.check(TokenKind::End) & !p.eof() {
+        p.expect(TokenKind::ElseWhen);
         expression(p);
-        p.expect(ModelicaToken::Then);
-        while !p.check_any(&[ModelicaToken::ElseWhen, ModelicaToken::End]) && !p.eof() {
+        p.expect(TokenKind::Then);
+        while !p.check_any(&[TokenKind::ElseWhen, TokenKind::End]) && !p.eof() {
             equation(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::When);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::When);
     p.exit(mark, SyntaxKind::WhenEquation);
 }
 
 fn when_statement(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::When);
+    p.expect(TokenKind::When);
     expression(p);
-    p.expect(ModelicaToken::Then);
-    while !p.check_any(&[ModelicaToken::ElseWhen, ModelicaToken::End]) && !p.eof() {
+    p.expect(TokenKind::Then);
+    while !p.check_any(&[TokenKind::ElseWhen, TokenKind::End]) && !p.eof() {
         statement(p);
-        p.expect(ModelicaToken::Semicolon);
+        p.expect(TokenKind::Semicolon);
     }
-    while !p.check(ModelicaToken::End) & !p.eof() {
-        p.expect(ModelicaToken::ElseWhen);
+    while !p.check(TokenKind::End) & !p.eof() {
+        p.expect(TokenKind::ElseWhen);
         expression(p);
-        p.expect(ModelicaToken::Then);
-        while !p.check_any(&[ModelicaToken::ElseWhen, ModelicaToken::End]) && !p.eof() {
+        p.expect(TokenKind::Then);
+        while !p.check_any(&[TokenKind::ElseWhen, TokenKind::End]) && !p.eof() {
             statement(p);
-            p.expect(ModelicaToken::Semicolon);
+            p.expect(TokenKind::Semicolon);
         }
     }
-    p.expect(ModelicaToken::End);
-    p.expect(ModelicaToken::When);
+    p.expect(TokenKind::End);
+    p.expect(TokenKind::When);
     p.exit(mark, SyntaxKind::WhenStatement);
 }
 
 fn connect_equation(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Connect);
-    p.expect(ModelicaToken::LParen);
+    p.expect(TokenKind::Connect);
+    p.expect(TokenKind::LParen);
     component_reference(p);
-    p.expect(ModelicaToken::Comma);
+    p.expect(TokenKind::Comma);
     component_reference(p);
-    p.expect(ModelicaToken::RParen);
+    p.expect(TokenKind::RParen);
     p.exit(mark, SyntaxKind::ConnectEquation);
 }
 
@@ -1129,18 +1129,18 @@ fn connect_equation(p: &mut Parser) {
 fn expression(p: &mut Parser) {
     let mark = p.enter();
     match p.nth(0) {
-        ModelicaToken::If => {
+        TokenKind::If => {
             p.advance();
             expression(p);
-            p.expect(ModelicaToken::Then);
+            p.expect(TokenKind::Then);
             expression(p);
-            while !p.check(ModelicaToken::Else) && !p.eof() {
-                p.expect(ModelicaToken::ElseIf);
+            while !p.check(TokenKind::Else) && !p.eof() {
+                p.expect(TokenKind::ElseIf);
                 expression(p);
-                p.expect(ModelicaToken::Then);
+                p.expect(TokenKind::Then);
                 expression(p);
             }
-            p.expect(ModelicaToken::Else);
+            p.expect(TokenKind::Else);
             expression(p);
         }
         _ => simple_expression(p),
@@ -1151,9 +1151,9 @@ fn expression(p: &mut Parser) {
 fn simple_expression(p: &mut Parser) {
     let mark = p.enter();
     logical_expression(p);
-    if p.consume(ModelicaToken::Colon) {
+    if p.consume(TokenKind::Colon) {
         logical_expression(p);
-        if p.consume(ModelicaToken::Colon) {
+        if p.consume(TokenKind::Colon) {
             logical_expression(p);
         }
     }
@@ -1163,7 +1163,7 @@ fn simple_expression(p: &mut Parser) {
 fn logical_expression(p: &mut Parser) {
     let mark = p.enter();
     logical_term(p);
-    while p.consume(ModelicaToken::Or) && !p.eof() {
+    while p.consume(TokenKind::Or) && !p.eof() {
         logical_term(p);
     }
     p.exit(mark, SyntaxKind::LogicalExpression);
@@ -1172,7 +1172,7 @@ fn logical_expression(p: &mut Parser) {
 fn logical_term(p: &mut Parser) {
     let mark = p.enter();
     logical_factor(p);
-    while p.consume(ModelicaToken::And) && !p.eof() {
+    while p.consume(TokenKind::And) && !p.eof() {
         logical_factor(p);
     }
     p.exit(mark, SyntaxKind::LogicalTerm);
@@ -1180,19 +1180,19 @@ fn logical_term(p: &mut Parser) {
 
 fn logical_factor(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Not);
+    p.consume(TokenKind::Not);
     relation(p);
     p.exit(mark, SyntaxKind::LogicalFactor);
 }
 
 fn relation(p: &mut Parser) {
-    const RELOPS: [ModelicaToken; 6] = [
-        ModelicaToken::Les,
-        ModelicaToken::Leq,
-        ModelicaToken::Gre,
-        ModelicaToken::Geq,
-        ModelicaToken::Eq,
-        ModelicaToken::Neq,
+    const RELOPS: [TokenKind; 6] = [
+        TokenKind::Les,
+        TokenKind::Leq,
+        TokenKind::Gre,
+        TokenKind::Geq,
+        TokenKind::Eq,
+        TokenKind::Neq,
     ];
     let mark = p.enter();
     arithmetic_expression(p);
@@ -1212,11 +1212,11 @@ fn relational_operator(p: &mut Parser) {
 }
 
 fn arithmetic_expression(p: &mut Parser) {
-    const ADDOPS: [ModelicaToken; 4] = [
-        ModelicaToken::Plus,
-        ModelicaToken::DotPlus,
-        ModelicaToken::Minus,
-        ModelicaToken::DotMinus,
+    const ADDOPS: [TokenKind; 4] = [
+        TokenKind::Plus,
+        TokenKind::DotPlus,
+        TokenKind::Minus,
+        TokenKind::DotMinus,
     ];
     let mark = p.enter();
     if p.check_any(&ADDOPS) {
@@ -1239,11 +1239,11 @@ fn add_operator(p: &mut Parser) {
 }
 
 fn term(p: &mut Parser) {
-    const MULOPS: [ModelicaToken; 4] = [
-        ModelicaToken::Star,
-        ModelicaToken::DotStar,
-        ModelicaToken::Slash,
-        ModelicaToken::DotSlash,
+    const MULOPS: [TokenKind; 4] = [
+        TokenKind::Star,
+        TokenKind::DotStar,
+        TokenKind::Slash,
+        TokenKind::DotSlash,
     ];
     let mark = p.enter();
     factor(p);
@@ -1265,7 +1265,7 @@ fn mul_operator(p: &mut Parser) {
 fn factor(p: &mut Parser) {
     let mark = p.enter();
     primary(p);
-    if p.check_any(&[ModelicaToken::Flex, ModelicaToken::DotFlex]) {
+    if p.check_any(&[TokenKind::Flex, TokenKind::DotFlex]) {
         p.advance();
         primary(p);
     }
@@ -1275,39 +1275,39 @@ fn factor(p: &mut Parser) {
 fn primary(p: &mut Parser) {
     let mark = p.enter();
     match p.nth(0) {
-        ModelicaToken::UReal
-        | ModelicaToken::UInt
-        | ModelicaToken::String
-        | ModelicaToken::Bool
-        | ModelicaToken::End => p.advance(),
-        ModelicaToken::LParen => {
+        TokenKind::UReal
+        | TokenKind::UInt
+        | TokenKind::String
+        | TokenKind::Bool
+        | TokenKind::End => p.advance(),
+        TokenKind::LParen => {
             p.advance();
             output_expression_list(p);
-            p.expect(ModelicaToken::RParen);
-            if p.check(ModelicaToken::LBracket) {
+            p.expect(TokenKind::RParen);
+            if p.check(TokenKind::LBracket) {
                 array_subscripts(p);
             }
         }
-        ModelicaToken::LBracket => {
+        TokenKind::LBracket => {
             p.advance();
             expression_list(p);
-            while p.consume(ModelicaToken::Semicolon) && !p.eof() {
+            while p.consume(TokenKind::Semicolon) && !p.eof() {
                 expression_list(p);
             }
-            p.expect(ModelicaToken::RBracket);
+            p.expect(TokenKind::RBracket);
         }
-        ModelicaToken::LCurly => {
+        TokenKind::LCurly => {
             p.advance();
             array_arguments(p);
-            p.expect(ModelicaToken::RCurly);
+            p.expect(TokenKind::RCurly);
         }
-        ModelicaToken::Der | ModelicaToken::Initial | ModelicaToken::Pure => {
+        TokenKind::Der | TokenKind::Initial | TokenKind::Pure => {
             p.advance();
             function_call_args(p);
         }
         _ => {
             component_reference(p);
-            if p.check(ModelicaToken::LParen) {
+            if p.check(TokenKind::LParen) {
                 function_call_args(p);
             }
         }
@@ -1317,19 +1317,19 @@ fn primary(p: &mut Parser) {
 
 fn type_specifier(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Dot);
+    p.consume(TokenKind::Dot);
     name(p);
     p.exit(mark, SyntaxKind::TypeSpecifier);
 }
 
 fn name(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    while p.check(ModelicaToken::Dot) && !p.eof() {
-        if p.nth(1) == ModelicaToken::Identifier {
+    p.expect(TokenKind::Identifier);
+    while p.check(TokenKind::Dot) && !p.eof() {
+        if p.nth(1) == TokenKind::Identifier {
             p.advance();
             p.advance();
-        } else if p.nth(1) == ModelicaToken::LCurly {
+        } else if p.nth(1) == TokenKind::LCurly {
             break;
         } else {
             p.advance_with_error(format!(
@@ -1343,14 +1343,14 @@ fn name(p: &mut Parser) {
 
 fn component_reference(p: &mut Parser) {
     let mark = p.enter();
-    p.consume(ModelicaToken::Dot);
-    p.expect(ModelicaToken::Identifier);
-    if p.check(ModelicaToken::LBracket) {
+    p.consume(TokenKind::Dot);
+    p.expect(TokenKind::Identifier);
+    if p.check(TokenKind::LBracket) {
         array_subscripts(p);
     }
-    while p.consume(ModelicaToken::Dot) && !p.eof() {
-        p.expect(ModelicaToken::Identifier);
-        if p.check(ModelicaToken::LBracket) {
+    while p.consume(TokenKind::Dot) && !p.eof() {
+        p.expect(TokenKind::Identifier);
+        if p.check(TokenKind::LBracket) {
             array_subscripts(p);
         }
     }
@@ -1359,13 +1359,13 @@ fn component_reference(p: &mut Parser) {
 
 fn result_reference(p: &mut Parser) {
     let mark = p.enter();
-    if p.consume(ModelicaToken::Der) {
-        p.expect(ModelicaToken::LParen);
+    if p.consume(TokenKind::Der) {
+        p.expect(TokenKind::LParen);
         component_reference(p);
-        if p.consume(ModelicaToken::Comma) {
-            p.expect(ModelicaToken::UInt);
+        if p.consume(TokenKind::Comma) {
+            p.expect(TokenKind::UInt);
         }
-        p.expect(ModelicaToken::RParen);
+        p.expect(TokenKind::RParen);
     } else {
         component_reference(p);
     }
@@ -1374,28 +1374,28 @@ fn result_reference(p: &mut Parser) {
 
 fn function_call_args(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::LParen);
-    if !p.consume(ModelicaToken::RParen) {
+    p.expect(TokenKind::LParen);
+    if !p.consume(TokenKind::RParen) {
         function_arguments(p);
-        p.expect(ModelicaToken::RParen);
+        p.expect(TokenKind::RParen);
     }
     p.exit(mark, SyntaxKind::FunctionCallArgs);
 }
 
 fn function_arguments(p: &mut Parser) {
     let mark = p.enter();
-    if p.nth(1) == ModelicaToken::Equal {
+    if p.nth(1) == TokenKind::Equal {
         named_arguments(p);
-    } else if !p.check(ModelicaToken::Function) {
+    } else if !p.check(TokenKind::Function) {
         expression(p);
-        if p.consume(ModelicaToken::Comma) {
+        if p.consume(TokenKind::Comma) {
             function_arguments_non_first(p);
-        } else if p.consume(ModelicaToken::For) {
+        } else if p.consume(TokenKind::For) {
             for_indices(p);
         }
     } else {
         function_partial_application(p);
-        if p.consume(ModelicaToken::Comma) {
+        if p.consume(TokenKind::Comma) {
             function_arguments_non_first(p);
         }
     }
@@ -1404,11 +1404,11 @@ fn function_arguments(p: &mut Parser) {
 
 fn function_arguments_non_first(p: &mut Parser) {
     let mark = p.enter();
-    if p.nth(1) == ModelicaToken::Equal {
+    if p.nth(1) == TokenKind::Equal {
         named_arguments(p);
     } else {
         function_argument(p);
-        if p.consume(ModelicaToken::Comma) {
+        if p.consume(TokenKind::Comma) {
             function_arguments_non_first(p);
         }
     }
@@ -1418,9 +1418,9 @@ fn function_arguments_non_first(p: &mut Parser) {
 fn array_arguments(p: &mut Parser) {
     let mark = p.enter();
     expression(p);
-    if p.consume(ModelicaToken::Comma) {
+    if p.consume(TokenKind::Comma) {
         array_arguments_non_first(p);
-    } else if p.consume(ModelicaToken::For) {
+    } else if p.consume(TokenKind::For) {
         for_indices(p);
     }
     p.exit(mark, SyntaxKind::ArrayArguments);
@@ -1429,7 +1429,7 @@ fn array_arguments(p: &mut Parser) {
 fn array_arguments_non_first(p: &mut Parser) {
     let mark = p.enter();
     expression(p);
-    if p.consume(ModelicaToken::Comma) {
+    if p.consume(TokenKind::Comma) {
         array_arguments_non_first(p);
     }
     p.exit(mark, SyntaxKind::ArrayArgumentsNonFirst);
@@ -1438,7 +1438,7 @@ fn array_arguments_non_first(p: &mut Parser) {
 fn named_arguments(p: &mut Parser) {
     let mark = p.enter();
     named_argument(p);
-    if p.consume(ModelicaToken::Comma) {
+    if p.consume(TokenKind::Comma) {
         named_arguments(p);
     }
     p.exit(mark, SyntaxKind::NamedArguments);
@@ -1446,15 +1446,15 @@ fn named_arguments(p: &mut Parser) {
 
 fn named_argument(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Identifier);
-    p.expect(ModelicaToken::Equal);
+    p.expect(TokenKind::Identifier);
+    p.expect(TokenKind::Equal);
     function_argument(p);
     p.exit(mark, SyntaxKind::NamedArgument);
 }
 
 fn function_argument(p: &mut Parser) {
     let mark = p.enter();
-    if p.check(ModelicaToken::Function) {
+    if p.check(TokenKind::Function) {
         function_partial_application(p);
     } else {
         expression(p);
@@ -1464,13 +1464,13 @@ fn function_argument(p: &mut Parser) {
 
 fn function_partial_application(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Function);
+    p.expect(TokenKind::Function);
     type_specifier(p);
-    p.expect(ModelicaToken::LParen);
-    if p.check(ModelicaToken::Identifier) {
+    p.expect(TokenKind::LParen);
+    if p.check(TokenKind::Identifier) {
         named_arguments(p);
     }
-    p.expect(ModelicaToken::RParen);
+    p.expect(TokenKind::RParen);
     p.exit(mark, SyntaxKind::FunctionPartialApplication);
 }
 
@@ -1478,12 +1478,12 @@ fn output_expression_list(p: &mut Parser) {
     let mark = p.enter();
     // This production can only occur inside parentheses, so easiest way
     // is to check for right paren
-    if !p.check(ModelicaToken::RParen) {
-        if !p.check_any(&[ModelicaToken::RParen, ModelicaToken::Comma]) {
+    if !p.check(TokenKind::RParen) {
+        if !p.check_any(&[TokenKind::RParen, TokenKind::Comma]) {
             expression(p);
         }
-        while p.consume(ModelicaToken::Comma) && !p.eof() {
-            if !p.check_any(&[ModelicaToken::RParen, ModelicaToken::Comma]) {
+        while p.consume(TokenKind::Comma) && !p.eof() {
+            if !p.check_any(&[TokenKind::RParen, TokenKind::Comma]) {
                 expression(p);
             }
         }
@@ -1494,7 +1494,7 @@ fn output_expression_list(p: &mut Parser) {
 fn expression_list(p: &mut Parser) {
     let mark = p.enter();
     expression(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         expression(p);
     }
     p.exit(mark, SyntaxKind::ExpressionList);
@@ -1502,18 +1502,18 @@ fn expression_list(p: &mut Parser) {
 
 fn array_subscripts(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::LBracket);
+    p.expect(TokenKind::LBracket);
     subscript(p);
-    while p.consume(ModelicaToken::Comma) && !p.eof() {
+    while p.consume(TokenKind::Comma) && !p.eof() {
         subscript(p);
     }
-    p.expect(ModelicaToken::RBracket);
+    p.expect(TokenKind::RBracket);
     p.exit(mark, SyntaxKind::ArraySubscripts);
 }
 
 fn subscript(p: &mut Parser) {
     let mark = p.enter();
-    if !p.consume(ModelicaToken::Colon) {
+    if !p.consume(TokenKind::Colon) {
         expression(p);
     }
     p.exit(mark, SyntaxKind::Subscript);
@@ -1522,7 +1522,7 @@ fn subscript(p: &mut Parser) {
 fn description(p: &mut Parser) {
     let mark = p.enter();
     description_string(p);
-    if p.check(ModelicaToken::Annotation) {
+    if p.check(TokenKind::Annotation) {
         annotation_clause(p);
     }
     p.exit(mark, SyntaxKind::Description);
@@ -1530,9 +1530,9 @@ fn description(p: &mut Parser) {
 
 fn description_string(p: &mut Parser) {
     let mark = p.enter();
-    if p.consume(ModelicaToken::String) {
-        while p.consume(ModelicaToken::Plus) && !p.eof() {
-            p.expect(ModelicaToken::String);
+    if p.consume(TokenKind::String) {
+        while p.consume(TokenKind::Plus) && !p.eof() {
+            p.expect(TokenKind::String);
         }
     }
     p.exit(mark, SyntaxKind::DescriptionString);
@@ -1540,7 +1540,7 @@ fn description_string(p: &mut Parser) {
 
 fn annotation_clause(p: &mut Parser) {
     let mark = p.enter();
-    p.expect(ModelicaToken::Annotation);
+    p.expect(TokenKind::Annotation);
     class_modification(p);
     p.exit(mark, SyntaxKind::AnnotationClause);
 }

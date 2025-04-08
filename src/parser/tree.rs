@@ -98,7 +98,7 @@ impl Tree {
 
 #[cfg(test)]
 mod tests {
-    use super::super::{parse, ModelicaToken};
+    use super::super::{parse, TokenKind};
 
     use super::*;
 
@@ -124,9 +124,9 @@ mod tests {
         } else {
             panic!("annotation not found");
         }
-        assert_eq!(tree.start().kind, ModelicaToken::String);
+        assert_eq!(tree.start().kind, TokenKind::String);
         assert_eq!(tree.start().text, r#""descr""#);
-        assert_eq!(tree.end().kind, ModelicaToken::RParen);
-        assert_eq!(tree.end().end.pos, 21);
+        assert_eq!(tree.end().kind, TokenKind::RParen);
+        assert_eq!(tree.end().end.offset, 21);
     }
 }

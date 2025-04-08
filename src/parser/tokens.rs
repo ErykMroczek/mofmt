@@ -1,11 +1,18 @@
-use std::fmt::{Debug, Display, Error, Formatter};
+use std::fmt::{Debug, Error, Formatter};
 
 #[derive(PartialEq, Copy, Clone)]
 /// Represents a type of a Modelica token. Defined based on Modelica
 /// Specification
 /// 3.7
-pub enum ModelicaToken {
+pub enum TokenKind {
     EOF,
+
+    ErrorIllegalCharacter,
+    ErrorIllegalQident,
+    ErrorUnclosedString,
+    ErrorUnclosedBlockComment,
+    ErrorUnclosedQIdent,
+
     Comma,
     Dot,
     Semicolon,
@@ -100,116 +107,118 @@ pub enum ModelicaToken {
     Bool,
 }
 
-impl Debug for ModelicaToken {
+impl Debug for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        use TokenKind as TK;
         match self {
-            ModelicaToken::EOF => write!(f, "EOF"),
-            ModelicaToken::Comma => write!(f, "','"),
-            ModelicaToken::Dot => write!(f, "'.''"),
-            ModelicaToken::Semicolon => write!(f, "';'"),
-            ModelicaToken::Colon => write!(f, "':'"),
-            ModelicaToken::LParen => write!(f, "'('"),
-            ModelicaToken::RParen => write!(f, "')'"),
-            ModelicaToken::LCurly => write!(f, "'{{'"),
-            ModelicaToken::RCurly => write!(f, "'}}'"),
-            ModelicaToken::LBracket => write!(f, "'['"),
-            ModelicaToken::RBracket => write!(f, "']'"),
-            ModelicaToken::Equal => write!(f, "'='"),
-            ModelicaToken::Assign => write!(f, "':='"),
-            ModelicaToken::Plus => write!(f, "'+'"),
-            ModelicaToken::Minus => write!(f, "'-'"),
-            ModelicaToken::Star => write!(f, "'*'"),
-            ModelicaToken::Slash => write!(f, "'/'"),
-            ModelicaToken::Flex => write!(f, "'^'"),
-            ModelicaToken::DotPlus => write!(f, "'.+'"),
-            ModelicaToken::DotMinus => write!(f, "'.-'"),
-            ModelicaToken::DotStar => write!(f, "'.*'"),
-            ModelicaToken::DotSlash => write!(f, "'./'"),
-            ModelicaToken::DotFlex => write!(f, "'.^'"),
-            ModelicaToken::Gre => write!(f, "'>'"),
-            ModelicaToken::Geq => write!(f, "'>='"),
-            ModelicaToken::Les => write!(f, "'<'"),
-            ModelicaToken::Leq => write!(f, "'<='"),
-            ModelicaToken::Neq => write!(f, "'<>'"),
-            ModelicaToken::Eq => write!(f, "'=='"),
-            ModelicaToken::Not => write!(f, "'not'"),
-            ModelicaToken::And => write!(f, "'and'"),
-            ModelicaToken::Or => write!(f, "'or'"),
-            ModelicaToken::In => write!(f, "'in'"),
-            ModelicaToken::For => write!(f, "for'"),
-            ModelicaToken::If => write!(f, "'if'"),
-            ModelicaToken::Else => write!(f, "'else'"),
-            ModelicaToken::ElseIf => write!(f, "'elseif'"),
-            ModelicaToken::Then => write!(f, "'then'"),
-            ModelicaToken::When => write!(f, "'when'"),
-            ModelicaToken::ElseWhen => write!(f, "'elsewhen'"),
-            ModelicaToken::While => write!(f, "'while'"),
-            ModelicaToken::Loop => write!(f, "'loop'"),
-            ModelicaToken::Break => write!(f, "'break'"),
-            ModelicaToken::Return => write!(f, "'return'"),
-            ModelicaToken::Partial => write!(f, "'partial'"),
-            ModelicaToken::Class => write!(f, "'class'"),
-            ModelicaToken::Operator => write!(f, "'operator'"),
-            ModelicaToken::Expandable => write!(f, "'expandable'"),
-            ModelicaToken::Model => write!(f, "'model'"),
-            ModelicaToken::Function => write!(f, "'function'"),
-            ModelicaToken::Record => write!(f, "'record'"),
-            ModelicaToken::Type => write!(f, "'type'"),
-            ModelicaToken::Block => write!(f, "'block'"),
-            ModelicaToken::Connector => write!(f, "'connector'"),
-            ModelicaToken::Package => write!(f, "'package'"),
-            ModelicaToken::Pure => write!(f, "'pure'"),
-            ModelicaToken::Impure => write!(f, "'impure'"),
-            ModelicaToken::Initial => write!(f, "'initial'"),
-            ModelicaToken::Equation => write!(f, "'equation'"),
-            ModelicaToken::Algorithm => write!(f, "'algorithm'"),
-            ModelicaToken::Extends => write!(f, "'extends'"),
-            ModelicaToken::Import => write!(f, "'import'"),
-            ModelicaToken::Public => write!(f, "'public'"),
-            ModelicaToken::Protected => write!(f, "'protected'"),
-            ModelicaToken::Within => write!(f, "'within'"),
-            ModelicaToken::Final => write!(f, "'final'"),
-            ModelicaToken::Encapsulated => write!(f, "'encapsulated'"),
-            ModelicaToken::Enumeration => write!(f, "'enumeration'"),
-            ModelicaToken::Input => write!(f, "'input'"),
-            ModelicaToken::Output => write!(f, "'output'"),
-            ModelicaToken::Redeclare => write!(f, "'redeclare'"),
-            ModelicaToken::Inner => write!(f, "'inner'"),
-            ModelicaToken::Outer => write!(f, "'outer'"),
-            ModelicaToken::Replaceable => write!(f, "'replaceable'"),
-            ModelicaToken::Constrainedby => write!(f, "'constrainedby'"),
-            ModelicaToken::Flow => write!(f, "'flow'"),
-            ModelicaToken::Stream => write!(f, "'stream'"),
-            ModelicaToken::Discrete => write!(f, "'discrete'"),
-            ModelicaToken::Parameter => write!(f, "'parameter'"),
-            ModelicaToken::Constant => write!(f, "'constant'"),
-            ModelicaToken::Each => write!(f, "'each'"),
-            ModelicaToken::Annotation => write!(f, "'annotation'"),
-            ModelicaToken::External => write!(f, "'external'"),
-            ModelicaToken::End => write!(f, "'end'"),
-            ModelicaToken::Der => write!(f, "'der'"),
-            ModelicaToken::Connect => write!(f, "'connect'"),
-            ModelicaToken::LineComment => write!(f, "LINE COMMENT"),
-            ModelicaToken::BlockComment => write!(f, "BLOCK COMMENT"),
-            ModelicaToken::Identifier => write!(f, "IDENTIFIER"),
-            ModelicaToken::String => write!(f, "STRING"),
-            ModelicaToken::UInt => write!(f, "UNSIGNED INTEGER"),
-            ModelicaToken::UReal => write!(f, "UNSIGNED REAL"),
-            ModelicaToken::Bool => write!(f, "'true' or 'false'"),
+            TK::EOF => write!(f, "EOF"),
+            TK::Comma => write!(f, "','"),
+            TK::Dot => write!(f, "'.''"),
+            TK::Semicolon => write!(f, "';'"),
+            TK::Colon => write!(f, "':'"),
+            TK::LParen => write!(f, "'('"),
+            TK::RParen => write!(f, "')'"),
+            TK::LCurly => write!(f, "'{{'"),
+            TK::RCurly => write!(f, "'}}'"),
+            TK::LBracket => write!(f, "'['"),
+            TK::RBracket => write!(f, "']'"),
+            TK::Equal => write!(f, "'='"),
+            TK::Assign => write!(f, "':='"),
+            TK::Plus => write!(f, "'+'"),
+            TK::Minus => write!(f, "'-'"),
+            TK::Star => write!(f, "'*'"),
+            TK::Slash => write!(f, "'/'"),
+            TK::Flex => write!(f, "'^'"),
+            TK::DotPlus => write!(f, "'.+'"),
+            TK::DotMinus => write!(f, "'.-'"),
+            TK::DotStar => write!(f, "'.*'"),
+            TK::DotSlash => write!(f, "'./'"),
+            TK::DotFlex => write!(f, "'.^'"),
+            TK::Gre => write!(f, "'>'"),
+            TK::Geq => write!(f, "'>='"),
+            TK::Les => write!(f, "'<'"),
+            TK::Leq => write!(f, "'<='"),
+            TK::Neq => write!(f, "'<>'"),
+            TK::Eq => write!(f, "'=='"),
+            TK::Not => write!(f, "'not'"),
+            TK::And => write!(f, "'and'"),
+            TK::Or => write!(f, "'or'"),
+            TK::In => write!(f, "'in'"),
+            TK::For => write!(f, "for'"),
+            TK::If => write!(f, "'if'"),
+            TK::Else => write!(f, "'else'"),
+            TK::ElseIf => write!(f, "'elseif'"),
+            TK::Then => write!(f, "'then'"),
+            TK::When => write!(f, "'when'"),
+            TK::ElseWhen => write!(f, "'elsewhen'"),
+            TK::While => write!(f, "'while'"),
+            TK::Loop => write!(f, "'loop'"),
+            TK::Break => write!(f, "'break'"),
+            TK::Return => write!(f, "'return'"),
+            TK::Partial => write!(f, "'partial'"),
+            TK::Class => write!(f, "'class'"),
+            TK::Operator => write!(f, "'operator'"),
+            TK::Expandable => write!(f, "'expandable'"),
+            TK::Model => write!(f, "'model'"),
+            TK::Function => write!(f, "'function'"),
+            TK::Record => write!(f, "'record'"),
+            TK::Type => write!(f, "'type'"),
+            TK::Block => write!(f, "'block'"),
+            TK::Connector => write!(f, "'connector'"),
+            TK::Package => write!(f, "'package'"),
+            TK::Pure => write!(f, "'pure'"),
+            TK::Impure => write!(f, "'impure'"),
+            TK::Initial => write!(f, "'initial'"),
+            TK::Equation => write!(f, "'equation'"),
+            TK::Algorithm => write!(f, "'algorithm'"),
+            TK::Extends => write!(f, "'extends'"),
+            TK::Import => write!(f, "'import'"),
+            TK::Public => write!(f, "'public'"),
+            TK::Protected => write!(f, "'protected'"),
+            TK::Within => write!(f, "'within'"),
+            TK::Final => write!(f, "'final'"),
+            TK::Encapsulated => write!(f, "'encapsulated'"),
+            TK::Enumeration => write!(f, "'enumeration'"),
+            TK::Input => write!(f, "'input'"),
+            TK::Output => write!(f, "'output'"),
+            TK::Redeclare => write!(f, "'redeclare'"),
+            TK::Inner => write!(f, "'inner'"),
+            TK::Outer => write!(f, "'outer'"),
+            TK::Replaceable => write!(f, "'replaceable'"),
+            TK::Constrainedby => write!(f, "'constrainedby'"),
+            TK::Flow => write!(f, "'flow'"),
+            TK::Stream => write!(f, "'stream'"),
+            TK::Discrete => write!(f, "'discrete'"),
+            TK::Parameter => write!(f, "'parameter'"),
+            TK::Constant => write!(f, "'constant'"),
+            TK::Each => write!(f, "'each'"),
+            TK::Annotation => write!(f, "'annotation'"),
+            TK::External => write!(f, "'external'"),
+            TK::End => write!(f, "'end'"),
+            TK::Der => write!(f, "'der'"),
+            TK::Connect => write!(f, "'connect'"),
+            TK::LineComment => write!(f, "LINE COMMENT"),
+            TK::BlockComment => write!(f, "BLOCK COMMENT"),
+            TK::Identifier => write!(f, "IDENTIFIER"),
+            TK::String => write!(f, "STRING"),
+            TK::UInt => write!(f, "UNSIGNED INTEGER"),
+            TK::UReal => write!(f, "UNSIGNED REAL"),
+            TK::Bool => write!(f, "'true' or 'false'"),
+            _ => write!(f, "ERROR"),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
-/// Used to represent token's position in the input string
+/// Represents token position in the input string
 ///
-/// * `pos`: index of the character that corresponds with this position
-/// * `line`: line number of the character that corresponds with this
-///   position
-/// * `col`: column number of the character that corresponds with this
-///   position
+/// * `offset`: offset in bytes from the start of the input string that
+///   corresponds with this position
+/// * `line`: line number that corresponds with this position
+/// * `col`: column (number of characters from the last newline) that
+///   corresponds with this position
 pub struct Position {
-    pub pos: usize,
+    pub offset: usize,
     pub line: usize,
     pub col: usize,
 }
@@ -220,26 +229,23 @@ pub struct Position {
 /// Tokens contain information on their type and their coordinates in
 /// the source.
 ///
-/// * `idx`: position in the token collection
-/// * `text`: text content of the token
 /// * `kind`: token's kind
-/// * `start`: position of the first character
-/// * `end`: position of the last character
+/// * `text`: text content of the token
+/// * `source`: source of the token (input string or file)
+/// * `idx`: position in the token in the tokenized source
+/// * `start`: starting position
+/// * `end`: ending position
 pub struct Token {
-    /// Index of the token in the input
-    pub idx: usize,
+    /// Token's kind
+    pub kind: TokenKind,
     /// Text of the token
     pub text: String,
-    /// Token's kind
-    pub kind: ModelicaToken,
-    /// Position of staring character in the input
+    /// Source of the token
+    pub source: String,
+    /// Index of the token in the input
+    pub idx: usize,
+    /// Starting position
     pub start: Position,
-    /// Positon of ending character in the input
+    /// Ending position
     pub end: Position,
-}
-
-impl Display for Token {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "'{}'", self.text)
-    }
 }

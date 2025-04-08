@@ -7,7 +7,7 @@ mod tree;
 
 // Re-exports
 
-pub use tokens::{ModelicaToken, Token};
+pub use tokens::{TokenKind, Token};
 pub use syntax::SyntaxKind;
 pub use events::SyntaxEvent;
 pub use tree::{Child, Tree, build_tree};
