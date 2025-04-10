@@ -225,7 +225,10 @@ pub struct Position {
     pub col: usize,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Copy, Clone, Debug)]
+pub struct TokenID(usize);
+
+#[derive(Debug, Clone)]
 /// Represents a single Modelica token.
 ///
 /// Tokens contain information on their type and their coordinates in
@@ -234,7 +237,7 @@ pub struct Position {
 /// * `kind`: token's kind
 /// * `text`: text content of the token
 /// * `source`: source of the token (input string or file)
-/// * `idx`: position in the token in the tokenized source
+/// * `id`: ID of the toke; the same as token's order in the input
 /// * `start`: starting position
 /// * `end`: ending position
 pub struct Token {
@@ -244,10 +247,63 @@ pub struct Token {
     pub text: String,
     /// Source of the token
     pub source: String,
-    /// Index of the token in the input
-    pub idx: usize,
+    /// ID of the toke; the same as token's order in the input
+    pub id: TokenID,
     /// Starting position
     pub start: Position,
     /// Ending position
     pub end: Position,
+}
+
+pub struct Tokenized {
+    /// Source name
+    pub name: String,
+    /// Source code
+    pub source: String,
+    /// Tokens' kinds
+    pub kinds: Vec<TokenKind>,
+    /// Token's starting offsets
+    pub starts: Vec<usize>,
+    /// Token's ending offsets
+    pub ends: Vec<usize>,
+}
+
+impl Tokenized {
+    pub fn new(name: String, source: String) -> Self {
+        return Tokenized {
+            name,
+            source,
+            kinds: Vec::new(),
+            starts: Vec::new(),
+            ends: Vec::new(),
+        };
+    }
+
+    pub fn get(&self, i: TokenID) -> Token {
+        let kind = self.kinds[i.0];
+        let start = self.starts[i.0];
+        let end = self.ends[i.0];
+        let text = String::from(&self.source[start..end]);
+        let lines: Vec<&str> = text.split('\n').collect();
+        let pre = &self.source[..start];
+        let pre_lines: Vec<&str> = pre.split('\n').collect();
+        let start_pos = Position {
+            offset: start,
+            line: pre_lines.len(),
+            col: pre_lines.last().unwrap().chars().count(),
+        };
+        let end_pos = Position {
+            offset: end,
+            line: lines.len(),
+            col: lines.last().unwrap().chars().count(),
+        };
+        Token {
+            kind: kind.clone(),
+            text,
+            source: self.name.clone(),
+            id: i,
+            start: start_pos,
+            end: end_pos,
+        }
+    }
 }

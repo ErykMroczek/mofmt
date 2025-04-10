@@ -1,9 +1,6 @@
 use std::cell::Cell;
 
-use super::events::SyntaxEvent;
-use super::lexing::Tokenized;
-use super::syntax::SyntaxKind;
-use super::tokens::TokenKind;
+use super::tokens::{TokenKind, Tokenized, TokenID};
 
 pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
     let mut parser = Parser::new(tokens);
@@ -11,15 +8,127 @@ pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
     parser.events
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+/// Represents Modelica grammar rules as defined in [Modelica
+/// Specification
+/// 3.6](https://specification.modelica.org/maint/3.6/modelica-concrete-syntax.html).
+pub enum SyntaxKind {
+    /// Custom production type used to indicate a faulty syntax tree
+    Error,
+    StoredDefinition,
+    ClassDefinition,
+    ClassPrefixes,
+    ClassSpecifier,
+    LongClassSpecifier,
+    ShortClassSpecifier,
+    DerClassSpecifier,
+    BasePrefix,
+    EnumList,
+    EnumerationLiteral,
+    Composition,
+    LanguageSpecification,
+    ExternalFunctionCall,
+    ElementList,
+    Element,
+    ImportClause,
+    ImportList,
+    ExtendsClause,
+    ConstrainingClause,
+    ClassOrInheritanceModification,
+    ArgumentOrInheritanceModificationList,
+    InheritanceModification,
+    ComponentClause,
+    TypePrefix,
+    ComponentList,
+    ComponentDeclaration,
+    ConditionAttribute,
+    Declaration,
+    Modification,
+    ModificationExpression,
+    ClassModification,
+    ArgumentList,
+    Argument,
+    ElementModificationOrReplaceable,
+    ElementModification,
+    ElementRedeclaration,
+    ElementReplaceable,
+    ComponentClause1,
+    ComponentDeclaration1,
+    ShortClassDefinition,
+    EquationSection,
+    AlgorithmSection,
+    Equation,
+    Statement,
+    IfEquation,
+    IfStatement,
+    ForEquation,
+    ForStatement,
+    ForIndices,
+    ForIndex,
+    WhileStatement,
+    WhenEquation,
+    WhenStatement,
+    ConnectEquation,
+    Expression,
+    SimpleExpression,
+    LogicalExpression,
+    LogicalTerm,
+    LogicalFactor,
+    Relation,
+    RelationalOperator,
+    ArithmeticExpression,
+    AddOperator,
+    Term,
+    MulOperator,
+    Factor,
+    Primary,
+    TypeSpecifier,
+    Name,
+    ComponentReference,
+    ResultReference,
+    FunctionCallArgs,
+    FunctionArguments,
+    FunctionArgumentsNonFirst,
+    ArrayArguments,
+    ArrayArgumentsNonFirst,
+    NamedArguments,
+    NamedArgument,
+    FunctionArgument,
+    FunctionPartialApplication,
+    OutputExpressionList,
+    ExpressionList,
+    ArraySubscripts,
+    Subscript,
+    Description,
+    DescriptionString,
+    AnnotationClause,
+}
+
+#[derive(Debug)]
+/// Represents a single Modelica syntax event.
+///
+/// Syntax event may mark starts and ends of productions or terminals.
+/// The list of such syntax events should be consumed to build a parse
+/// tree or an AST.
+pub enum SyntaxEvent {
+    /// Event indicating beginning of the Modelica production.
+    Enter(SyntaxKind),
+    /// Event indicating an end of some Modelica production.
+    Exit,
+    /// Event indicating a token.
+    Advance(usize),
+    Error(String),
+}
+
 /// Represents a Modelica parser
 struct Parser<'a> {
     /// Scanned tokens
     tokens: &'a Tokenized,
-    indices: Vec<usize>,
+    indices: Vec<TokenID>,
     /// Collected syntax events
     events: Vec<SyntaxEvent>,
     /// Current position in the `indices`
-    pos: usize,
+    pos: TokenID,
     /// Parser lifes
     lifes: Cell<u32>,
 }
@@ -130,7 +239,7 @@ impl<'a> Parser<'a> {
             .iter()
             .enumerate()
             .filter(|(_, k)| **k >= TokenKind::Comma)
-            .map(|(i, _)| i)
+            .map(|(i, _)| TokenID(i))
             .collect();
         Parser {
             tokens,
@@ -183,6 +292,7 @@ impl<'a> Parser<'a> {
             .map_or(TokenKind::EOF, |i| self.tokens.kinds[*i])
     }
 
+    // FIXME Get rid of panic
     fn blowup(&self) {
         let tok = if !self.eof() {
             self.tokens.get(self.pos).unwrap()
@@ -228,10 +338,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Advance the parser if current token is expected. Report error if
-    /// current tokens doesn't match the specified type.
-    fn expect(&mut self, typ: TokenKind) {
-        if !self.consume(typ) {
-            self.error(format!("expected {typ:?}, found {:?}", self.nth(0)));
+    /// current tokens doesn't match the specified kind.
+    fn expect(&mut self, kind: TokenKind) {
+        if !self.consume(kind) {
+            self.error(format!("expected {kind:?}, found {:?}", self.nth(0)));
         }
     }
 }

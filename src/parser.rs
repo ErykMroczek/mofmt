@@ -1,16 +1,14 @@
-mod events;
 mod lexing;
 mod parsing;
-mod syntax;
 mod tokens;
-mod tree;
+mod cst;
 
 // Re-exports
 
 pub use tokens::{TokenKind, Token};
 pub use syntax::SyntaxKind;
 pub use events::SyntaxEvent;
-pub use tree::{Child, Tree, build_tree};
+pub use cst::{Child, Tree, build_tree};
 
 /// Output from the parser.
 /// Contains everything necesary to build a parse tree.

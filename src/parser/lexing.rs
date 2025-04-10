@@ -1,68 +1,10 @@
-use super::{
-    tokens::{Position, TokenKind},
-    Token,
-};
+use super::tokens::{Tokenized, TokenKind};
 
 /// Return collections of Modelica tokens, comments and errors generated from the input.
 pub fn lex(name: String, source: String) -> Tokenized {
     let mut lexer = Lexer::new(name, source);
     lexer.tokenize();
     lexer.tokens
-}
-
-pub struct Tokenized {
-    /// Source name
-    pub name: String,
-    /// Source code
-    pub source: String,
-    /// Tokens' kinds
-    pub kinds: Vec<TokenKind>,
-    /// Token's starting offsets
-    pub starts: Vec<usize>,
-    /// Token's ending offsets
-    pub ends: Vec<usize>,
-}
-
-impl Tokenized {
-    fn new(name: String, source: String) -> Self {
-        return Tokenized {
-            name,
-            source,
-            kinds: Vec::new(),
-            starts: Vec::new(),
-            ends: Vec::new(),
-        };
-    }
-    pub fn get(&self, i: usize) -> Option<Token> {
-        if let Some(kind) = self.kinds.get(i) {
-            let start = self.starts[i];
-            let end = self.ends[i];
-            let text = String::from(&self.source[start..end]);
-            let lines: Vec<&str> = text.split('\n').collect();
-            let pre = &self.source[..start];
-            let pre_lines: Vec<&str> = pre.split('\n').collect();
-            let start_pos = Position {
-                offset: start,
-                line: pre_lines.len(),
-                col: pre_lines.last().unwrap().chars().count(),
-            };
-            let end_pos = Position {
-                offset: end,
-                line: lines.len(),
-                col: lines.last().unwrap().chars().count(),
-            };
-            Some(Token {
-                kind: *kind,
-                text,
-                source: self.name.clone(),
-                idx: i,
-                start: start_pos,
-                end: end_pos,
-            })
-        } else {
-            None
-        }
-    }
 }
 
 /// Represents Modelica lexer/scanner.
@@ -448,10 +390,13 @@ mod tests {
         assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Within);
         assert_eq!(tokens.get(0).unwrap().start.line, 1);
         assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Identifier);
-        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().text, ";");
-        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().kind, TokenKind::Semicolon);
+        assert_eq!(tokens.get(tokens.kinds.len() - 1).unwrap().text, ";");
+        assert_eq!(
+            tokens.get(tokens.kinds.len() - 1).unwrap().kind,
+            TokenKind::Semicolon
+        );
         assert_eq!(comments[0].kind, TokenKind::LineComment);
-        assert_eq!(tokens.get(tokens.kinds.len()-1).unwrap().start.line, 7);
+        assert_eq!(tokens.get(tokens.kinds.len() - 1).unwrap().start.line, 7);
         assert_eq!(tokens.get(0).unwrap().start.col, 1);
         assert_eq!(tokens.get(1).unwrap().start.col, 8);
         assert_eq!(comments[0].start.col, 9);
