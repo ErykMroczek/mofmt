@@ -225,7 +225,7 @@ pub struct Position {
     pub col: usize,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct TokenID(usize);
 
 #[derive(Debug, Clone)]
@@ -240,13 +240,13 @@ pub struct TokenID(usize);
 /// * `id`: ID of the toke; the same as token's order in the input
 /// * `start`: starting position
 /// * `end`: ending position
-pub struct Token {
+pub struct Token<'a> {
     /// Token's kind
     pub kind: TokenKind,
     /// Text of the token
-    pub text: String,
+    pub text: &'a str,
     /// Source of the token
-    pub source: String,
+    pub source: &'a str,
     /// ID of the toke; the same as token's order in the input
     pub id: TokenID,
     /// Starting position
@@ -257,35 +257,72 @@ pub struct Token {
 
 pub struct Tokenized {
     /// Source name
-    pub name: String,
+    source: String,
     /// Source code
-    pub source: String,
+    text: String,
     /// Tokens' kinds
-    pub kinds: Vec<TokenKind>,
+    kinds: Vec<TokenKind>,
     /// Token's starting offsets
-    pub starts: Vec<usize>,
+    starts: Vec<usize>,
     /// Token's ending offsets
-    pub ends: Vec<usize>,
+    ends: Vec<usize>,
 }
 
 impl Tokenized {
-    pub fn new(name: String, source: String) -> Self {
+    pub fn new(source: String, text: String) -> Self {
         return Tokenized {
-            name,
             source,
+            text,
             kinds: Vec::new(),
             starts: Vec::new(),
             ends: Vec::new(),
         };
     }
 
+    pub fn push(&mut self, kind: TokenKind, start: usize, end: usize) {
+        self.kinds.push(kind);
+        self.starts.push(start);
+        self.ends.push(end);
+    }
+
+    pub fn first(&self) -> TokenID {
+        TokenID(0)
+    }
+
+    pub fn last(&self) -> TokenID {
+        TokenID(self.kinds.len() - 1)
+    }
+
+    pub fn text(&self) -> &str {
+        self.text.as_str()
+    }
+
+    pub fn kind(&self, i: TokenID) -> TokenKind {
+        self.kinds[i.0]
+    }
+
+    pub fn all<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
+        self.kinds
+            .iter()
+            .enumerate()
+            .map(|(i, _)| TokenID(i))
+    }
+
+    pub fn tokens<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
+        self.kinds
+            .iter()
+            .enumerate()
+            .filter(|(_, k)| **k >= TokenKind::Comma)
+            .map(|(i, _)| TokenID(i))
+    }
+
     pub fn get(&self, i: TokenID) -> Token {
         let kind = self.kinds[i.0];
         let start = self.starts[i.0];
         let end = self.ends[i.0];
-        let text = String::from(&self.source[start..end]);
+        let text = &self.text[start..end];
         let lines: Vec<&str> = text.split('\n').collect();
-        let pre = &self.source[..start];
+        let pre = &self.text[..start];
         let pre_lines: Vec<&str> = pre.split('\n').collect();
         let start_pos = Position {
             offset: start,
@@ -300,7 +337,7 @@ impl Tokenized {
         Token {
             kind: kind.clone(),
             text,
-            source: self.name.clone(),
+            source: self.source.as_str(),
             id: i,
             start: start_pos,
             end: end_pos,

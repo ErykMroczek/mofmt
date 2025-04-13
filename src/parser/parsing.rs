@@ -1,6 +1,6 @@
 use std::cell::Cell;
 
-use super::tokens::{TokenKind, Tokenized, TokenID};
+use super::tokens::{TokenID, TokenKind, Tokenized};
 
 pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
     let mut parser = Parser::new(tokens);
@@ -116,7 +116,7 @@ pub enum SyntaxEvent {
     /// Event indicating an end of some Modelica production.
     Exit,
     /// Event indicating a token.
-    Advance(usize),
+    Advance(TokenID),
     Error(String),
 }
 
@@ -128,7 +128,7 @@ struct Parser<'a> {
     /// Collected syntax events
     events: Vec<SyntaxEvent>,
     /// Current position in the `indices`
-    pos: TokenID,
+    pos: usize,
     /// Parser lifes
     lifes: Cell<u32>,
 }
@@ -233,18 +233,11 @@ impl<'a> Parser<'a> {
 
     /// Return a new parser instance
     fn new(tokens: &'a Tokenized) -> Self {
-        let cap = tokens.kinds.len();
-        let indices = tokens
-            .kinds
-            .iter()
-            .enumerate()
-            .filter(|(_, k)| **k >= TokenKind::Comma)
-            .map(|(i, _)| TokenID(i))
-            .collect();
+        let indices = tokens.tokens().collect();
         Parser {
             tokens,
             indices,
-            events: Vec::with_capacity(cap),
+            events: Vec::new(),
             pos: 0,
             lifes: Cell::new(100),
         }
@@ -272,7 +265,9 @@ impl<'a> Parser<'a> {
     /// Advance the parser, consume the token and push it into the events vector
     fn advance(&mut self) {
         assert!(!self.eof());
-        self.events.push(SyntaxEvent::Advance(self.indices.get(self.pos).unwrap().clone()));
+        self.events.push(SyntaxEvent::Advance(
+            self.indices.get(self.pos).unwrap().clone(),
+        ));
         self.pos += 1;
         self.lifes.set(100);
     }
@@ -289,16 +284,17 @@ impl<'a> Parser<'a> {
         self.lifes.set(self.lifes.get() - 1);
         self.indices
             .get(self.pos + n)
-            .map_or(TokenKind::EOF, |i| self.tokens.kinds[*i])
+            .map_or(TokenKind::EOF, |i| self.tokens.kind(*i))
     }
 
     // FIXME Get rid of panic
     fn blowup(&self) {
-        let tok = if !self.eof() {
-            self.tokens.get(self.pos).unwrap()
+        let id = if let Some(i) = self.indices.get(self.pos) {
+            *i
         } else {
-            self.tokens.get(self.tokens.kinds.len()-1).unwrap()
+            self.tokens.last()
         };
+        let tok = self.tokens.get(id);
         panic!(
             "{}:{}:{}: Parser stuck",
             tok.source, tok.start.line, tok.start.col

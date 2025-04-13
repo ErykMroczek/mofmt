@@ -26,11 +26,11 @@ impl Lexer {
     /// source code
     ///
     /// * source - reference to the source string
-    fn new(name: String, source: String) -> Self {
+    fn new(source: String, text: String) -> Self {
         return Lexer {
             start: 0,
             current: 0,
-            tokens: Tokenized::new(name, source),
+            tokens: Tokenized::new(source, text),
             at_eof: false,
         };
     }
@@ -44,7 +44,7 @@ impl Lexer {
 
     /// Return next byte from the input without consuming it
     fn peek(&mut self) -> Option<u8> {
-        self.tokens.source.as_bytes().get(self.current).cloned()
+        self.tokens.text().as_bytes().get(self.current).cloned()
     }
 
     /// Return next byte from the input and consume it
@@ -63,9 +63,7 @@ impl Lexer {
 
     /// Add a new token to the collection
     fn push_token(&mut self, kind: TokenKind) {
-        self.tokens.kinds.push(kind);
-        self.tokens.starts.push(self.start);
-        self.tokens.ends.push(self.current);
+        self.tokens.push(kind, self.start, self.current);
         self.jump();
     }
 
@@ -298,7 +296,7 @@ impl Lexer {
             }
             self.next();
         }
-        let word: &str = &self.tokens.source[self.start..self.current];
+        let word: &str = &self.tokens.text()[self.start..self.current];
         match word {
             "not" => self.push_token(TokenKind::Not),
             "and" => self.push_token(TokenKind::And),

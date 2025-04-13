@@ -1,36 +1,6 @@
 use super::tokens::{Tokenized, Token, TokenID};
 use super::parsing::{SyntaxEvent, SyntaxKind};
 
-/// Return the parse tree built from the collection returned from parser
-pub fn build_tree(tokens: Vec<Token>, events: Vec<SyntaxEvent>) -> Tree {
-    let mut stack = Vec::new();
-    let mut tokens = tokens.into_iter();
-    let mut events = events;
-
-    assert!(matches!(events.pop(), Some(SyntaxEvent::Exit)));
-
-    for event in events {
-        match event {
-            SyntaxEvent::Enter(kind) => stack.push(Tree::new(kind)),
-            SyntaxEvent::Exit => {
-                let tree = stack.pop().unwrap();
-                if tree.len() > 0 {
-                    stack.last_mut().unwrap().push(Child::Tree(tree));
-                }
-            }
-            SyntaxEvent::Advance => {
-                let token = tokens.next().unwrap();
-                stack.last_mut().unwrap().push(Child::Token(token));
-            }
-        }
-    }
-
-    assert!(tokens.next().is_none());
-    assert!(stack.len() == 1);
-
-    stack.pop().unwrap()
-}
-
 #[derive(Copy, Clone)]
 pub struct TreeID(usize);
 
@@ -40,8 +10,29 @@ pub struct ModelicaCST {
 }
 
 impl ModelicaCST {
-    pub fn new(tokens: Tokenized, events: Vec<SyntaxEvent>) -> Self {
-        todo!();
+    pub fn new(tokens: Tokenized, mut events: Vec<SyntaxEvent>) -> Self {
+        let mut trees = Vec::new();
+        let mut stack: Vec<TreeID> = Vec::new();
+        let mut all = tokens.all();
+        for event in events {
+            match event {
+                SyntaxEvent::Enter(kind) => {
+                    let tree = Tree::new(kind, stack.last().cloned());
+                    stack.push(TreeID(trees.len()));
+                    trees.push(tree);
+                }
+                SyntaxEvent::Exit => {
+                    let id = stack.pop().unwrap();
+                    if let Some(parent) = stack.last() {
+                        trees[parent.0].push(Child::Tree(id));
+                    }
+                }
+                SyntaxEvent::Advance(tokid) => {
+                    todo!("advance {:?}", tokid);
+                }
+            }
+        }
+        ModelicaCST { tokens, trees }
     }
 
     pub fn root(&self) -> Option<TreeID> {
@@ -100,9 +91,24 @@ impl ModelicaCST {
 }
 
 struct Tree {
-    pub kind: SyntaxKind,
-    pub parent: Option<TreeID>,
-    pub children: Vec<Child>,
+    kind: SyntaxKind,
+    parent: Option<TreeID>,
+    children: Vec<Child>,
+}
+
+impl Tree {
+    pub fn new(kind: SyntaxKind, parent: Option<TreeID>) -> Self {
+        Tree {
+            kind,
+            parent,
+            children: Vec::new(),
+        }
+    }
+
+    pub fn push(&mut self, child: Child) {
+        self.children.push(child);
+    }
+
 }
 
 pub enum Child {
