@@ -1,9 +1,8 @@
 // Re-exports
 
-pub use parser::{parse, SyntaxKind, build_tree};
+pub use parser::parse;
 
 use self::formatter::{format, print};
-use self::parser::{SyntaxEvent, Token};
 
 /// Return string containing formatted Modelica code
 pub fn pretty_print(tokens: Vec<Token>, comments: Vec<Token>, events: Vec<SyntaxEvent>) -> String {

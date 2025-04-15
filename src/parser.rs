@@ -6,28 +6,12 @@ mod cst;
 // Re-exports
 
 pub use tokens::{TokenKind, Token};
-pub use syntax::SyntaxKind;
-pub use events::SyntaxEvent;
-pub use cst::{Child, Tree, build_tree};
+pub use parsing::SyntaxKind;
+pub use cst::{Child, ModelicaCST};
 
-/// Output from the parser.
-/// Contains everything necesary to build a parse tree.
-pub struct ParsedModelica {
-    pub tokens: Vec<Token>,
-    pub comments: Vec<Token>,
-    pub events: Vec<SyntaxEvent>,
-    pub errors: Vec<String>,
-}
-
-/// Return `Parsed` object generated from the `source` string.
-pub fn parse(name: &str, source: &str, entry: SyntaxKind) -> ParsedModelica {
-    let (tokens, comments, mut errors) = lexing::lex(name, source);
-    let (events, mut p_errors) = parsing::events(name, &tokens, entry);
-    errors.append(&mut p_errors);
-    ParsedModelica {
-        tokens,
-        comments,
-        events,
-        errors,
-    }
+/// Return Modelica Concrete Syntax Tree object
+pub fn parse(source: String, code: String, entry: SyntaxKind) -> ModelicaCST {
+    let tokens = lexing::lex(source, code);
+    let events = parsing::events(&tokens, entry);
+    cst::ModelicaCST::new(tokens, events)
 }
