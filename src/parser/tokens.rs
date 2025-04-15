@@ -225,7 +225,7 @@ pub struct Position {
     pub col: usize,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
 pub struct TokenID(usize);
 
 #[derive(Debug, Clone)]
@@ -291,6 +291,23 @@ impl Tokenized {
 
     pub fn last(&self) -> TokenID {
         TokenID(self.kinds.len() - 1)
+    }
+
+    pub fn next(&self, id: TokenID) -> Option<TokenID> {
+        let next = id.0 + 1;
+        if next < self.kinds.len() {
+            Some(TokenID(next))
+        } else {
+            None
+        }
+    }
+
+    pub fn prev(&self, id: TokenID) -> Option<TokenID> {
+        if id.0 > 0 {
+            Some(TokenID(id.0 - 1))
+        } else {
+            None
+        }
     }
 
     pub fn text(&self) -> &str {

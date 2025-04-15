@@ -7,13 +7,15 @@ pub struct TreeID(usize);
 pub struct ModelicaCST {
     tokens: Tokenized,
     trees: Vec<Tree>,
+    errors: Vec<Error>,
 }
 
 impl ModelicaCST {
-    pub fn new(tokens: Tokenized, mut events: Vec<SyntaxEvent>) -> Self {
+    pub fn new(tokens: Tokenized, events: Vec<SyntaxEvent>) -> Self {
         let mut trees = Vec::new();
         let mut stack: Vec<TreeID> = Vec::new();
-        let mut all = tokens.all();
+        let mut errors = Vec::new();
+        let mut current_token = tokens.first();
         for event in events {
             match event {
                 SyntaxEvent::Enter(kind) => {
@@ -27,12 +29,34 @@ impl ModelicaCST {
                         trees[parent.0].push(Child::Tree(id));
                     }
                 }
-                SyntaxEvent::Advance(tokid) => {
-                    todo!("advance {:?}", tokid);
+                SyntaxEvent::Advance(id) => {
+                    while id >= current_token {
+                        trees[stack.last().unwrap().0].push(Child::Token(current_token));
+                        if let Some(next_token) = tokens.next(current_token) {
+                            current_token = next_token;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                SyntaxEvent::Error(msg) => {
+                    errors.push(Error {
+                        msg,
+                        tree: stack.last().unwrap().clone(),
+                    });
                 }
             }
         }
-        ModelicaCST { tokens, trees }
+        // Check remaining tokens
+        while current_token < tokens.last() {
+            trees[stack.last().unwrap().0].push(Child::Token(current_token));
+            if let Some(next_token) = tokens.next(current_token) {
+                current_token = next_token;
+            } else {
+                break;
+            }
+        }
+        ModelicaCST { tokens, trees, errors }
     }
 
     pub fn root(&self) -> Option<TreeID> {
@@ -41,6 +65,10 @@ impl ModelicaCST {
         } else {
             None
         }
+    }
+
+    pub fn errors(&self) -> &[Error] {
+        self.errors.as_slice()
     }
 
     pub fn kind(&self, id: TreeID) -> SyntaxKind {
@@ -88,6 +116,11 @@ impl ModelicaCST {
         }
         contains
     }
+}
+
+struct Error {
+    msg: String,
+    tree: TreeID,
 }
 
 struct Tree {
