@@ -1,5 +1,5 @@
-use super::tokens::{Tokenized, Token, TokenID};
 use super::parsing::{SyntaxEvent, SyntaxKind};
+use super::tokens::{Token, TokenID, Tokenized};
 
 #[derive(Copy, Clone)]
 pub struct TreeID(usize);
@@ -56,7 +56,11 @@ impl ModelicaCST {
                 break;
             }
         }
-        ModelicaCST { tokens, trees, errors }
+        ModelicaCST {
+            tokens,
+            trees,
+            errors,
+        }
     }
 
     pub fn root(&self) -> Option<TreeID> {
@@ -141,7 +145,6 @@ impl Tree {
     pub fn push(&mut self, child: Child) {
         self.children.push(child);
     }
-
 }
 
 pub enum Child {

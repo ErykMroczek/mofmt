@@ -319,10 +319,7 @@ impl Tokenized {
     }
 
     pub fn all<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
-        self.kinds
-            .iter()
-            .enumerate()
-            .map(|(i, _)| TokenID(i))
+        self.kinds.iter().enumerate().map(|(i, _)| TokenID(i))
     }
 
     pub fn tokens<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {

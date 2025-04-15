@@ -1,4 +1,4 @@
-use super::tokens::{Tokenized, TokenKind};
+use super::tokens::{TokenKind, Tokenized};
 
 /// Return collections of Modelica tokens, comments and errors generated from the input.
 pub fn lex(name: String, source: String) -> Tokenized {
