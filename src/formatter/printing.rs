@@ -1,10 +1,12 @@
-use super::markers::Marker;
+use crate::parser::ModelicaCST;
 
-pub fn print(markers: Vec<Marker>) -> String {
+use super::formatting::Marker;
+
+pub fn print(cst: &ModelicaCST, markers: Vec<Marker>) -> String {
     let mut printer = Printer::new();
     let formatted: Vec<String> = markers
         .into_iter()
-        .filter_map(|m| printer.print_marker(m))
+        .filter_map(|m| printer.print_marker(cst, m))
         .collect();
     formatted.join("")
 }
@@ -18,7 +20,7 @@ impl Printer {
         Printer { indent: 0 }
     }
 
-    fn print_marker(&mut self, m: Marker) -> Option<String> {
+    fn print_marker(&mut self, cst: &ModelicaCST, m: Marker) -> Option<String> {
         const INDENT: &str = "  ";
         const EOL: &str = if cfg!(windows) { "\r\n" } else { "\n" };
         match m {
@@ -31,7 +33,7 @@ impl Printer {
                 self.indent -= 1;
                 None
             }
-            Marker::Token(txt) => Some(txt),
+            Marker::Token(tok) => Some(String::from(cst.tokens().text(tok))),
             _ => {
                 let mut out = String::from(EOL);
                 if m == Marker::Blank {

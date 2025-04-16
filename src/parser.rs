@@ -5,7 +5,7 @@ mod cst;
 
 // Re-exports
 
-pub use tokens::{TokenKind, Token, TokenID, Tokenized};
+pub use tokens::{TokenKind, TokenID};
 pub use parsing::SyntaxKind;
 pub use cst::{Child, ModelicaCST, TreeID};
 
