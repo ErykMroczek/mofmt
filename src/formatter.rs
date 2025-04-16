@@ -1,8 +1,9 @@
 mod formatting;
-mod markers;
 mod printing;
 
-// Re-expors
+use crate::parser::ModelicaCST;
 
-pub use formatting::format;
-pub use printing::print;
+/// Return string containing formatted Modelica code
+pub fn pretty_print(cst: ModelicaCST) -> String {
+    todo!()
+}

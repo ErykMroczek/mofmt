@@ -44,7 +44,7 @@ impl Lexer {
 
     /// Return next byte from the input without consuming it
     fn peek(&mut self) -> Option<u8> {
-        self.tokens.text().as_bytes().get(self.current).cloned()
+        self.tokens.code().as_bytes().get(self.current).cloned()
     }
 
     /// Return next byte from the input and consume it
@@ -296,7 +296,7 @@ impl Lexer {
             }
             self.next();
         }
-        let word: &str = &self.tokens.text()[self.start..self.current];
+        let word: &str = &self.tokens.code()[self.start..self.current];
         match word {
             "not" => self.push_token(TokenKind::Not),
             "and" => self.push_token(TokenKind::And),

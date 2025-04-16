@@ -5,9 +5,9 @@ mod cst;
 
 // Re-exports
 
-pub use tokens::{TokenKind, Token};
+pub use tokens::{TokenKind, Token, TokenID, Tokenized};
 pub use parsing::SyntaxKind;
-pub use cst::{Child, ModelicaCST};
+pub use cst::{Child, ModelicaCST, TreeID};
 
 /// Return Modelica Concrete Syntax Tree object
 pub fn parse(source: String, code: String, entry: SyntaxKind) -> ModelicaCST {

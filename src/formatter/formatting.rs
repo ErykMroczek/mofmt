@@ -1,7 +1,16 @@
 use std::{iter::Peekable, vec::IntoIter};
 
-use super::markers::Marker;
 use crate::parser::*;
+
+#[derive(PartialEq)]
+pub enum Marker {
+    Token(TokenID),
+    Indent,
+    Dedent,
+    Space,
+    Blank,
+    Break,
+}
 
 /// Enum used for controling blank line insertion
 enum Blank {
@@ -11,10 +20,10 @@ enum Blank {
 }
 
 /// Return collection of markers that should be consumed to generate pretty printed string
-pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
-    let mut f = Formatter::new(comments);
-    match tree.kind {
-        SyntaxKind::StoredDefinition => stored_definition(&mut f, tree),
+pub fn format(cst: &ModelicaCST) -> Vec<Marker> {
+    let mut f = Formatter::new(cst);
+    match cst.kind(cst.root().unwrap()) {
+        SyntaxKind::StoredDefinition => stored_definition(&mut f, cst.root().unwrap()),
         SyntaxKind::ClassDefinition => class_definition(&mut f, tree),
         SyntaxKind::ClassPrefixes => class_prefixes(&mut f, tree),
         SyntaxKind::ClassSpecifier => class_specifier(&mut f, tree),
@@ -113,25 +122,27 @@ pub fn format(tree: Tree, comments: Vec<Token>) -> Vec<Marker> {
 }
 
 /// Helper structure that collects markers
-struct Formatter {
-    comments: Peekable<IntoIter<Token>>,
+struct Formatter<'a> {
+    cst: &'a ModelicaCST,
     markers: Vec<Marker>,
-    prev_tok: TokenKind,
+    prev_kind: TokenKind,
     prev_line: usize,
+    prev_tok: TokenID,
 }
 
-impl Formatter {
-    fn new(comments: Vec<Token>) -> Self {
+impl<'a> Formatter<'a> {
+    fn new(cst: &'a ModelicaCST) -> Self {
         Formatter {
-            comments: comments.into_iter().peekable(),
+            cst,
             markers: Vec::new(),
-            prev_tok: TokenKind::EOF,
+            prev_kind: TokenKind::EOF,
             prev_line: 1,
+            prev_tok: cst.tokens().first(),
         }
     }
 
     /// Insert whitespace or linebreak marker
-    fn break_or_space(&mut self, is_multiline: bool, tok: &Token) {
+    fn break_or_space(&mut self, is_multiline: bool, tok: TokenID) {
         if is_multiline {
             self.handle_break(tok, Blank::Illegal);
         } else {
@@ -140,7 +151,7 @@ impl Formatter {
     }
 
     /// Find and insert comments, and check if blank line may be inserted
-    fn handle_break(&mut self, tok: &Token, blanks: Blank) {
+    fn handle_break(&mut self, tok: TokenID, blanks: Blank) {
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
             if !self.markers.is_empty() {
@@ -188,11 +199,11 @@ impl Formatter {
 
     /// Return comments from before the specified token.
     /// First vector contains inline comments.
-    fn comments_before(&mut self, tok: &Token) -> (Vec<Token>, Vec<Token>) {
+    fn comments_before(&mut self, tok: TokenID) -> (Vec<Token>, Vec<Token>) {
         let mut comments = Vec::new();
         let mut inlines = Vec::new();
-        while let Some(comment) = self.comments.peek() {
-            if comment.idx < tok.idx {
+        while let Some(id) = self.cst.tokens().next(self.prev_tok) {
+            if id < tok && self.cst.tokens().kind(id) == TokenKind::LineComment || self.cst.tokens().kind(id) == TokenKind::BlockComment {
                 if comment.start.line == self.prev_line {
                     inlines.push(self.comments.next().unwrap());
                 } else {
@@ -206,36 +217,35 @@ impl Formatter {
     }
 
     /// Collect token marker and update the last token data
-    fn handle_token(&mut self, tok: Token) {
-        // Discard comments, as they are only allowed when line is wrapped
-        let _ = self.comments_before(&tok);
-        self.prev_line = tok.end.line;
-        self.prev_tok = tok.kind;
-        self.markers.push(Marker::Token(tok.text));
+    fn handle_token(&mut self, tok: TokenID) {
+        self.prev_line = self.cst.tokens().end(tok).line;
+        self.prev_kind = self.cst.tokens().kind(tok);
+        self.prev_tok = tok;
+        self.markers.push(Marker::Token(tok));
     }
 }
 
-fn stored_definition(f: &mut Formatter, tree: Tree) {
-    for child in tree.children {
+fn stored_definition(f: &mut Formatter, tree: TreeID) {
+    for child in f.cst.children(tree) {
         match child {
-            Child::Tree(tree) => match tree.kind {
+            Child::Tree(tree) => match f.cst.kind(*tree) {
                 SyntaxKind::Name => name(f, tree),
                 SyntaxKind::ClassDefinition => {
-                    if f.prev_tok == TokenKind::Semicolon {
-                        f.handle_break(tree.start(), Blank::Legal);
+                    if f.prev_kind == TokenKind::Semicolon {
+                        f.handle_break(f.cst.start(*tree), Blank::Legal);
                     }
                     class_definition(f, tree);
                 }
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                let kind = tok.kind;
+                let kind = f.cst.tokens().kind(*tok);
                 if kind == TokenKind::Final {
-                    f.handle_break(&tok, Blank::Legal);
-                } else if kind == TokenKind::Within && tok.idx > 0 {
-                    f.handle_break(&tok, Blank::Illegal);
+                    f.handle_break(*tok, Blank::Legal);
+                } else if kind == TokenKind::Within && tok > &f.cst.tokens().first() {
+                    f.handle_break(*tok, Blank::Illegal);
                 }
-                f.handle_token(tok);
+                f.handle_token(*tok);
                 if kind == TokenKind::Final || kind == TokenKind::Within {
                     f.markers.push(Marker::Space);
                 }
@@ -418,7 +428,7 @@ fn der_class_specifier(f: &mut Formatter, tree: Tree) {
                 let kind = tok.kind;
                 if kind == TokenKind::Equal {
                     f.markers.push(Marker::Space);
-                } else if kind == TokenKind::Identifier && f.prev_tok == TokenKind::Comma {
+                } else if kind == TokenKind::Identifier && f.prev_kind == TokenKind::Comma {
                     f.break_or_space(is_multiline, &tok)
                 }
                 f.handle_token(tok);
@@ -507,13 +517,13 @@ fn composition(f: &mut Formatter, tree: Tree) {
                     }
                     SyntaxKind::AnnotationClause => {
                         f.markers.push(Marker::Indent);
-                        let extern_element_annotation = f.prev_tok == TokenKind::External
+                        let extern_element_annotation = f.prev_kind == TokenKind::External
                             || ([
                                 SyntaxKind::LanguageSpecification,
                                 SyntaxKind::ExternalFunctionCall,
                             ]
                             .contains(&prev_rule)
-                                && f.prev_tok != TokenKind::Semicolon);
+                                && f.prev_kind != TokenKind::Semicolon);
                         if extern_element_annotation {
                             f.markers.push(Marker::Indent);
                         }
@@ -608,7 +618,7 @@ fn element_list(f: &mut Formatter, tree: Tree) {
     for child in tree.children {
         match child {
             Child::Tree(tree) => {
-                if f.prev_tok == TokenKind::Semicolon {
+                if f.prev_kind == TokenKind::Semicolon {
                     f.handle_break(tree.start(), Blank::Legal);
                 }
                 element(f, tree);
@@ -1137,7 +1147,7 @@ fn equation_section(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => {
                 f.handle_break(
                     tree.start(),
-                    if f.prev_tok == TokenKind::Equation {
+                    if f.prev_kind == TokenKind::Equation {
                         Blank::Required
                     } else {
                         Blank::Legal
@@ -1164,7 +1174,7 @@ fn algorithm_section(f: &mut Formatter, tree: Tree) {
             Child::Tree(tree) => {
                 f.handle_break(
                     tree.start(),
-                    if f.prev_tok == TokenKind::Algorithm {
+                    if f.prev_kind == TokenKind::Algorithm {
                         Blank::Required
                     } else {
                         Blank::Legal
@@ -1231,7 +1241,7 @@ fn statement(f: &mut Formatter, tree: Tree) {
         match child {
             Child::Tree(tree) => match tree.kind {
                 SyntaxKind::ComponentReference => {
-                    if f.prev_tok == TokenKind::Assign {
+                    if f.prev_kind == TokenKind::Assign {
                         f.markers.push(Marker::Space);
                     }
                     component_reference(f, tree);
@@ -1291,7 +1301,7 @@ fn if_equation(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::If && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::If && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if [
                     TokenKind::ElseIf,
@@ -1326,7 +1336,7 @@ fn if_statement(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::If && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::If && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if [
                     TokenKind::ElseIf,
@@ -1361,7 +1371,7 @@ fn for_equation(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::For && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::For && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == TokenKind::End {
                     f.handle_break(&tok, Blank::Legal);
@@ -1390,7 +1400,7 @@ fn for_statement(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::For && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::For && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == TokenKind::End {
                     f.handle_break(&tok, Blank::Legal);
@@ -1449,7 +1459,7 @@ fn while_statement(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::While && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::While && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == TokenKind::End {
                     f.handle_break(&tok, Blank::Legal);
@@ -1478,7 +1488,7 @@ fn when_equation(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::When && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::When && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == TokenKind::ElseWhen || tok.kind == TokenKind::End {
                     f.handle_break(&tok, Blank::Legal);
@@ -1507,7 +1517,7 @@ fn when_statement(f: &mut Formatter, tree: Tree) {
                 _ => unreachable!(),
             },
             Child::Token(tok) => {
-                if tok.kind == TokenKind::When && f.prev_tok == TokenKind::End {
+                if tok.kind == TokenKind::When && f.prev_kind == TokenKind::End {
                     f.markers.push(Marker::Space);
                 } else if tok.kind == TokenKind::ElseWhen || tok.kind == TokenKind::End {
                     f.handle_break(&tok, Blank::Legal);
@@ -2081,7 +2091,7 @@ fn output_expression_list(f: &mut Formatter, tree: Tree, mut wrapped: bool) -> b
         match child {
             Child::Tree(t) => wrapped = expression(f, t, wrapped, true),
             Child::Token(tok) => {
-                if f.prev_tok == TokenKind::LParen {
+                if f.prev_kind == TokenKind::LParen {
                     f.markers.push(Marker::Space);
                 }
                 f.handle_token(tok);

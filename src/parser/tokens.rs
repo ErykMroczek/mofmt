@@ -259,7 +259,7 @@ pub struct Tokenized {
     /// Source name
     source: String,
     /// Source code
-    text: String,
+    code: String,
     /// Tokens' kinds
     kinds: Vec<TokenKind>,
     /// Token's starting offsets
@@ -269,10 +269,10 @@ pub struct Tokenized {
 }
 
 impl Tokenized {
-    pub fn new(source: String, text: String) -> Self {
+    pub fn new(source: String, code: String) -> Self {
         return Tokenized {
             source,
-            text,
+            code,
             kinds: Vec::new(),
             starts: Vec::new(),
             ends: Vec::new(),
@@ -310,16 +310,39 @@ impl Tokenized {
         }
     }
 
-    pub fn text(&self) -> &str {
-        self.text.as_str()
+    pub fn code(&self) -> &str {
+        self.code.as_str()
     }
 
     pub fn kind(&self, i: TokenID) -> TokenKind {
         self.kinds[i.0]
     }
 
-    pub fn all<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
-        self.kinds.iter().enumerate().map(|(i, _)| TokenID(i))
+    pub fn text(&self, i: TokenID) -> &str {
+        let start = self.starts[i.0];
+        let end = self.ends[i.0];
+        &self.code[start..end]
+    }
+
+    pub fn start(&self, i: TokenID) -> Position {
+        let start = self.starts[i.0];
+        let pre = &self.code[..start];
+        let lines: Vec<&str> = pre.split('\n').collect();
+        Position {
+            offset: start,
+            line: lines.len(),
+            col: lines.last().unwrap().chars().count(),
+        }
+    }
+
+    pub fn end(&self, i: TokenID) -> Position {
+        let end = self.ends[i.0];
+        let lines: Vec<&str> = self.code.split('\n').collect();
+        Position {
+            offset: end,
+            line: lines.len(),
+            col: lines.last().unwrap().chars().count(),
+        }
     }
 
     pub fn tokens<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
@@ -331,30 +354,13 @@ impl Tokenized {
     }
 
     pub fn get(&self, i: TokenID) -> Token {
-        let kind = self.kinds[i.0];
-        let start = self.starts[i.0];
-        let end = self.ends[i.0];
-        let text = &self.text[start..end];
-        let lines: Vec<&str> = text.split('\n').collect();
-        let pre = &self.text[..start];
-        let pre_lines: Vec<&str> = pre.split('\n').collect();
-        let start_pos = Position {
-            offset: start,
-            line: pre_lines.len(),
-            col: pre_lines.last().unwrap().chars().count(),
-        };
-        let end_pos = Position {
-            offset: end,
-            line: lines.len(),
-            col: lines.last().unwrap().chars().count(),
-        };
         Token {
-            kind: kind.clone(),
-            text,
+            kind: self.kind(i),
+            text: self.text(i),
             source: self.source.as_str(),
             id: i,
-            start: start_pos,
-            end: end_pos,
+            start: self.start(i),
+            end: self.end(i),
         }
     }
 }

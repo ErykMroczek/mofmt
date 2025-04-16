@@ -1,5 +1,5 @@
 use super::parsing::{SyntaxEvent, SyntaxKind};
-use super::tokens::{Token, TokenID, Tokenized};
+use super::tokens::{TokenID, Tokenized};
 
 #[derive(Copy, Clone)]
 pub struct TreeID(usize);
@@ -75,6 +75,10 @@ impl ModelicaCST {
         self.errors.as_slice()
     }
 
+    pub fn tokens(&self) -> &Tokenized {
+        &self.tokens
+    }
+
     pub fn kind(&self, id: TreeID) -> SyntaxKind {
         self.trees[id.0].kind
     }
@@ -87,21 +91,21 @@ impl ModelicaCST {
         self.trees[id.0].children.as_slice()
     }
 
-    pub fn start(&self, id: TreeID) -> Token {
+    pub fn start(&self, id: TreeID) -> TokenID {
         match self.children(id).first().unwrap() {
-            Child::Token(token) => self.tokens.get(*token),
+            Child::Token(token) => token.clone(),
             Child::Tree(tree) => self.start(*tree),
         }
     }
-    pub fn end(&self, id: TreeID) -> Token {
+    pub fn end(&self, id: TreeID) -> TokenID {
         match self.children(id).last().unwrap() {
-            Child::Token(token) => self.tokens.get(*token),
+            Child::Token(token) => token.clone(),
             Child::Tree(tree) => self.end(*tree),
         }
     }
     pub fn is_multiline(&self, id: TreeID) -> bool {
-        let first = self.start(id);
-        let last = self.end(id);
+        let first = self.tokens.get(self.start(id));
+        let last = self.tokens.get(self.end(id));
         first.start.line < last.end.line
     }
     pub fn contains(&self, id: TreeID, kind: SyntaxKind) -> bool {
