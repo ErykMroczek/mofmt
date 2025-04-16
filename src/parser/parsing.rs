@@ -233,7 +233,7 @@ impl<'a> Parser<'a> {
 
     /// Return a new parser instance
     fn new(tokens: &'a Tokenized) -> Self {
-        let indices = tokens.tokens().collect();
+        let indices = tokens.tokens();
         Parser {
             tokens,
             indices,

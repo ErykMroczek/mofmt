@@ -345,12 +345,31 @@ impl Tokenized {
         }
     }
 
-    pub fn tokens<'a>(&'a self) -> impl Iterator<Item = TokenID> + 'a {
+    pub fn tokens(&self) -> Vec<TokenID> {
         self.kinds
             .iter()
             .enumerate()
             .filter(|(_, k)| **k >= TokenKind::Comma)
             .map(|(i, _)| TokenID(i))
+            .collect()
+    }
+
+    pub fn comments(&self) -> Vec<TokenID> {
+        self.kinds
+            .iter()
+            .enumerate()
+            .filter(|(_, k)| **k == TokenKind::LineComment || **k == TokenKind::BlockComment)
+            .map(|(i, _)| TokenID(i))
+            .collect()
+    }
+
+    pub fn errors(&self) -> Vec<TokenID> {
+        self.kinds
+            .iter()
+            .enumerate()
+            .filter(|(_, k)| (TokenKind::ErrorIllegalCharacter..TokenKind::ErrorUnclosedQIdent).contains(*k))
+            .map(|(i, _)| TokenID(i))
+            .collect()
     }
 
     pub fn get(&self, i: TokenID) -> Token {

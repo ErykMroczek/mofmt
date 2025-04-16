@@ -30,14 +30,7 @@ impl ModelicaCST {
                     }
                 }
                 SyntaxEvent::Advance(id) => {
-                    while id >= current_token {
-                        trees[stack.last().unwrap().0].push(Child::Token(current_token));
-                        if let Some(next_token) = tokens.next(current_token) {
-                            current_token = next_token;
-                        } else {
-                            break;
-                        }
-                    }
+                    trees[stack.last().unwrap().0].push(Child::Token(id));
                 }
                 SyntaxEvent::Error(msg) => {
                     errors.push(Error {
@@ -103,6 +96,11 @@ impl ModelicaCST {
             Child::Tree(tree) => self.end(*tree),
         }
     }
+
+    pub fn is_empty(&self, id: TreeID) -> bool {
+        self.children(id).is_empty()
+    }
+
     pub fn is_multiline(&self, id: TreeID) -> bool {
         let first = self.tokens.get(self.start(id));
         let last = self.tokens.get(self.end(id));
