@@ -64,22 +64,22 @@ fn format_files(args: &[String], check: bool) {
         match contents {
             Ok(source) => {
                 let parsed = parse(
-                    name.to_string().as_str(),
-                    &source,
+                    name.to_string(),
+                    source,
                     SyntaxKind::StoredDefinition,
                 );
-                if !parsed.errors.is_empty() {
+                if !parsed.errors().is_empty() || !parsed.tokens().errors().is_empty() {
                     writeln!(
                         lock,
                         "Syntax errors detected:\n{}",
-                        parsed.errors.join("\n")
+                        parsed.errors().iter().map(|err| err.msg.clone()).collect::<Vec<String>>().join("\n")
                     )
                     .unwrap();
                     code = 1;
                 } else {
-                    let output = pretty_print(parsed.tokens, parsed.comments, parsed.events) + EOL;
+                    let output = pretty_print(&parsed) + EOL;
                     if check {
-                        if output != source {
+                        if output != parsed.tokens().code() {
                             code = 1;
                             writeln!(lock, "{}: check failed", name).unwrap();
                         } else {

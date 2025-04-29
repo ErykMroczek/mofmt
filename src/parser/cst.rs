@@ -25,8 +25,10 @@ impl ModelicaCST {
                 }
                 SyntaxEvent::Exit => {
                     let id = stack.pop().unwrap();
-                    if let Some(parent) = stack.last() {
-                        trees[parent.0].push(Child::Tree(id));
+                    if !trees[id.0].children.is_empty() {
+                        if let Some(parent) = stack.last() {
+                            trees[parent.0].push(Child::Tree(id));
+                        }
                     }
                 }
                 SyntaxEvent::Advance(id) => {
@@ -42,7 +44,7 @@ impl ModelicaCST {
         }
         // Check remaining tokens
         while current_token < tokens.last() {
-            trees[stack.last().unwrap().0].push(Child::Token(current_token));
+            trees.last_mut().unwrap().push(Child::Token(current_token));
             if let Some(next_token) = tokens.next(current_token) {
                 current_token = next_token;
             } else {
@@ -124,8 +126,8 @@ impl ModelicaCST {
     }
 }
 
-struct Error {
-    msg: String,
+pub struct Error {
+    pub msg: String,
     tree: TreeID,
 }
 

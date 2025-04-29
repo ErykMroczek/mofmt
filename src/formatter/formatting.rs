@@ -2196,7 +2196,7 @@ fn description_string(f: &mut Formatter, tree: TreeID) {
     f.markers.push(Marker::Indent);
     for child in f.cst.children(tree) {
         if let Child::Token(tok) = child {
-            match f.cst.tokens().kind(*tok) {
+            let kind = f.cst.tokens().kind(*tok); match kind {
                 TokenKind::Plus => {
                     f.break_or_space(is_multiline, *tok);
                     f.handle_token(*tok);

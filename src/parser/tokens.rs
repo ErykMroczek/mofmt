@@ -337,7 +337,7 @@ impl Tokenized {
 
     pub fn end(&self, i: TokenID) -> Position {
         let end = self.ends[i.0];
-        let lines: Vec<&str> = self.code.split('\n').collect();
+        let lines: Vec<&str> = self.code[..end].split('\n').collect();
         Position {
             offset: end,
             line: lines.len(),
