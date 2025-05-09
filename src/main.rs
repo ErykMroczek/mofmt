@@ -1,4 +1,4 @@
-use mofmt::{parse, pretty_print, SyntaxKind};
+use mofmt::{parse, SyntaxKind};
 use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
@@ -76,7 +76,7 @@ fn format_files(args: &[String], check: bool) {
                     .unwrap();
                     code = 1;
                 } else {
-                    let output = pretty_print(&parsed) + EOL;
+                    let output = parsed.pretty_print() + EOL;
                     if check {
                         if output != parsed.tokens().code() {
                             code = 1;

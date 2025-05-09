@@ -3,8 +3,10 @@ mod printing;
 
 use crate::parser::ModelicaCST;
 
-/// Return string containing formatted Modelica code
-pub fn pretty_print(cst: &ModelicaCST) -> String {
-    let markers = formatting::format(cst);
-    printing::print(cst, markers)
+impl ModelicaCST {
+    /// Return string containing formatted Modelica code represented by the CST.
+    pub fn pretty_print(&self) -> String {
+        let markers = formatting::format(self);
+        printing::print(self, markers)
+    }
 }

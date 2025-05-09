@@ -29,14 +29,14 @@
 ///
 /// The lexer assumes that the input is valid UTF-8. It handles escaped characters in strings
 /// and quoted identifiers, and it ensures that tokens are aligned with character boundaries.
-use super::tokens::{TokenKind, Tokenized};
+use super::tokens::{TokenKind, Tokens};
 
 /// Tokenizes the given Modelica source code.
 ///
 /// The `lex` function is the main entry point for lexical analysis of Modelica source code.
 /// It takes the name of the source and the source code itself as input, and returns a `Tokenized`
 /// structure containing the tokens extracted from the source code.
-pub fn lex(name: String, source: String) -> Tokenized {
+pub fn lex(name: String, source: String) -> Tokens {
     let mut lexer = Lexer::new(name, source);
     lexer.tokenize();
     lexer.tokens
@@ -56,7 +56,7 @@ pub fn lex(name: String, source: String) -> Tokenized {
 struct Lexer {
     start: usize,
     current: usize,
-    tokens: Tokenized,
+    tokens: Tokens,
     at_eof: bool,
 }
 
@@ -69,7 +69,7 @@ impl Lexer {
         Lexer {
             start: 0,
             current: 0,
-            tokens: Tokenized::new(source, text),
+            tokens: Tokens::new(source, text),
             at_eof: false,
         }
     }

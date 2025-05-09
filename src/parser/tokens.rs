@@ -258,9 +258,9 @@ pub struct Token<'a> {
 
 /// Represents a collection of tokenized data extracted from the Modelica source code.
 ///
-/// This structure contains information about the source code, its tokens,
-/// and their respective metadata such as kinds and offsets.
-pub struct Tokenized {
+/// This structure has opaque API and does not expose the internal structure of the tokenized data.
+/// It provides methods to navigate the tokens and access their properties.
+pub struct Tokens {
     source: String,
     code: String,
     kinds: Vec<TokenKind>,
@@ -268,10 +268,10 @@ pub struct Tokenized {
     ends: Vec<usize>,
 }
 
-impl Tokenized {
+impl Tokens {
 
     pub(super) fn new(source: String, code: String) -> Self {
-        Tokenized {
+        Tokens {
             source,
             code,
             kinds: Vec::new(),

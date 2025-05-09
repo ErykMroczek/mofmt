@@ -5,7 +5,7 @@ use std::fs;
 fn format_file(path: &str) -> String {
     let input = fs::read_to_string(path).expect("error");
     let parsed = mofmt::parse(String::from(path), input, mofmt::SyntaxKind::StoredDefinition);
-    mofmt::pretty_print(&parsed)
+    parsed.pretty_print()
 }
 
 #[test]

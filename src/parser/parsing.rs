@@ -1,8 +1,9 @@
 use std::cell::Cell;
 
-use super::tokens::{TokenID, TokenKind, Tokenized};
+use super::tokens::{TokenID, TokenKind, Tokens};
 
-pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
+/// Return a vector of syntax events for the given tokenized input
+pub fn events(tokens: &Tokens, start: SyntaxKind) -> Vec<SyntaxEvent> {
     let mut parser = Parser::new(tokens);
     parser.parse(start);
     parser.events
@@ -107,33 +108,32 @@ pub enum SyntaxKind {
 #[derive(Debug)]
 /// Represents a single Modelica syntax event.
 ///
-/// Syntax event may mark starts and ends of productions or terminals.
+/// Syntax event may mark starts and ends of productions, or terminals.
 /// The list of such syntax events should be consumed to build a parse
-/// tree or an AST.
+/// tree or AST.
 pub enum SyntaxEvent {
-    /// Event indicating beginning of the Modelica production.
     Enter(SyntaxKind),
-    /// Event indicating an end of some Modelica production.
     Exit,
-    /// Event indicating a token.
     Advance(TokenID),
     Error(TokenID, String),
 }
 
 /// Represents a Modelica parser
+/// 
+/// Parser is a recursive descent parser.
+/// It parses the input tokens and builds a vector of syntax events.
+/// Life of the parser is limited to 100 attempts. If parser is stuck
+/// for more than 100 attempts at consuming next token, it will panic.
 struct Parser<'a> {
-    /// Scanned tokens
-    tokens: &'a Tokenized,
+    tokens: &'a Tokens,
     indices: Vec<TokenID>,
-    /// Collected syntax events
     events: Vec<SyntaxEvent>,
-    /// Current position in the `indices`
     pos: usize,
-    /// Parser lifes
     lifes: Cell<u32>,
 }
 
 impl<'a> Parser<'a> {
+    /// Parse the input tokens starting from the specified production
     fn parse(&mut self, start: SyntaxKind) {
         match start {
             SyntaxKind::StoredDefinition => stored_definition(self),
@@ -232,7 +232,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Return a new parser instance
-    fn new(tokens: &'a Tokenized) -> Self {
+    fn new(tokens: &'a Tokens) -> Self {
         let indices = tokens.tokens();
         Parser {
             tokens,
@@ -254,11 +254,8 @@ impl<'a> Parser<'a> {
     }
 
     /// Close the production scope and update its type
-    ///
-    /// * `m`: position of the corresponding enter event
-    /// * `typ`: type of the production
-    fn exit(&mut self, m: usize, typ: SyntaxKind) {
-        self.events[m] = SyntaxEvent::Enter(typ);
+    fn exit(&mut self, m: usize, kind: SyntaxKind) {
+        self.events[m] = SyntaxEvent::Enter(kind);
         self.events.push(SyntaxEvent::Exit);
     }
 
@@ -275,6 +272,7 @@ impl<'a> Parser<'a> {
     fn eof(&self) -> bool {
         self.pos == self.indices.len()
     }
+
     /// Return type of the n-th token counting from the current one.
     fn nth(&self, n: usize) -> TokenKind {
         if self.lifes.get() == 0 {
@@ -286,7 +284,9 @@ impl<'a> Parser<'a> {
             .map_or(TokenKind::Eof, |i| self.tokens.kind(*i))
     }
 
-    // FIXME Get rid of panic
+    /// Panic if parser is stuck
+    // FIXME: This is a temporary solution. Parser should be able to
+    // recover from errors and continue parsing.
     fn blowup(&self) {
         let id = if let Some(i) = self.indices.get(self.pos) {
             *i
@@ -301,19 +301,19 @@ impl<'a> Parser<'a> {
     }
 
     /// Return `true` if current token matches the specified type
-    fn check(&self, typ: TokenKind) -> bool {
-        self.nth(0) == typ
+    fn check(&self, kind: TokenKind) -> bool {
+        self.nth(0) == kind
     }
 
     /// Return `true` if current token matches any of the specified types
-    fn check_any(&self, typ: &[TokenKind]) -> bool {
-        typ.contains(&self.nth(0))
+    fn check_any(&self, kinds: &[TokenKind]) -> bool {
+        kinds.contains(&self.nth(0))
     }
 
     /// Return `true` if current token matches the specified type and
     /// advance the parser. Otherwise return `false` and do not advance.
-    fn consume(&mut self, typ: TokenKind) -> bool {
-        if self.check(typ) {
+    fn consume(&mut self, kind: TokenKind) -> bool {
+        if self.check(kind) {
             self.advance();
             return true;
         }
@@ -331,6 +331,7 @@ impl<'a> Parser<'a> {
         ));
     }
 
+    /// Advance the parser and mark the current token as erroneus.
     fn advance_with_error(&mut self, msg: String) {
         let mark = self.enter();
         self.error(msg);
@@ -349,6 +350,8 @@ impl<'a> Parser<'a> {
 
 // Useful constants used in the parsing process
 
+
+// Keywords that are used to break sections in the Modelica code
 const SECTION_BREAKERS: [TokenKind; 8] = [
     TokenKind::Protected,
     TokenKind::Public,
@@ -359,6 +362,8 @@ const SECTION_BREAKERS: [TokenKind; 8] = [
     TokenKind::Annotation,
     TokenKind::External,
 ];
+
+// Keywords that are used to define classes
 const CLASS_PREFS: [TokenKind; 13] = [
     TokenKind::Partial,
     TokenKind::Class,
