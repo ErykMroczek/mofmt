@@ -149,7 +149,7 @@ impl<'a> Formatter<'a> {
             cst,
             markers: Vec::new(),
             comments: cst.tokens().comments().into_iter().peekable(),
-            prev_kind: TokenKind::EOF,
+            prev_kind: TokenKind::Eof,
             prev_line: 1,
             prev_tok: cst.tokens().first(),
         }
@@ -290,7 +290,7 @@ fn class_definition(f: &mut Formatter, tree: TreeID) {
 }
 
 fn class_prefixes(f: &mut Formatter, tree: TreeID) {
-    for (idx, child) in f.cst.children(tree).into_iter().enumerate() {
+    for (idx, child) in f.cst.children(tree).iter().enumerate() {
         if let Child::Token(tok) = child {
             if idx > 0 {
                 f.markers.push(Marker::Space);
@@ -474,7 +474,7 @@ fn enum_list(f: &mut Formatter, tree: TreeID, mut is_multiline: bool) {
     if !is_multiline {
         is_multiline = f.cst.is_multiline(tree);
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => enumeration_literal(f, *t),
@@ -600,7 +600,7 @@ fn external_function_call(f: &mut Formatter, tree: TreeID) {
             }
         }
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match f.cst.kind(*tree) {
@@ -688,7 +688,7 @@ fn import_clause(f: &mut Formatter, tree: TreeID) {
             }
         }
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match f.cst.kind(*tree) {
@@ -727,7 +727,7 @@ fn import_list(f: &mut Formatter, tree: TreeID, mut is_multiline: bool) {
     if !is_multiline {
         is_multiline = f.cst.is_multiline(tree);
     }
-    for (idx, child) in f.cst.children(tree).into_iter().enumerate() {
+    for (idx, child) in f.cst.children(tree).iter().enumerate() {
         if let Child::Token(tok) = child {
             if f.cst.tokens().kind(*tok) == TokenKind::Identifier && idx > 1 {
                 f.break_or_space(is_multiline, *tok);
@@ -780,7 +780,7 @@ fn constraining_clause(f: &mut Formatter, tree: TreeID) {
 fn class_or_inheritance_modification(f: &mut Formatter, tree: TreeID) {
     f.markers.push(Marker::Indent);
     let is_multiline = f.cst.is_multiline(tree) && f.cst.children(tree).len() > 2;
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => argument_or_inheritance_modification_list(f, *t, is_multiline),
@@ -806,7 +806,7 @@ fn argument_or_inheritance_modification_list(
     if !is_multiline {
         is_multiline = f.cst.is_multiline(tree);
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match f.cst.kind(*tree) {
@@ -860,7 +860,7 @@ fn component_clause(f: &mut Formatter, tree: TreeID) {
 }
 
 fn type_prefix(f: &mut Formatter, tree: TreeID) {
-    for (idx, child) in f.cst.children(tree).into_iter().enumerate() {
+    for (idx, child) in f.cst.children(tree).iter().enumerate() {
         if let Child::Token(tok) = child {
             if idx > 0 {
                 f.markers.push(Marker::Space);
@@ -977,7 +977,7 @@ fn class_modification(f: &mut Formatter, tree: TreeID) {
     let is_multiline = f.cst.is_multiline(tree)
         || f.cst.contains(tree, SyntaxKind::DescriptionString)
         || f.cst.contains(tree, SyntaxKind::Description);
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => argument_list(f, *t, is_multiline),
@@ -999,7 +999,7 @@ fn argument_list(f: &mut Formatter, tree: TreeID, mut is_multiline: bool) {
     if !is_multiline {
         is_multiline = f.cst.is_multiline(tree);
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => argument(f, *t),
@@ -1541,7 +1541,7 @@ fn when_statement(f: &mut Formatter, tree: TreeID) {
 fn connect_equation(f: &mut Formatter, tree: TreeID) {
     let is_multiline = f.cst.is_multiline(tree);
     f.markers.push(Marker::Indent);
-    for (idx, child) in f.cst.children(tree).into_iter().enumerate() {
+    for (idx, child) in f.cst.children(tree).iter().enumerate() {
         match child {
             Child::Tree(tree) => {
                 if idx == 2 {
@@ -1562,7 +1562,7 @@ fn connect_equation(f: &mut Formatter, tree: TreeID) {
 fn expression(f: &mut Formatter, tree: TreeID, mut wrapped: bool, in_oel: bool) -> bool {
     let is_multiline = f.cst.is_multiline(tree);
     let mut conditional = false;
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => match f.cst.kind(*tree) {
@@ -1617,7 +1617,7 @@ fn simple_expression(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool
 }
 
 fn logical_expression(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => wrapped = logical_term(f, *tree, wrapped),
@@ -1642,7 +1642,7 @@ fn logical_expression(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> boo
 }
 
 fn logical_term(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => wrapped = logical_factor(f, *tree, wrapped),
@@ -1680,7 +1680,7 @@ fn logical_factor(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
 }
 
 fn relation(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         if let Child::Tree(tree) = child {
             if f.cst.kind(*tree) == SyntaxKind::RelationalOperator {
@@ -1714,7 +1714,7 @@ fn relational_operator(f: &mut Formatter, tree: TreeID) {
 }
 
 fn arithmetic_expression(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().enumerate().peekable();
+    let mut children = f.cst.children(tree).iter().enumerate().peekable();
     while let Some((idx, child)) = children.next() {
         if let Child::Tree(tree) = child {
             if f.cst.kind(*tree) == SyntaxKind::AddOperator {
@@ -1752,7 +1752,7 @@ fn add_operator(f: &mut Formatter, tree: TreeID) {
 }
 
 fn term(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         if let Child::Tree(tree) = child {
             if f.cst.kind(*tree) == SyntaxKind::MulOperator {
@@ -1786,7 +1786,7 @@ fn mul_operator(f: &mut Formatter, tree: TreeID) {
 }
 
 fn factor(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(tree) => wrapped = primary(f, *tree, wrapped),
@@ -1813,7 +1813,7 @@ fn factor(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
 fn primary(f: &mut Formatter, tree: TreeID, mut wrapped: bool) -> bool {
     let is_multiline = f.cst.is_multiline(tree);
     let children_count = f.cst.children(tree).len();
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Token(tok) => match f.cst.tokens().kind(*tok) {
@@ -1909,7 +1909,7 @@ fn result_reference(f: &mut Formatter, tree: TreeID) {
 
 fn function_call_args(f: &mut Formatter, tree: TreeID) {
     let is_multiline = f.cst.is_multiline(tree);
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     f.markers.push(Marker::Indent);
     while let Some(child) = children.next() {
         match child {
@@ -2080,7 +2080,7 @@ fn function_partial_application(f: &mut Formatter, tree: TreeID) {
             }
         }
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => match f.cst.kind(*t) {
@@ -2126,7 +2126,7 @@ fn expression_list(f: &mut Formatter, tree: TreeID, mut is_multiline: bool) {
     if !is_multiline {
         is_multiline = f.cst.is_multiline(tree);
     }
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => _ = expression(f, *t, false, false),
@@ -2143,7 +2143,7 @@ fn expression_list(f: &mut Formatter, tree: TreeID, mut is_multiline: bool) {
 fn array_subscripts(f: &mut Formatter, tree: TreeID) {
     f.markers.push(Marker::Indent);
     let is_multiline = f.cst.is_multiline(tree);
-    let mut children = f.cst.children(tree).into_iter().peekable();
+    let mut children = f.cst.children(tree).iter().peekable();
     while let Some(child) = children.next() {
         match child {
             Child::Tree(t) => subscript(f, *t),
@@ -2175,7 +2175,7 @@ fn subscript(f: &mut Formatter, tree: TreeID) {
 }
 
 fn description(f: &mut Formatter, tree: TreeID) {
-    for (idx, child) in f.cst.children(tree).into_iter().enumerate() {
+    for (idx, child) in f.cst.children(tree).iter().enumerate() {
         if let Child::Tree(t) = child {
             match f.cst.kind(*t) {
                 SyntaxKind::DescriptionString => description_string(f, *t),

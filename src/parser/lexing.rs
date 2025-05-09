@@ -27,12 +27,12 @@ impl Lexer {
     ///
     /// * source - reference to the source string
     fn new(source: String, text: String) -> Self {
-        return Lexer {
+        Lexer {
             start: 0,
             current: 0,
             tokens: Tokenized::new(source, text),
             at_eof: false,
-        };
+        }
     }
 
     /// Collect tokens

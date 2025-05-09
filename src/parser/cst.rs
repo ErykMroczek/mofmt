@@ -37,7 +37,7 @@ impl ModelicaCST {
                 SyntaxEvent::Error(msg) => {
                     errors.push(Error {
                         msg,
-                        tree: stack.last().unwrap().clone(),
+                        //tree: *stack.last().unwrap(),
                     });
                 }
             }
@@ -88,13 +88,13 @@ impl ModelicaCST {
 
     pub fn start(&self, id: TreeID) -> TokenID {
         match self.children(id).first().unwrap() {
-            Child::Token(token) => token.clone(),
+            Child::Token(token) => *token,
             Child::Tree(tree) => self.start(*tree),
         }
     }
     pub fn end(&self, id: TreeID) -> TokenID {
         match self.children(id).last().unwrap() {
-            Child::Token(token) => token.clone(),
+            Child::Token(token) => *token,
             Child::Tree(tree) => self.end(*tree),
         }
     }
@@ -128,7 +128,7 @@ impl ModelicaCST {
 
 pub struct Error {
     pub msg: String,
-    tree: TreeID,
+    // tree: TreeID,
 }
 
 struct Tree {

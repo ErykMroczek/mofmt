@@ -6,7 +6,7 @@ use std::fmt::{Debug, Error, Formatter};
 /// Specification
 /// 3.7
 pub enum TokenKind {
-    EOF,
+    Eof,
 
     ErrorIllegalCharacter,
     ErrorIllegalQident,
@@ -113,7 +113,7 @@ impl Debug for TokenKind {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         use TokenKind as TK;
         match self {
-            TK::EOF => write!(f, "EOF"),
+            TK::Eof => write!(f, "EOF"),
             TK::Comma => write!(f, "','"),
             TK::Dot => write!(f, "'.''"),
             TK::Semicolon => write!(f, "';'"),
@@ -270,13 +270,13 @@ pub struct Tokenized {
 
 impl Tokenized {
     pub fn new(source: String, code: String) -> Self {
-        return Tokenized {
+        Tokenized {
             source,
             code,
             kinds: Vec::new(),
             starts: Vec::new(),
             ends: Vec::new(),
-        };
+        }
     }
 
     pub fn push(&mut self, kind: TokenKind, start: usize, end: usize) {

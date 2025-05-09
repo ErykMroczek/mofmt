@@ -266,7 +266,7 @@ impl<'a> Parser<'a> {
     fn advance(&mut self) {
         assert!(!self.eof());
         self.events.push(SyntaxEvent::Advance(
-            self.indices.get(self.pos).unwrap().clone(),
+            *self.indices.get(self.pos).unwrap(),
         ));
         self.pos += 1;
         self.lifes.set(100);
@@ -284,7 +284,7 @@ impl<'a> Parser<'a> {
         self.lifes.set(self.lifes.get() - 1);
         self.indices
             .get(self.pos + n)
-            .map_or(TokenKind::EOF, |i| self.tokens.kind(*i))
+            .map_or(TokenKind::Eof, |i| self.tokens.kind(*i))
     }
 
     // FIXME Get rid of panic
