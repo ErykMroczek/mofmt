@@ -214,10 +214,11 @@ impl Debug for TokenKind {
 #[derive(Debug, PartialEq, Copy, Clone)]
 /// Represents token position in the input string
 ///
-/// * `offset`: offset in bytes from the start of the input string that
+/// # Fields
+/// - `offset`: offset in bytes from the start of the input string that
 ///   corresponds with this position
-/// * `line`: line number that corresponds with this position
-/// * `col`: column (number of characters from the last newline) that
+/// - `line`: line number that corresponds with this position
+/// - `col`: column (number of characters from the last newline) that
 ///   corresponds with this position
 pub struct Position {
     pub offset: usize,
@@ -229,42 +230,43 @@ pub struct Position {
 pub struct TokenID(usize);
 
 #[derive(Debug, Clone)]
-/// Represents a single Modelica token.
+/// Represents a token extracted from the Modelica source code.
 ///
-/// Tokens contain information on their type and their coordinates in
-/// the source.
+/// A `Token` is a slice of the source code that has been identified as a meaningful unit, such as a keyword, identifier, or symbol.
+/// It contains metadata about its type, position, and the source it was extracted from.
 ///
-/// * `kind`: token's kind
-/// * `text`: text content of the token
-/// * `source`: source of the token (input string or file)
-/// * `id`: ID of the toke; the same as token's order in the input
-/// * `start`: starting position
-/// * `end`: ending position
+/// # Fields
+/// - `kind`: The type of the token, represented by the `TokenKind` enum.
+/// - `text`: A slice of the source code that represents the token's text.
+/// - `source`: A reference to the entire source code from which the token was extracted.
+/// - `id`: A unique identifier for the token within the `Tokenized` collection.
+/// - `start`: The starting position of the token in the source code, represented by the `Position` struct.
+/// - `end`: The ending position of the token in the source code, represented by the `Position` struct.
 pub struct Token<'a> {
-    /// Token's kind
     pub kind: TokenKind,
-    /// Text of the token
     pub text: &'a str,
-    /// Source of the token
     pub source: &'a str,
-    /// ID of the toke; the same as token's order in the input
     pub id: TokenID,
-    /// Starting position
     pub start: Position,
-    /// Ending position
     pub end: Position,
 }
 
+/// Represents a collection of tokenized data extracted from the Modelica source code.
+///
+/// This structure contains information about the source code, its tokens,
+/// and their respective metadata such as kinds and offsets.
+///
+/// # Fields
+/// - `source`: The name of the source from which the tokens were extracted.
+/// - `code`: The actual source code that was tokenized.
+/// - `kinds`: A vector containing the kinds of tokens identified in the source code.
+/// - `starts`: A vector of starting offsets for each token in the source code.
+/// - `ends`: A vector of ending offsets for each token in the source code.
 pub struct Tokenized {
-    /// Source name
     source: String,
-    /// Source code
     code: String,
-    /// Tokens' kinds
     kinds: Vec<TokenKind>,
-    /// Token's starting offsets
     starts: Vec<usize>,
-    /// Token's ending offsets
     ends: Vec<usize>,
 }
 
@@ -310,6 +312,10 @@ impl Tokenized {
         }
     }
 
+    pub fn source(&self) -> &str {
+        self.source.as_str()
+    }
+
     pub fn code(&self) -> &str {
         self.code.as_str()
     }
@@ -331,7 +337,7 @@ impl Tokenized {
         Position {
             offset: start,
             line: lines.len(),
-            col: lines.last().unwrap().chars().count(),
+            col: lines.last().unwrap().chars().count() + 1,
         }
     }
 
@@ -341,7 +347,7 @@ impl Tokenized {
         Position {
             offset: end,
             line: lines.len(),
-            col: lines.last().unwrap().chars().count(),
+            col: lines.last().unwrap().chars().count() + 1,
         }
     }
 
@@ -363,12 +369,41 @@ impl Tokenized {
             .collect()
     }
 
-    pub fn errors(&self) -> Vec<TokenID> {
+    pub fn errors(&self) -> Vec<String> {
         self.kinds
             .iter()
             .enumerate()
-            .filter(|(_, k)| (TokenKind::ErrorIllegalCharacter..TokenKind::ErrorUnclosedQIdent).contains(*k))
-            .map(|(i, _)| TokenID(i))
+            .filter(|(_, k)| {
+                (TokenKind::ErrorIllegalCharacter..TokenKind::ErrorUnclosedQIdent).contains(*k)
+            })
+            .map(|(i, k)| {
+                let start = self.start(TokenID(i));
+                let c = self.code.chars().nth(start.offset).unwrap();
+                let msg = match *k {
+                    TokenKind::ErrorIllegalCharacter => format!(
+                        "{}:{}:{}: illegal character '{c}'",
+                        self.source, start.line, start.col
+                    ),
+                    TokenKind::ErrorIllegalQident => format!(
+                        "{}:{}:{}: illegal character inside quoted identifier '{c}'",
+                        self.source, start.line, start.col
+                    ),
+                    TokenKind::ErrorUnclosedString => format!(
+                        "{}:{}:{}: unclosed string literal",
+                        self.source, start.line, start.col
+                    ),
+                    TokenKind::ErrorUnclosedBlockComment => format!(
+                        "{}:{}:{}: unclosed block comment",
+                        self.source, start.line, start.col
+                    ),
+                    TokenKind::ErrorUnclosedQIdent => format!(
+                        "{}:{}:{}: unclosed quoted identifier",
+                        self.source, start.line, start.col
+                    ),
+                    _ => unreachable!(),
+                };
+                msg
+            })
             .collect()
     }
 

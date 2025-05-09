@@ -34,10 +34,10 @@ impl ModelicaCST {
                 SyntaxEvent::Advance(id) => {
                     trees[stack.last().unwrap().0].push(Child::Token(id));
                 }
-                SyntaxEvent::Error(msg) => {
+                SyntaxEvent::Error(i, msg) => {
                     errors.push(Error {
                         msg,
-                        //tree: *stack.last().unwrap(),
+                        token: i,
                     });
                 }
             }
@@ -66,8 +66,25 @@ impl ModelicaCST {
         }
     }
 
-    pub fn errors(&self) -> &[Error] {
-        self.errors.as_slice()
+    pub fn errors(&self) -> Vec<String> {
+        self.errors
+            .iter()
+            .map(|e| {
+
+                let pos = if e.token == self.tokens.last() {
+                    self.tokens.end(e.token)
+                } else {
+                    self.tokens.start(e.token)
+                };
+                format!(
+                    "{}:{}:{}: {}",
+                    self.tokens().source(),
+                    pos.line,
+                    pos.col,
+                    e.msg
+                )
+            })
+            .collect()
     }
 
     pub fn tokens(&self) -> &Tokenized {
@@ -126,9 +143,9 @@ impl ModelicaCST {
     }
 }
 
-pub struct Error {
-    pub msg: String,
-    // tree: TreeID,
+struct Error {
+    msg: String,
+    token: TokenID,
 }
 
 struct Tree {

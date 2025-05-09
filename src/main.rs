@@ -1,4 +1,4 @@
-use mofmt::{parse, SyntaxKind, pretty_print};
+use mofmt::{parse, pretty_print, SyntaxKind};
 use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
@@ -63,16 +63,15 @@ fn format_files(args: &[String], check: bool) {
         let name = p.display();
         match contents {
             Ok(source) => {
-                let parsed = parse(
-                    name.to_string(),
-                    source,
-                    SyntaxKind::StoredDefinition,
-                );
-                if !parsed.errors().is_empty() || !parsed.tokens().errors().is_empty() {
+                let parsed = parse(name.to_string(), source, SyntaxKind::StoredDefinition);
+                let mut errors = parsed.tokens().errors();
+                errors.append(&mut parsed.errors());
+                if !errors.is_empty() {
                     writeln!(
                         lock,
-                        "Syntax errors detected:\n{}",
-                        parsed.errors().iter().map(|err| err.msg.clone()).collect::<Vec<String>>().join("\n")
+                        "\n{}: \x1b[31msyntax errors detected\x1b[0m\n{}",
+                        name,
+                        errors.join("\n")
                     )
                     .unwrap();
                     code = 1;

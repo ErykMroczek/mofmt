@@ -117,7 +117,7 @@ pub enum SyntaxEvent {
     Exit,
     /// Event indicating a token.
     Advance(TokenID),
-    Error(String),
+    Error(TokenID, String),
 }
 
 /// Represents a Modelica parser
@@ -265,9 +265,8 @@ impl<'a> Parser<'a> {
     /// Advance the parser, consume the token and push it into the events vector
     fn advance(&mut self) {
         assert!(!self.eof());
-        self.events.push(SyntaxEvent::Advance(
-            *self.indices.get(self.pos).unwrap(),
-        ));
+        self.events
+            .push(SyntaxEvent::Advance(*self.indices.get(self.pos).unwrap()));
         self.pos += 1;
         self.lifes.set(100);
     }
@@ -323,7 +322,13 @@ impl<'a> Parser<'a> {
 
     /// Mark currently parsed token as erroneus.
     fn error(&mut self, msg: String) {
-        self.events.push(SyntaxEvent::Error(msg));
+        self.events.push(SyntaxEvent::Error(
+            *self
+                .indices
+                .get(self.pos)
+                .unwrap_or_else(|| self.indices.last().unwrap()),
+            msg,
+        ));
     }
 
     fn advance_with_error(&mut self, msg: String) {

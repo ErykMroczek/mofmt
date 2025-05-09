@@ -70,6 +70,11 @@ impl Lexer {
     /// Update the starting position for building the next token
     #[inline(always)]
     fn jump(&mut self) {
+        // If the current position is not a char boundary, we need to
+        // find the next char boundary
+        while !self.tokens.code().is_char_boundary(self.current) {
+            self.current += 1;
+        }
         self.start = self.current;
     }
 
