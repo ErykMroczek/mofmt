@@ -1,21 +1,62 @@
+/// Lexical analysis for Modelica source code.
+///
+/// This module provides functionality to tokenize Modelica source code into a sequence of tokens.
+/// The main entry point is the `lex` function, which takes the source code as input and returns
+/// a collection of tokens. The lexer processes the input character by character, identifying
+/// keywords, symbols, literals, and other elements of the Modelica language.
+///
+/// # Tokenization Process
+///
+/// The lexer identifies various elements of the Modelica language, including:
+///
+/// - **Keywords**: Reserved words such as `if`, `else`, `while`, `class`, etc.
+/// - **Identifiers**: User-defined names for variables, functions, and other entities.
+/// - **Literals**: Numeric values, strings, and booleans.
+/// - **Operators**: Arithmetic, logical, and comparison operators.
+/// - **Delimiters**: Symbols such as parentheses, braces, and semicolons.
+/// - **Comments**: Line comments (`//`) and block comments (`/* ... */`).
+///
+/// # Error Handling
+///
+/// The lexer detects and reports errors such as:
+///
+/// - Illegal characters.
+/// - Unclosed strings or comments.
+///
+/// Errors are stored as special kind of tokens, and the lexer continues processing the input.
+///
+/// # Notes
+///
+/// The lexer assumes that the input is valid UTF-8. It handles escaped characters in strings
+/// and quoted identifiers, and it ensures that tokens are aligned with character boundaries.
 use super::tokens::{TokenKind, Tokenized};
 
-/// Return collections of Modelica tokens, comments and errors generated from the input.
+/// Tokenizes the given Modelica source code.
+///
+/// The `lex` function is the main entry point for lexical analysis of Modelica source code.
+/// It takes the name of the source and the source code itself as input, and returns a `Tokenized`
+/// structure containing the tokens extracted from the source code.
 pub fn lex(name: String, source: String) -> Tokenized {
     let mut lexer = Lexer::new(name, source);
     lexer.tokenize();
     lexer.tokens
 }
 
-/// Represents Modelica lexer/scanner.
+/// Represents a lexer that processes Modelica code and generates tokens.
+///
+/// The `Lexer` struct keeps track of the current position in the input, the starting
+/// position of the current token, the collection of tokens generated so far, and whether
+/// the end of the input has been reached.
+///
+/// Fields:
+/// - `start`: The starting position of the current lexeme in the input.
+/// - `current`: The current position being analyzed in the input.
+/// - `tokens`: A collection of tokens generated during the lexing process.
+/// - `at_eof`: A flag indicating whether the lexer has reached the end of the input.
 struct Lexer {
-    /// Starting offset of currently constructed token
     start: usize,
-    /// Current offset of the lexer
     current: usize,
-    /// Tokens collected so far
     tokens: Tokenized,
-    /// `true` if lexer reached the end of file
     at_eof: bool,
 }
 
@@ -24,8 +65,6 @@ impl Lexer {
     ///
     /// Lexer is initialized and positioned at the beginning of the
     /// source code
-    ///
-    /// * source - reference to the source string
     fn new(source: String, text: String) -> Self {
         Lexer {
             start: 0,
@@ -89,7 +128,7 @@ impl Lexer {
         false
     }
 
-    /// Consume a sequence of valid characters from the input
+    /// Consume a sequence of digits
     #[inline(always)]
     fn accept_digits(&mut self) {
         while let Some(c) = self.peek() {
@@ -365,71 +404,3 @@ impl Lexer {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn lexing_correct_input() {
-//         let source = r#"within Some.Library;
-//         // Here goes a line comment!
-//         parameter Real x(start = 0) = if true then 1e-3 else -2
-//           "Some parameter";
-//         /* End there goes
-//         a block comment! */
-//         final constant Some.Type 'quoted'(min = 0, max = 1) = func.call(x);"#;
-//         let tokens = lex(String::from("none"), String::from(source));
-//         let comments: Vec<Token> = tokens
-//             .kinds
-//             .iter()
-//             .enumerate()
-//             .filter(|(_, k)| **k == TokenKind::BlockComment || **k == TokenKind::LineComment)
-//             .map(|(i, _)| tokens.get(i).unwrap())
-//             .collect();
-//         assert_eq!(tokens.kinds.len(), 48);
-//         assert_eq!(comments.len(), 2);
-//         assert_eq!(tokens.get(0).unwrap().text, "within");
-//         assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Within);
-//         assert_eq!(tokens.get(0).unwrap().start.line, 1);
-//         assert_eq!(tokens.get(0).unwrap().kind, TokenKind::Identifier);
-//         assert_eq!(tokens.get(tokens.kinds.len() - 1).unwrap().text, ";");
-//         assert_eq!(
-//             tokens.get(tokens.kinds.len() - 1).unwrap().kind,
-//             TokenKind::Semicolon
-//         );
-//         assert_eq!(comments[0].kind, TokenKind::LineComment);
-//         assert_eq!(tokens.get(tokens.kinds.len() - 1).unwrap().start.line, 7);
-//         assert_eq!(tokens.get(0).unwrap().start.col, 1);
-//         assert_eq!(tokens.get(1).unwrap().start.col, 8);
-//         assert_eq!(comments[0].start.col, 9);
-//         assert_eq!(errors.len(), 0);
-//     }
-
-//     #[test]
-//     fn lexing_erroneus_input() {
-//         let source = "Some.Name x1y_ = ! \"string\";";
-//         let (tokens, _, errors) = lex("none", source);
-//         assert_eq!(tokens.len(), 7);
-//         assert_eq!(errors.len(), 1);
-//         assert_eq!(errors[0], "none:1:18: unexpected character: '!'");
-//     }
-
-//     #[test]
-//     fn lexing_unicode_string() {
-//         let source = "String s := \"stringą\";";
-//         let (tokens, _, errors) = lex("none", source);
-//         assert_eq!(errors.len(), 0);
-//         assert_eq!(tokens.len(), 5);
-//         assert_eq!(tokens[3].text, "\"stringą\"");
-//     }
-
-//     #[test]
-//     fn lexing_block_comment() {
-//         let source = "/** comment **/";
-//         let (tokens, comments, errors) = lex("none", source);
-//         assert_eq!(errors.len(), 0);
-//         assert_eq!(tokens.len(), 0);
-//         assert_eq!(comments.len(), 1);
-//     }
-// }

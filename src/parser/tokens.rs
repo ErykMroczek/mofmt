@@ -8,6 +8,8 @@ use std::fmt::{Debug, Error, Formatter};
 pub enum TokenKind {
     Eof,
 
+    // Custom kinds for error handling
+
     ErrorIllegalCharacter,
     ErrorIllegalQident,
     ErrorUnclosedString,
@@ -227,6 +229,9 @@ pub struct Position {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
+/// Represents a unique identifier for a token.
+/// 
+/// It acts as a opaque pointer to a token in the `Tokenized` collection.
 pub struct TokenID(usize);
 
 #[derive(Debug, Clone)]
@@ -255,13 +260,6 @@ pub struct Token<'a> {
 ///
 /// This structure contains information about the source code, its tokens,
 /// and their respective metadata such as kinds and offsets.
-///
-/// # Fields
-/// - `source`: The name of the source from which the tokens were extracted.
-/// - `code`: The actual source code that was tokenized.
-/// - `kinds`: A vector containing the kinds of tokens identified in the source code.
-/// - `starts`: A vector of starting offsets for each token in the source code.
-/// - `ends`: A vector of ending offsets for each token in the source code.
 pub struct Tokenized {
     source: String,
     code: String,
@@ -271,7 +269,8 @@ pub struct Tokenized {
 }
 
 impl Tokenized {
-    pub fn new(source: String, code: String) -> Self {
+
+    pub(super) fn new(source: String, code: String) -> Self {
         Tokenized {
             source,
             code,
@@ -281,20 +280,23 @@ impl Tokenized {
         }
     }
 
-    pub fn push(&mut self, kind: TokenKind, start: usize, end: usize) {
+    pub(super) fn push(&mut self, kind: TokenKind, start: usize, end: usize) {
         self.kinds.push(kind);
         self.starts.push(start);
         self.ends.push(end);
     }
 
+    /// Return first token ID
     pub fn first(&self) -> TokenID {
         TokenID(0)
     }
 
+    /// Return last token ID
     pub fn last(&self) -> TokenID {
         TokenID(self.kinds.len() - 1)
     }
 
+    /// Return next valid token ID
     pub fn next(&self, id: TokenID) -> Option<TokenID> {
         let next = id.0 + 1;
         if next < self.kinds.len() {
@@ -304,6 +306,7 @@ impl Tokenized {
         }
     }
 
+    /// Return previous valid token ID
     pub fn prev(&self, id: TokenID) -> Option<TokenID> {
         if id.0 > 0 {
             Some(TokenID(id.0 - 1))
@@ -312,24 +315,29 @@ impl Tokenized {
         }
     }
 
+    /// Return the source/file from which the tokens were extracted
     pub fn source(&self) -> &str {
         self.source.as_str()
     }
 
+    /// Return the source code from which the tokens were extracted
     pub fn code(&self) -> &str {
         self.code.as_str()
     }
 
+    /// Return kind of the token
     pub fn kind(&self, i: TokenID) -> TokenKind {
         self.kinds[i.0]
     }
 
+    /// Return the text contents of the token
     pub fn text(&self, i: TokenID) -> &str {
         let start = self.starts[i.0];
         let end = self.ends[i.0];
         &self.code[start..end]
     }
 
+    /// Return the start position of the token
     pub fn start(&self, i: TokenID) -> Position {
         let start = self.starts[i.0];
         let pre = &self.code[..start];
@@ -341,6 +349,7 @@ impl Tokenized {
         }
     }
 
+    /// Return the end position of the token
     pub fn end(&self, i: TokenID) -> Position {
         let end = self.ends[i.0];
         let lines: Vec<&str> = self.code[..end].split('\n').collect();
@@ -351,6 +360,12 @@ impl Tokenized {
         }
     }
 
+    /// Return all valid token IDs
+    pub fn all(&self) -> Vec<TokenID> {
+        (0..self.kinds.len()).map(TokenID).collect()
+    }
+
+    /// Return all valid token IDs that are not comments
     pub fn tokens(&self) -> Vec<TokenID> {
         self.kinds
             .iter()
@@ -360,6 +375,7 @@ impl Tokenized {
             .collect()
     }
 
+    /// Return all valid token IDs that are comments
     pub fn comments(&self) -> Vec<TokenID> {
         self.kinds
             .iter()
@@ -369,6 +385,7 @@ impl Tokenized {
             .collect()
     }
 
+    /// Return formatted lexical error messages
     pub fn errors(&self) -> Vec<String> {
         self.kinds
             .iter()
@@ -407,6 +424,7 @@ impl Tokenized {
             .collect()
     }
 
+    /// Return the full token instance of a given ID
     pub fn get(&self, i: TokenID) -> Token {
         Token {
             kind: self.kind(i),

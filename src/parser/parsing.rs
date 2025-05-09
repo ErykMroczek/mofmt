@@ -11,7 +11,7 @@ pub fn events(tokens: &Tokenized, start: SyntaxKind) -> Vec<SyntaxEvent> {
 #[derive(Debug, PartialEq, Clone, Copy)]
 /// Represents Modelica grammar rules as defined in [Modelica
 /// Specification
-/// 3.6](https://specification.modelica.org/maint/3.6/modelica-concrete-syntax.html).
+/// 3.7](https://specification.modelica.org/maint/3.7/modelica-concrete-syntax.html).
 pub enum SyntaxKind {
     /// Custom production type used to indicate a faulty syntax tree
     Error,
