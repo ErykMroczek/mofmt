@@ -9,21 +9,6 @@ pub use tokens::{TokenKind, TokenID, Position, Tokens};
 pub use parsing::SyntaxKind;
 pub use cst::{Child, ModelicaCST, TreeID};
 
-/// Parse Modelica code into a concrete syntax tree (CST).
-/// 
-/// # Arguments
-/// * `source` - The source file name.
-/// * `code` - The Modelica code to parse.
-/// * `entry` - The entry point for parsing.
-/// 
-/// # Returns
-/// A `ModelicaCST` object representing the parsed code.
-pub fn parse(source: String, code: String, entry: SyntaxKind) -> ModelicaCST {
-    let tokens = lexing::lex(source, code);
-    let events = parsing::events(&tokens, entry);
-    cst::ModelicaCST::new(tokens, events)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -32,7 +17,7 @@ mod tests {
     #[test]
     fn test_parse_correct_modelica_code() {
         let code = "model Complex \n parameter Real x = 1.0;  \n end Complex;".to_string();
-        let cst = parse(String::from("test"), code, SyntaxKind::StoredDefinition);
+        let cst = ModelicaCST::from(String::from("test"), code, SyntaxKind::StoredDefinition);
 
         // Check token kinds
         let tokens = cst.tokens();
@@ -61,7 +46,7 @@ mod tests {
     #[test]
     fn test_parse_incorrect_modelica_code() {
         let code = "model Example end Example".to_string();
-        let cst = parse(String::from("test"), code, SyntaxKind::StoredDefinition);
+        let cst = ModelicaCST::from(String::from("test"), code, SyntaxKind::StoredDefinition);
 
         // Check syntax errors
         let errors = cst.errors();

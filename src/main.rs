@@ -1,4 +1,4 @@
-use mofmt::{parse, SyntaxKind};
+use mofmt::{ModelicaCST, SyntaxKind};
 use std::io::{stdout, Write};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
@@ -63,7 +63,7 @@ fn format_files(args: &[String], check: bool) {
         let name = p.display();
         match contents {
             Ok(source) => {
-                let parsed = parse(name.to_string(), source, SyntaxKind::StoredDefinition);
+                let parsed = ModelicaCST::from(name.to_string(), source, SyntaxKind::StoredDefinition);
                 let mut errors = parsed.tokens().errors();
                 errors.append(&mut parsed.errors());
                 if !errors.is_empty() {

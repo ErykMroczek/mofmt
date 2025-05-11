@@ -1,4 +1,5 @@
-use super::parsing::{SyntaxEvent, SyntaxKind};
+use super::parsing::{SyntaxEvent, SyntaxKind, events};
+use super::lexing::lex;
 use super::tokens::{TokenID, Tokens};
 
 #[derive(Copy, Clone)]
@@ -53,6 +54,21 @@ impl ModelicaCST {
             trees,
             errors,
         }
+    }
+
+    /// Parse Modelica code into a concrete syntax tree (CST).
+    /// 
+    /// # Arguments
+    /// * `source` - The source file name.
+    /// * `code` - The Modelica code to parse.
+    /// * `entry` - The entry point for parsing.
+    /// 
+    /// # Returns
+    /// A `ModelicaCST` object representing the parsed code.
+    pub fn from(source: String, code: String, entry: SyntaxKind) -> Self {
+        let tokens = lex(source, code);
+        let events = events(&tokens, entry);
+        Self::new(tokens, events)
     }
 
     /// Return the root node of the CST.
