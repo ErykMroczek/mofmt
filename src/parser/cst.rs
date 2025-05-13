@@ -7,7 +7,7 @@ use super::tokens::{TokenID, Tokens};
 /// It acts as a opaque pointer to the node in the CST.
 pub struct TreeID(usize);
 
-//// A concrete syntax tree (CST) for Modelica.
+/// A concrete syntax tree (CST) for Modelica.
 /// The CST is a tree structure that represents the syntactic structure of the source code.
 /// 
 /// CST API is opaque and does not expose the internal structure of the tree.

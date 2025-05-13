@@ -169,7 +169,12 @@ impl<'a> Formatter<'a> {
         let (inlines, comments) = self.comments_before(tok);
         for comment in inlines {
             if !self.markers.is_empty() {
-                self.markers.push(Marker::Space);
+                // Keep the distance between the last token on the line and the following inline comment
+                let distance =
+                    self.cst.tokens().start(comment).col - self.cst.tokens().end(self.prev_tok).col;
+                for _ in 0..distance {
+                    self.markers.push(Marker::Space);
+                }
             }
             self.markers.push(Marker::Token(comment));
         }
@@ -526,13 +531,9 @@ fn composition(f: &mut Formatter, tree: TreeID) {
                     SyntaxKind::LanguageSpecification => {
                         f.markers.push(Marker::Space);
                         language_specification(f, *tree);
+                        f.markers.push(Marker::Space);
                     }
-                    SyntaxKind::ExternalFunctionCall => {
-                        f.markers.push(Marker::Indent);
-                        f.handle_break(f.cst.start(*tree), Blank::Required);
-                        external_function_call(f, *tree);
-                        f.markers.push(Marker::Dedent);
-                    }
+                    SyntaxKind::ExternalFunctionCall => external_function_call(f, *tree),
                     SyntaxKind::AnnotationClause => {
                         f.markers.push(Marker::Indent);
                         let extern_element_annotation = f.prev_kind == TokenKind::External
@@ -542,9 +543,6 @@ fn composition(f: &mut Formatter, tree: TreeID) {
                             ]
                             .contains(&prev_rule)
                                 && f.prev_kind != TokenKind::Semicolon);
-                        if extern_element_annotation {
-                            f.markers.push(Marker::Indent);
-                        }
                         f.handle_break(
                             f.cst.start(*tree),
                             if !extern_element_annotation {
@@ -554,10 +552,10 @@ fn composition(f: &mut Formatter, tree: TreeID) {
                             },
                         );
                         annotation_clause(f, *tree);
-                        f.markers.push(Marker::Dedent);
                         if extern_element_annotation {
                             f.markers.push(Marker::Dedent);
                         }
+                        f.markers.push(Marker::Dedent);
                     }
                     _ => unreachable!(),
                 }
@@ -566,6 +564,9 @@ fn composition(f: &mut Formatter, tree: TreeID) {
             Child::Token(tok) => {
                 let kind = f.cst.tokens().kind(*tok);
                 if [TokenKind::Protected, TokenKind::Public, TokenKind::External].contains(&kind) {
+                    if kind == TokenKind::External {
+                        f.markers.push(Marker::Indent);
+                    }
                     f.handle_break(*tok, Blank::Required);
                 }
                 f.handle_token(*tok);
@@ -944,12 +945,14 @@ fn modification(f: &mut Formatter, tree: TreeID) {
                 SyntaxKind::ModificationExpression => {
                     let is_multiline_if = f.cst.is_multiline(*tree)
                         && f.cst.tokens().kind(f.cst.start(*tree)) == TokenKind::If;
-                    if is_multiline_if {
+                    let is_wrapped_at_eq =
+                        f.cst.tokens().start(f.cst.start(*tree)).line != f.prev_line;
+                    if is_multiline_if || is_wrapped_at_eq {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline_if, f.cst.start(*tree));
+                    f.break_or_space(is_multiline_if || is_wrapped_at_eq, f.cst.start(*tree));
                     modification_expression(f, *tree);
-                    if is_multiline_if {
+                    if is_multiline_if || is_wrapped_at_eq {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -1216,12 +1219,14 @@ fn equation(f: &mut Formatter, tree: TreeID) {
                 SyntaxKind::Expression => {
                     let is_multiline_if = f.cst.is_multiline(*tree)
                         && f.cst.tokens().kind(f.cst.start(*tree)) == TokenKind::If;
-                    if is_multiline_if {
+                    let is_wrapped_at_eq =
+                        f.cst.tokens().start(f.cst.start(*tree)).line != f.prev_line;
+                    if is_multiline_if || is_wrapped_at_eq {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline_if, f.cst.start(*tree));
+                    f.break_or_space(is_multiline_if || is_wrapped_at_eq, f.cst.start(*tree));
                     expression(f, *tree, false, false);
-                    if is_multiline_if {
+                    if is_multiline_if || is_wrapped_at_eq {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -1255,20 +1260,31 @@ fn statement(f: &mut Formatter, tree: TreeID) {
         match child {
             Child::Tree(tree) => match f.cst.kind(*tree) {
                 SyntaxKind::ComponentReference => {
+                    let mut is_wrapped_at_ass = false;
                     if f.prev_kind == TokenKind::Assign {
-                        f.markers.push(Marker::Space);
+                        is_wrapped_at_ass =
+                            f.cst.tokens().start(f.cst.start(*tree)).line != f.prev_line;
+                        if is_wrapped_at_ass {
+                            f.markers.push(Marker::Indent);
+                        }
+                        f.break_or_space(is_wrapped_at_ass, f.cst.start(*tree));
                     }
                     component_reference(f, *tree);
+                    if is_wrapped_at_ass {
+                        f.markers.push(Marker::Dedent);
+                    }
                 }
                 SyntaxKind::Expression => {
                     let is_multiline_if = f.cst.is_multiline(*tree)
                         && f.cst.tokens().kind(f.cst.start(*tree)) == TokenKind::If;
-                    if is_multiline_if {
+                    let is_wrapped_at_ass =
+                        f.cst.tokens().start(f.cst.start(*tree)).line != f.prev_line;
+                    if is_multiline_if || is_wrapped_at_ass {
                         f.markers.push(Marker::Indent);
                     }
-                    f.break_or_space(is_multiline_if, f.cst.start(*tree));
+                    f.break_or_space(is_multiline_if || is_wrapped_at_ass, f.cst.start(*tree));
                     expression(f, *tree, false, false);
-                    if is_multiline_if {
+                    if is_multiline_if || is_wrapped_at_ass {
                         f.markers.push(Marker::Dedent);
                     }
                 }
@@ -2196,7 +2212,8 @@ fn description_string(f: &mut Formatter, tree: TreeID) {
     f.markers.push(Marker::Indent);
     for child in f.cst.children(tree) {
         if let Child::Token(tok) = child {
-            let kind = f.cst.tokens().kind(*tok); match kind {
+            let kind = f.cst.tokens().kind(*tok);
+            match kind {
                 TokenKind::Plus => {
                     f.break_or_space(is_multiline, *tok);
                     f.handle_token(*tok);

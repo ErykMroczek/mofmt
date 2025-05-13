@@ -396,7 +396,8 @@ impl Tokens {
             .map(|(i, k)| {
                 let start = self.start(TokenID(i));
                 let c = self.code.chars().nth(start.offset).unwrap();
-                let msg = match *k {
+                
+                match *k {
                     TokenKind::ErrorIllegalCharacter => format!(
                         "{}:{}:{}: illegal character '{c}'",
                         self.source, start.line, start.col
@@ -418,8 +419,7 @@ impl Tokens {
                         self.source, start.line, start.col
                     ),
                     _ => unreachable!(),
-                };
-                msg
+                }
             })
             .collect()
     }
